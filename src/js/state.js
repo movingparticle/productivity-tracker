@@ -22,7 +22,8 @@ export let store = {
   todayLog: [], 
   history: [], 
   pendingList: [], 
-  templates: []
+  templates: [],
+  roadmaps: {}
 };
 
 // UI Re-render callback registration
@@ -56,6 +57,11 @@ export function setRoomState(roomId, newState) {
     ['todayLog', 'history', 'pendingList', 'templates'].forEach(k => {
       if (!Array.isArray(store[k])) store[k] = [];
     });
+    
+    // Ensure roadmaps exists as an object
+    if (!store.roadmaps || typeof store.roadmaps !== 'object') {
+      store.roadmaps = {};
+    }
     
     // Ensure config exists
     if (!store.config) {
@@ -154,6 +160,7 @@ export function checkDateAutoClose() {
 
     // Clear daily arrays and update date marker
     store.todayLog = [];
+    store.roadmaps = {};
     store.lastActiveDate = todayStr;
     store.bonusCounters = {};
     
@@ -328,7 +335,8 @@ export function hardResetState() {
     todayLog: [], 
     history: [], 
     pendingList: [], 
-    templates: []
+    templates: [],
+    roadmaps: {}
   };
   localProfileId = 'u1';
   localStorage.setItem('localProfileId', localProfileId);
@@ -341,6 +349,7 @@ export function hardResetState() {
 export function weeklyResetState() {
   store.history = [];
   store.todayLog = [];
+  store.roadmaps = {};
   store.lastActiveDate = new Date().toDateString();
   store.bonusCounters = {};
   saveState();
@@ -363,4 +372,18 @@ export function setCurrentRoomId(id) {
   localStorage.setItem('prodTrackerRoom', id);
   // New connection: wait for its fresh snapshot before allowing any writes.
   roomDataLoaded = false;
+}
+
+/**
+ * Saves or updates the current profile's daily roadmap
+ */
+export function saveRoadmap(goalText, endText, status) {
+  if (!localProfileId) return;
+  if (!store.roadmaps) store.roadmaps = {};
+  store.roadmaps[localProfileId] = {
+    goal: goalText,
+    end: endText,
+    status: status || 'todo'
+  };
+  saveState();
 }

@@ -62,6 +62,20 @@ export function initDomElements() {
     dailyLogList: document.getElementById('dailyLogList'),
     mainFab: document.getElementById('mainFab'),
     
+    // Roadmap elements
+    roadmapContainer: document.getElementById('roadmapContainer'),
+    btnEditRoadmap: document.getElementById('btnEditRoadmap'),
+    roadmapView: document.getElementById('roadmapView'),
+    roadmapGoalText: document.getElementById('roadmapGoalText'),
+    roadmapEndText: document.getElementById('roadmapEndText'),
+    roadmapStatusBadge: document.getElementById('roadmapStatusBadge'),
+    roadmapForm: document.getElementById('roadmapForm'),
+    inputRoadmapGoal: document.getElementById('inputRoadmapGoal'),
+    inputRoadmapEnd: document.getElementById('inputRoadmapEnd'),
+    selectRoadmapStatus: document.getElementById('selectRoadmapStatus'),
+    btnCancelRoadmap: document.getElementById('btnCancelRoadmap'),
+    btnSaveRoadmap: document.getElementById('btnSaveRoadmap'),
+    
     bonusAlert: document.getElementById('bonusAlert'),
     pendingInput: document.getElementById('pendingInput'),
     pendingPoints: document.getElementById('pendingPoints'),
@@ -137,19 +151,18 @@ export function showToast(message, type = 'success') {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   
-  // Custom icons based on toast type
-  let icon = '🔔';
-  if (type === 'success') icon = '✅';
-  else if (type === 'error') icon = '❌';
-  else if (type === 'warning') icon = '⚠️';
-  else if (type === 'info') icon = 'ℹ️';
+  // Custom icons based on toast type (inline SVGs for premium look)
+  let icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+  if (type === 'success') icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+  else if (type === 'error') icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+  else if (type === 'warning') icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
 
   toast.innerHTML = `
     <div style="display:flex; align-items:center; gap:8px;">
-      <span>${icon}</span>
+      <span class="icon-span">${icon}</span>
       <span>${message}</span>
     </div>
-    <button class="toast-close">×</button>
+    <button class="toast-close" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
   `;
 
   toastContainer.appendChild(toast);
@@ -256,6 +269,7 @@ export function updateUI() {
   renderMetrics();
   renderTemplates();
   renderUserConfigList();
+  renderRoadmap();
 
   if (elements.inputWorkDays) {
     elements.inputWorkDays.value = state.store.config.days || 6;
@@ -395,7 +409,7 @@ function renderTracker() {
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
         ${badgeHtml}
-        <button class="del-btn" data-id="${x.id}">×</button>
+        <button class="del-btn" data-id="${x.id}" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
     `;
 
@@ -422,7 +436,7 @@ function renderPending() {
     card.style.borderLeftColor = state.store.config.users[i % state.store.config.users.length]?.color || 'var(--text-muted)';
     card.innerHTML = `
       <div style="display:flex; align-items:center; gap:12px; flex:1; overflow:hidden;">
-        <button class="btn-check-card">✔</button>
+        <button class="btn-check-card" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
         <div style="display:flex; flex-direction:column; overflow:hidden;">
           <span style="font-weight:700; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.name}</span>
           <div style="display:flex; gap:5px; margin-top:2px;">
@@ -431,8 +445,8 @@ function renderPending() {
         </div>
       </div>
       <div style="display:flex; gap:8px; margin-left:10px;">
-        <button class="btn-edit-pen">✏️</button>
-        <button class="btn-del-pen">✕</button>
+        <button class="btn-edit-pen" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+        <button class="btn-del-pen" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
     `;
 
@@ -544,7 +558,7 @@ export function renderTemplates() {
           <span style="font-weight:700; font-size:0.95rem;">${t.name}</span>
           <span class="badge" style="margin-right:10px;">+${t.pts} pts</span>
         </div>
-        <button class="btn-edit-tpl">✏️</button>
+        <button class="btn-edit-tpl" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
       `;
 
       item.onclick = () => {
@@ -958,4 +972,86 @@ export function closeModal(modalEl) {
     });
   }
 }
+
+/**
+ * Render the current profile's daily roadmap
+ */
+export function renderRoadmap() {
+  const activeUser = state.store.config.users.find(u => u.id === state.localProfileId) || state.store.config.users[0];
+  if (!activeUser) return;
+
+  const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
+  
+  if (elements.roadmapContainer) {
+    elements.roadmapContainer.style.borderLeftColor = activeUser.color;
+  }
+
+  if (plan && (plan.goal || plan.end)) {
+    if (elements.roadmapGoalText) {
+      elements.roadmapGoalText.innerText = plan.goal || "Sin plan establecido.";
+      elements.roadmapGoalText.classList.remove('empty');
+    }
+    if (elements.roadmapEndText) {
+      elements.roadmapEndText.innerText = plan.end || "Sin plan establecido.";
+      elements.roadmapEndText.classList.remove('empty');
+    }
+    if (elements.roadmapStatusBadge) {
+      let statusText = "Sin iniciar";
+      let statusClass = "status-todo";
+      
+      switch(plan.status) {
+        case 'doing':
+          statusText = "En progreso";
+          statusClass = "status-doing";
+          break;
+        case 'done':
+          statusText = "¡Cumplido!";
+          statusClass = "status-done";
+          break;
+        case 'partial':
+          statusText = "Parcialmente cumplido";
+          statusClass = "status-partial";
+          break;
+      }
+      
+      elements.roadmapStatusBadge.innerText = statusText;
+      elements.roadmapStatusBadge.className = `roadmap-badge ${statusClass}`;
+    }
+  } else {
+    if (elements.roadmapGoalText) {
+      elements.roadmapGoalText.innerText = "Sin plan establecido para hoy.";
+      elements.roadmapGoalText.classList.add('empty');
+    }
+    if (elements.roadmapEndText) {
+      elements.roadmapEndText.innerText = "Sin plan establecido para hoy.";
+      elements.roadmapEndText.classList.add('empty');
+    }
+    if (elements.roadmapStatusBadge) {
+      elements.roadmapStatusBadge.innerText = "Sin iniciar";
+      elements.roadmapStatusBadge.className = "roadmap-badge status-todo";
+    }
+  }
+}
+
+/**
+ * Toggle roadmap edit mode inline
+ */
+export function toggleRoadmapForm(show) {
+  if (show) {
+    if (elements.roadmapForm) elements.roadmapForm.classList.remove('hidden');
+    if (elements.roadmapView) elements.roadmapView.classList.add('hidden');
+    
+    // Populate form inputs
+    const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
+    if (elements.inputRoadmapGoal) elements.inputRoadmapGoal.value = plan ? plan.goal || '' : '';
+    if (elements.inputRoadmapEnd) elements.inputRoadmapEnd.value = plan ? plan.end || '' : '';
+    if (elements.selectRoadmapStatus) elements.selectRoadmapStatus.value = plan ? plan.status || 'todo' : 'todo';
+    
+    if (elements.inputRoadmapGoal) elements.inputRoadmapGoal.focus();
+  } else {
+    if (elements.roadmapForm) elements.roadmapForm.classList.add('hidden');
+    if (elements.roadmapView) elements.roadmapView.classList.remove('hidden');
+  }
+}
+
 export { elements };

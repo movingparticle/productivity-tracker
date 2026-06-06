@@ -552,6 +552,25 @@ function bindEvents() {
       });
     };
   }
+
+  // Roadmap Edit, Cancel, Save
+  if (ui.elements.btnEditRoadmap) {
+    ui.elements.btnEditRoadmap.onclick = () => ui.toggleRoadmapForm(true);
+  }
+  if (ui.elements.btnCancelRoadmap) {
+    ui.elements.btnCancelRoadmap.onclick = () => ui.toggleRoadmapForm(false);
+  }
+  if (ui.elements.btnSaveRoadmap) {
+    ui.elements.btnSaveRoadmap.onclick = () => {
+      const goal = ui.elements.inputRoadmapGoal.value.trim();
+      const end = ui.elements.inputRoadmapEnd.value.trim();
+      const status = ui.elements.selectRoadmapStatus.value;
+      
+      state.saveRoadmap(goal, end, status);
+      ui.toggleRoadmapForm(false);
+      ui.showToast("Plan diario guardado");
+    };
+  }
 }
 
 /* ------------------------------------------------------------------ */
