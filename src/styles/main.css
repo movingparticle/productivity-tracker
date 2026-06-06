@@ -1490,7 +1490,7 @@ input:focus, select:focus {
   padding: 18px;
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
   border-left: 4px solid var(--active-color);
-  margin-bottom: 90px; /* Leave space for scrolling & FAB */
+  margin-bottom: 20px;
   flex-shrink: 0;
   transition: border-left-color 0.4s ease;
 }

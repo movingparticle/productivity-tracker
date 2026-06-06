@@ -306,6 +306,7 @@ function bindEvents() {
   // Navigation Item Clicks
   const navItems = [
     { id: 'navTrackerBtn', target: 'tracker' },
+    { id: 'navRoadmapBtn', target: 'roadmap' },
     { id: 'navPendingBtn', target: 'pending' },
     { id: 'navMetricsBtn', target: 'metrics' }
   ];
