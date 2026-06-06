@@ -2,11 +2,10 @@ import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, onValue, get, remove } from "firebase/database";
 import {
   getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
   signOut,
-  onAuthStateChanged,
-  sendPasswordResetEmail
+  onAuthStateChanged
 } from "firebase/auth";
 
 const firebaseConfig = {
@@ -39,18 +38,13 @@ export function observeAuthState(callback) {
   return onAuthStateChanged(auth, callback);
 }
 
-/**
- * Create a new account with email and password
- */
-export function registerWithEmail(email, password) {
-  return createUserWithEmailAndPassword(auth, email, password);
-}
+const googleProvider = new GoogleAuthProvider();
 
 /**
- * Sign in with an existing email and password
+ * Sign in with Google (popup flow)
  */
-export function loginWithEmail(email, password) {
-  return signInWithEmailAndPassword(auth, email, password);
+export function loginWithGoogle() {
+  return signInWithPopup(auth, googleProvider);
 }
 
 /**
@@ -58,13 +52,6 @@ export function loginWithEmail(email, password) {
  */
 export function logoutUser() {
   return signOut(auth);
-}
-
-/**
- * Send a password reset email
- */
-export function sendResetEmail(email) {
-  return sendPasswordResetEmail(auth, email);
 }
 
 /**

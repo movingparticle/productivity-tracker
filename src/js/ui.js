@@ -12,13 +12,8 @@ export function initDomElements() {
   elements = {
     // Auth screen
     authScreen: document.getElementById('authScreen'),
-    authEmail: document.getElementById('authEmail'),
-    authPassword: document.getElementById('authPassword'),
+    btnGoogleLogin: document.getElementById('btnGoogleLogin'),
     authError: document.getElementById('authError'),
-    authSubtitle: document.getElementById('authSubtitle'),
-    btnAuthSubmit: document.getElementById('btnAuthSubmit'),
-    authToggle: document.getElementById('authToggle'),
-    authForgot: document.getElementById('authForgot'),
     btnSignOut: document.getElementById('btnSignOut'),
 
     loginScreen: document.getElementById('loginScreen'),
