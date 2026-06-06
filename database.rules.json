@@ -35,7 +35,7 @@
 
         "members": {
           "$memberUid": {
-            ".write": "auth != null && (data.parent().child(auth.uid).child('role').val() === 'owner' || ($memberUid === auth.uid && (data.exists() || data.parent().numChildren() < 5)))"
+            ".write": "auth != null && (data.parent().child(auth.uid).child('role').val() === 'owner' || $memberUid === auth.uid)"
           }
         }
       }
