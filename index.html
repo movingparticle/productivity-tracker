@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Productivity Tracker Premium</title>
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-p5GZR6yN.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-OUDshXll.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-BTCj1Np8.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-DR_jzYqe.css">
 </head>
 <body>
 
@@ -138,56 +138,61 @@
     </div>
 
     <!-- ROADMAP TAB (DAILY PLAN) -->
-    <div class="screen" id="screenRoadmap">
+    <div class="screen" id="screenRoadmap" style="overflow-y: auto;">
       <div class="header-row">
         <span class="app-title">Plan de Enfoque</span>
       </div>
 
-      <div class="roadmap-card" id="roadmapContainer" style="margin-top: 10px;">
+      <!-- User Profile Selector (so they can switch profiles on the roadmap too) -->
+      <div class="profile-switch-container" style="margin-bottom: 15px;">
+        <div class="profile-switch" id="roadmapProfileSwitcher">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <div class="roadmap-card" id="roadmapContainer" style="margin-top: 5px; min-height: 120px;">
         <div class="roadmap-header">
-          <span class="roadmap-card-title">Enfoque Diario</span>
-          <button class="btn-roadmap-edit" id="btnEditRoadmap" title="Editar plan">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-          </button>
+          <span class="roadmap-card-title" id="roadmapUserTitle">Plan de Hoy</span>
         </div>
         
-        <div class="roadmap-view" id="roadmapView">
-          <div class="roadmap-section">
-            <span class="roadmap-label">¿Qué me gustaría hacer hoy?</span>
-            <p class="roadmap-text empty" id="roadmapGoalText">Sin plan establecido para hoy.</p>
-          </div>
-          <div class="roadmap-section" style="margin-top: 12px;">
-            <span class="roadmap-label">¿Cómo quiero terminar el día?</span>
-            <p class="roadmap-text empty" id="roadmapEndText">Sin plan establecido para hoy.</p>
-          </div>
-          <div class="roadmap-status-container" style="margin-top: 15px;">
-            <span class="roadmap-status-label">Estado:</span>
-            <span class="roadmap-badge status-todo" id="roadmapStatusBadge">Sin iniciar</span>
+        <div class="roadmap-items-list" id="roadmapItemsList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+          <!-- Dynamically populated Lego block items -->
+        </div>
+      </div>
+
+      <h4 class="section-title">Construir Plan (Bloques)</h4>
+      <div class="roadmap-builder-card" style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 15px; margin-bottom: 90px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
+        
+        <!-- 1. Cargar desde Pendientes -->
+        <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px;">
+          <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📌 Cargar de Tareas Pendientes</label>
+          <div style="display: flex; gap: 8px;">
+            <select id="selectRoadmapPending" style="flex: 1; margin: 0; padding: 10px 12px; border: 1px solid rgba(15, 23, 42, 0.15); border-radius: var(--radius-md); font-size: 0.9rem; background: #ffffff;">
+              <option value="">-- Seleccionar Tarea --</option>
+            </select>
+            <button class="btn-save" id="btnAddPendingToRoadmap" style="width: auto; margin: 0; background: var(--active-color); font-size: 0.85rem; padding: 8px 16px;">Añadir</button>
           </div>
         </div>
-
-        <div class="roadmap-form hidden" id="roadmapForm">
-          <div class="roadmap-field">
-            <label for="inputRoadmapGoal">¿Qué me gustaría hacer hoy?</label>
-            <input type="text" id="inputRoadmapGoal" class="roadmap-input" placeholder="Ej: Ejercicio 30m, leer, avanzar informe...">
-          </div>
-          <div class="roadmap-field" style="margin-top: 10px;">
-            <label for="inputRoadmapEnd">¿Cómo quiero terminar el día?</label>
-            <input type="text" id="inputRoadmapEnd" class="roadmap-input" placeholder="Ej: Relajado y con la meta cumplida...">
-          </div>
-          <div class="roadmap-field" style="margin-top: 10px;">
-            <label for="selectRoadmapStatus">Estado de avance</label>
-            <select id="selectRoadmapStatus" class="roadmap-select">
-              <option value="todo">Sin iniciar</option>
-              <option value="doing">En progreso</option>
-              <option value="done">¡Cumplido!</option>
-              <option value="partial">Parcialmente cumplido</option>
+        
+        <!-- 2. Cargar desde Rutinas -->
+        <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px;">
+          <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🔄 Cargar de Rutinas Guardadas</label>
+          <div style="display: flex; gap: 8px;">
+            <select id="selectRoadmapRoutine" style="flex: 1; margin: 0; padding: 10px 12px; border: 1px solid rgba(15, 23, 42, 0.15); border-radius: var(--radius-md); font-size: 0.9rem; background: #ffffff;">
+              <option value="">-- Seleccionar Rutina --</option>
             </select>
+            <button class="btn-save" id="btnAddRoutineToRoadmap" style="width: auto; margin: 0; background: var(--active-color); font-size: 0.85rem; padding: 8px 16px;">Añadir</button>
           </div>
-          <div class="roadmap-actions" style="margin-top: 15px; display: flex; gap: 8px;">
-            <button class="btn-roadmap-cancel" id="btnCancelRoadmap">Cancelar</button>
-            <button class="btn-roadmap-save" id="btnSaveRoadmap">Guardar Plan</button>
+        </div>
+        
+        <!-- 3. Actividad Libre / Personal -->
+        <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px;">
+          <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">👤 Actividad Libre / Personal</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="inputRoadmapCustom" placeholder="Ej: Cita médica, almuerzo, descanso..." style="flex: 1; margin: 0; padding: 10px 12px; border: 1px solid rgba(15, 23, 42, 0.15); border-radius: var(--radius-md); font-size: 0.9rem;">
+            <button class="btn-save" id="btnAddCustomToRoadmap" style="width: auto; margin: 0; background: var(--active-color); font-size: 0.85rem; padding: 8px 16px;">Añadir</button>
           </div>
+          <div class="rooms-hint" style="margin-top: 4px;">Las actividades personales no otorgan puntos en el historial del equipo.</div>
         </div>
       </div>
     </div>
