@@ -6,6 +6,12 @@ export const COLORS = ['#3b82f6', '#ec4899', '#f59e0b', '#10b981', '#a855f7', '#
 export let currentRoomId = localStorage.getItem('prodTrackerRoom') || null;
 export let localProfileId = localStorage.getItem('localProfileId') || null;
 
+// Guard: blocks any write to the cloud until the room's real data has been
+// loaded from Firebase. Without this, the default in-memory store (or the
+// clock's daily-rollover check) overwrites real cloud data on startup,
+// wiping out users, routines and tasks.
+let roomDataLoaded = false;
+
 export let store = {
   config: { 
     users: [{ id: 'u1', name: 'User 1', color: '#3b82f6', meta: 15, bank: 0 }], 
@@ -38,6 +44,10 @@ export function triggerUiUpdate() {
 export function setRoomState(roomId, newState) {
   currentRoomId = roomId;
   localStorage.setItem('prodTrackerRoom', roomId);
+
+  // Firebase has given us an authoritative answer for this room (real data,
+  // or null meaning the room is brand new). It is now safe to persist changes.
+  roomDataLoaded = true;
 
   if (newState) {
     store = { ...store, ...newState };
@@ -86,6 +96,9 @@ export function changeProfile(profileId) {
  * Triggers saving the state object to Firebase Realtime Database
  */
 export async function saveState() {
+  // Never write before the initial cloud snapshot has arrived, otherwise we
+  // could overwrite real data with the default in-memory store.
+  if (!roomDataLoaded) return;
   if (currentRoomId) {
     await saveToCloudDb(currentRoomId, store);
   }
@@ -348,4 +361,6 @@ export function setLocalProfileId(id) {
 export function setCurrentRoomId(id) {
   currentRoomId = id;
   localStorage.setItem('prodTrackerRoom', id);
+  // New connection: wait for its fresh snapshot before allowing any writes.
+  roomDataLoaded = false;
 }
