@@ -10,6 +10,17 @@ let elements = {};
  */
 export function initDomElements() {
   elements = {
+    // Auth screen
+    authScreen: document.getElementById('authScreen'),
+    authEmail: document.getElementById('authEmail'),
+    authPassword: document.getElementById('authPassword'),
+    authError: document.getElementById('authError'),
+    authSubtitle: document.getElementById('authSubtitle'),
+    btnAuthSubmit: document.getElementById('btnAuthSubmit'),
+    authToggle: document.getElementById('authToggle'),
+    authForgot: document.getElementById('authForgot'),
+    btnSignOut: document.getElementById('btnSignOut'),
+
     loginScreen: document.getElementById('loginScreen'),
     userInput: document.getElementById('userInput'),
     roomInput: document.getElementById('roomInput'),
@@ -755,6 +766,49 @@ export function resetTplForm() {
   if (elements.editTplIndex) elements.editTplIndex.value = "";
   if (elements.tplFormTitle) elements.tplFormTitle.innerText = "NUEVA RUTINA";
   if (elements.btnDeleteTpl) elements.btnDeleteTpl.style.display = 'none';
+}
+
+/* --- AUTH SCREEN HELPERS --- */
+
+/**
+ * Show the email/password auth gate, hiding the room login screen.
+ */
+export function showAuthScreen() {
+  if (elements.authScreen) elements.authScreen.classList.remove('hidden');
+  if (elements.loginScreen) elements.loginScreen.classList.add('hidden');
+}
+
+/**
+ * Hide the auth gate once the user is logged in.
+ */
+export function hideAuthScreen() {
+  if (elements.authScreen) elements.authScreen.classList.add('hidden');
+}
+
+/**
+ * Show the room selection/login screen (used after auth when no room is cached).
+ */
+export function showRoomLogin() {
+  if (elements.authScreen) elements.authScreen.classList.add('hidden');
+  if (elements.loginScreen) elements.loginScreen.classList.remove('hidden');
+}
+
+/**
+ * Display an inline error on the auth screen.
+ */
+export function showAuthError(message) {
+  if (!elements.authError) return;
+  elements.authError.innerText = message;
+  elements.authError.classList.add('show');
+}
+
+/**
+ * Clear the auth screen error.
+ */
+export function clearAuthError() {
+  if (!elements.authError) return;
+  elements.authError.innerText = '';
+  elements.authError.classList.remove('show');
 }
 
 /* --- BASE MODAL HELPER FUNCTIONS --- */

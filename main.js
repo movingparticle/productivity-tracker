@@ -1,6 +1,53 @@
 import * as state from "./src/js/state";
 import * as ui from "./src/js/ui";
-import { connectToRoomDb, lookupUserRoom, renameRoomDb } from "./src/js/firebase";
+import {
+  connectToRoomDb,
+  lookupUserRoom,
+  renameRoomDb,
+  observeAuthState,
+  registerWithEmail,
+  loginWithEmail,
+  logoutUser,
+  sendResetEmail,
+  getCurrentUser,
+  rememberUserRoom,
+  getUserRoom,
+  clearUserRoom
+} from "./src/js/firebase";
+
+// Auth UI mode: 'login' or 'register'
+let authMode = 'login';
+// Ensures the room connection only happens once per authenticated session
+let appStarted = false;
+
+/**
+ * Translate Firebase auth error codes into friendly Spanish messages.
+ */
+function authErrorMessage(error) {
+  const code = error && error.code ? error.code : '';
+  switch (code) {
+    case 'auth/invalid-email':
+      return 'El correo electrónico no es válido.';
+    case 'auth/missing-password':
+    case 'auth/weak-password':
+      return 'La contraseña debe tener al menos 6 caracteres.';
+    case 'auth/email-already-in-use':
+      return 'Ese correo ya está registrado. Inicia sesión.';
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return 'Correo o contraseña incorrectos.';
+    case 'auth/too-many-requests':
+      return 'Demasiados intentos. Espera un momento e intenta de nuevo.';
+    case 'auth/network-request-failed':
+      return 'Error de red. Revisa tu conexión.';
+    case 'auth/operation-not-allowed':
+    case 'auth/configuration-not-found':
+      return 'El acceso por email no está habilitado en Firebase. Actívalo en la consola.';
+    default:
+      return 'Ocurrió un error. Intenta de nuevo.';
+  }
+}
 
 // Clock and rollover check loop
 function startClock() {
@@ -41,11 +88,123 @@ function connectToRoom(roomId) {
     ui.elements.roomTitleDisplay.innerText = "Sala: " + roomId;
   }
 
+  // Remember this room for the account so it auto-reconnects on any device
+  const user = getCurrentUser();
+  if (user) {
+    rememberUserRoom(user.uid, roomId);
+  }
+
   // Bind connection listener
   connectToRoomDb(roomId, (newState) => {
     state.setRoomState(roomId, newState);
     ui.showSyncIndicator();
   });
+}
+
+// Toggle the auth form between login and register modes
+function setAuthMode(mode) {
+  authMode = mode;
+  ui.clearAuthError();
+  if (mode === 'register') {
+    if (ui.elements.authSubtitle) ui.elements.authSubtitle.innerText = "Crea tu cuenta para empezar";
+    if (ui.elements.btnAuthSubmit) ui.elements.btnAuthSubmit.innerText = "Crear cuenta";
+    if (ui.elements.authToggle) ui.elements.authToggle.innerHTML = "¿Ya tienes cuenta? <strong>Inicia sesión</strong>";
+    if (ui.elements.authPassword) ui.elements.authPassword.setAttribute('autocomplete', 'new-password');
+  } else {
+    if (ui.elements.authSubtitle) ui.elements.authSubtitle.innerText = "Inicia sesión para continuar";
+    if (ui.elements.btnAuthSubmit) ui.elements.btnAuthSubmit.innerText = "Entrar";
+    if (ui.elements.authToggle) ui.elements.authToggle.innerHTML = "¿No tienes cuenta? <strong>Regístrate</strong>";
+    if (ui.elements.authPassword) ui.elements.authPassword.setAttribute('autocomplete', 'current-password');
+  }
+}
+
+// Handle login / register submission
+async function handleAuthSubmit() {
+  const email = ui.elements.authEmail.value.trim();
+  const password = ui.elements.authPassword.value;
+
+  if (!email || !password) {
+    ui.showAuthError("Completa el correo y la contraseña.");
+    return;
+  }
+
+  ui.clearAuthError();
+  ui.elements.btnAuthSubmit.disabled = true;
+  const originalText = ui.elements.btnAuthSubmit.innerText;
+  ui.elements.btnAuthSubmit.innerText = "Procesando...";
+
+  try {
+    if (authMode === 'register') {
+      await registerWithEmail(email, password);
+      ui.showToast("¡Cuenta creada con éxito!");
+    } else {
+      await loginWithEmail(email, password);
+    }
+    // onAuthStateChanged will take over from here (shows room login / app)
+  } catch (error) {
+    console.error("Auth error:", error);
+    ui.showAuthError(authErrorMessage(error));
+  } finally {
+    ui.elements.btnAuthSubmit.disabled = false;
+    ui.elements.btnAuthSubmit.innerText = originalText;
+  }
+}
+
+// Send a password reset email
+async function handleForgotPassword() {
+  const email = ui.elements.authEmail.value.trim();
+  if (!email) {
+    ui.showAuthError("Escribe tu correo para enviarte el enlace de recuperación.");
+    return;
+  }
+  try {
+    await sendResetEmail(email);
+    ui.clearAuthError();
+    ui.showToast("Te enviamos un correo para restablecer tu contraseña.");
+  } catch (error) {
+    ui.showAuthError(authErrorMessage(error));
+  }
+}
+
+// Auth-related event bindings
+function bindAuthEvents() {
+  if (ui.elements.btnAuthSubmit) {
+    ui.elements.btnAuthSubmit.onclick = handleAuthSubmit;
+  }
+
+  // Submit on Enter from either field
+  [ui.elements.authEmail, ui.elements.authPassword].forEach(input => {
+    if (input) {
+      input.onkeyup = (e) => {
+        if (e.key === 'Enter') handleAuthSubmit();
+      };
+    }
+  });
+
+  if (ui.elements.authToggle) {
+    ui.elements.authToggle.onclick = () => {
+      setAuthMode(authMode === 'login' ? 'register' : 'login');
+    };
+  }
+
+  if (ui.elements.authForgot) {
+    ui.elements.authForgot.onclick = handleForgotPassword;
+  }
+
+  if (ui.elements.btnSignOut) {
+    ui.elements.btnSignOut.onclick = () => {
+      ui.showConfirm("¿Cerrar sesión de tu cuenta?", async () => {
+        try {
+          await logoutUser();
+          // Full reset of UI state for a clean logged-out screen
+          location.reload();
+        } catch (error) {
+          console.error(error);
+          ui.showToast("No se pudo cerrar sesión. Intenta de nuevo.", "error");
+        }
+      });
+    };
+  }
 }
 
 // Event Bindings
@@ -300,30 +459,62 @@ function bindEvents() {
 
   if (ui.elements.btnLogout) {
     ui.elements.btnLogout.onclick = () => {
-      ui.showConfirm("¿Estás seguro de que deseas salir de esta sala?", () => {
+      ui.showConfirm("¿Estás seguro de que deseas salir de esta sala?", async () => {
         localStorage.removeItem('prodTrackerRoom');
+        const user = getCurrentUser();
+        if (user) await clearUserRoom(user.uid);
         location.reload();
       });
     };
   }
 }
 
+// Decide what to show once we know the room for a logged-in user.
+async function routeAuthenticatedUser(user) {
+  // Prefer the room cached in this browser; otherwise look up the
+  // account's last room (so it works across devices).
+  let savedRoom = localStorage.getItem('prodTrackerRoom');
+  if (!savedRoom) {
+    savedRoom = await getUserRoom(user.uid);
+  }
+
+  if (savedRoom) {
+    connectToRoom(savedRoom);
+  } else {
+    ui.showRoomLogin();
+  }
+}
+
+// React to login / logout
+function handleAuthState(user) {
+  if (user) {
+    ui.hideAuthScreen();
+    if (!appStarted) {
+      appStarted = true;
+      routeAuthenticatedUser(user);
+    }
+  } else {
+    appStarted = false;
+    ui.showAuthScreen();
+  }
+}
+
 // Initial Load Handler
 function initApp() {
   ui.initDomElements();
+  bindAuthEvents();
   bindEvents();
-  
+
   // Register dynamic rendering hook to state updates
   state.registerUiRenderer(() => ui.updateUI());
 
   // Clock
   startClock();
 
-  // Connect to room if cached in browser
-  const savedRoom = localStorage.getItem('prodTrackerRoom');
-  if (savedRoom) {
-    connectToRoom(savedRoom);
-  }
+  // Gate the whole app behind authentication. The room connection only
+  // happens after a user is confirmed, so the secured database rules
+  // (auth != null) are always satisfied.
+  observeAuthState(handleAuthState);
 }
 
 // Execute when DOM content is loaded

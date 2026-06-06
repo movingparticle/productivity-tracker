@@ -197,6 +197,47 @@ body {
   transform: translateY(0);
 }
 
+/* --- AUTH SCREEN EXTRAS --- */
+.auth-error {
+  display: none;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.auth-error.show {
+  display: block;
+}
+
+.auth-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 18px;
+  text-align: center;
+}
+
+.auth-link {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.auth-link:hover {
+  color: #3b82f6;
+}
+
+.auth-link strong {
+  color: #3b82f6;
+}
+
 /* --- APP SCREEN BASICS --- */
 .screen {
   flex: 1;

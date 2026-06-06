@@ -1,5 +1,13 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, onValue, get, remove } from "firebase/database";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  sendPasswordResetEmail
+} from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyApvyKCKutdRUriczevl7m9QLXz9wYi4g4",
@@ -14,8 +22,96 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
 
 let currentOnValueUnsubscribe = null;
+
+/* ------------------------------------------------------------------ */
+/* AUTHENTICATION (Email + Password)                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Subscribe to auth state changes (logged in / logged out)
+ * @param {function} callback Receives the Firebase user object, or null
+ * @returns {function} Unsubscribe function
+ */
+export function observeAuthState(callback) {
+  return onAuthStateChanged(auth, callback);
+}
+
+/**
+ * Create a new account with email and password
+ */
+export function registerWithEmail(email, password) {
+  return createUserWithEmailAndPassword(auth, email, password);
+}
+
+/**
+ * Sign in with an existing email and password
+ */
+export function loginWithEmail(email, password) {
+  return signInWithEmailAndPassword(auth, email, password);
+}
+
+/**
+ * Sign the current user out
+ */
+export function logoutUser() {
+  return signOut(auth);
+}
+
+/**
+ * Send a password reset email
+ */
+export function sendResetEmail(email) {
+  return sendPasswordResetEmail(auth, email);
+}
+
+/**
+ * Get the currently authenticated user (or null)
+ */
+export function getCurrentUser() {
+  return auth.currentUser;
+}
+
+/**
+ * Remember which room an account last used, so it auto-reconnects on any device
+ */
+export async function rememberUserRoom(uid, roomId) {
+  if (!uid || !roomId) return;
+  try {
+    await set(ref(db, `users/${uid}/lastRoom`), roomId);
+  } catch (err) {
+    console.warn("Could not remember user room:", err);
+  }
+}
+
+/**
+ * Forget the room an account last used (e.g. when the user leaves a room)
+ */
+export async function clearUserRoom(uid) {
+  if (!uid) return;
+  try {
+    await remove(ref(db, `users/${uid}/lastRoom`));
+  } catch (err) {
+    console.warn("Could not clear user room:", err);
+  }
+}
+
+/**
+ * Look up the room an account last used
+ * @returns {Promise<string|null>}
+ */
+export async function getUserRoom(uid) {
+  if (!uid) return null;
+  try {
+    const snap = await get(ref(db, `users/${uid}/lastRoom`));
+    return snap.exists() ? snap.val() : null;
+  } catch (err) {
+    console.warn("Could not read user room:", err);
+    return null;
+  }
+}
 
 /**
  * Connect to a specific room in Firebase Realtime Database
