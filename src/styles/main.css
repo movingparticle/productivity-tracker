@@ -37,7 +37,8 @@ body {
   font-family: var(--font-body);
   background: var(--bg-gradient);
   color: var(--text-main);
-  height: 100vh;
+  height: 100vh;          /* fallback */
+  height: 100dvh;         /* real visible height on mobile (excludes browser bars) */
   width: 100vw;
   overflow: hidden;
   position: fixed;
@@ -698,7 +699,7 @@ h4.section-title {
 /* --- FAB BUTTON --- */
 .fab {
   position: absolute;
-  bottom: 85px;
+  bottom: calc(85px + env(safe-area-inset-bottom, 0px));
   right: 20px;
   width: 56px;
   height: 56px;
@@ -723,7 +724,9 @@ h4.section-title {
 
 /* --- BOTTOM NAV BAR --- */
 .bottom-nav {
-  height: 65px;
+  min-height: 65px;
+  /* Reserve the phone's bottom safe area (home indicator / gesture bar) */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
