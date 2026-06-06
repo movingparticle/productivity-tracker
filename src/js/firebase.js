@@ -8,9 +8,18 @@ import {
   onAuthStateChanged
 } from "firebase/auth";
 
+// Serve Google's auth handler from our OWN domain (same-origin) to avoid the
+// "missing initial state" error caused by third-party storage partitioning in
+// mobile/strict browsers. On the deployed site, /__/auth/* is proxied to the
+// firebaseapp.com handler (see vercel.json). On localhost we fall back to the
+// default Firebase auth domain.
+const isLocalhost =
+  typeof location !== 'undefined' &&
+  (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+
 const firebaseConfig = {
   apiKey: "AIzaSyApvyKCKutdRUriczevl7m9QLXz9wYi4g4",
-  authDomain: "productivity-tracker-70063.firebaseapp.com",
+  authDomain: isLocalhost ? "productivity-tracker-70063.firebaseapp.com" : location.hostname,
   databaseURL: "https://productivity-tracker-70063-default-rtdb.firebaseio.com",
   projectId: "productivity-tracker-70063",
   storageBucket: "productivity-tracker-70063.firebasestorage.app",

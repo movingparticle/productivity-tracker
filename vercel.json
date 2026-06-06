@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/__/auth/:path*",
+      "destination": "https://productivity-tracker-70063.firebaseapp.com/__/auth/:path*"
+    },
+    {
+      "source": "/__/firebase/:path*",
+      "destination": "https://productivity-tracker-70063.firebaseapp.com/__/firebase/:path*"
+    }
+  ]
+}
