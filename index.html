@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Productivity Tracker Premium</title>
+  <link rel="stylesheet" href="./src/styles/main.css">
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-header">
+      <h1 class="login-logo">Tracker Premium</h1>
+      <p class="login-subtitle">Gestión de Productividad Multiusuario</p>
+    </div>
+    
+    <div class="login-card">
+      <label class="login-label" for="userInput">👤 Nombre de Usuario</label>
+      <input type="text" id="userInput" class="login-input" placeholder="Ej: Rodrigo">
+      
+      <div class="login-divider">O</div>
+      
+      <label class="login-label" for="roomInput">🏠 Nombre de Sala</label>
+      <input type="text" id="roomInput" class="login-input" placeholder="Ej: EMMA">
+      
+      <button class="btn-login" id="btnEnterRoom">Entrar</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-container" id="appContainer">
+    <!-- Live sync status indicator -->
+    <div class="sync-status" id="syncIndicator">● Conectado</div>
+
+    <!-- TRACKER TAB (TODAY ACTIVITY) -->
+    <div class="screen active" id="screenTracker">
+      <div class="header-row">
+        <div class="header-info">
+          <span class="app-title" id="roomTitleDisplay">Sala</span>
+          <span class="live-clock" id="liveClockDisplay">--:--</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn-icon" id="btnOpenReport" title="Ver Reporte">📄</button>
+          <button class="btn-icon" id="btnOpenConfig" title="Ajustes">⚙️</button>
+        </div>
+      </div>
+
+      <!-- User Score Card -->
+      <div class="score-card" id="scoreCard">
+        <div class="profile-switch-container">
+          <div class="profile-switch" id="profileSwitcher">
+            <!-- Buttons dynamically generated -->
+          </div>
+        </div>
+      
+        <div class="big-score" id="displayScore">0</div>
+        <span class="score-label" id="displayLabel">Puntos Acumulados</span>
+      
+        <div class="goal-row">
+          <div class="goal-info">
+            <span>META DIARIA</span>
+            <span id="dailyText">0/0</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="dailyBar"></div>
+          </div>
+          <div class="remaining-text" id="dailyRem">Calculando...</div>
+        </div>
+
+        <div class="goal-row">
+          <div class="goal-info">
+            <span>SALDO SEMANAL</span>
+            <span id="weeklyText">0/0</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="weeklyBar"></div>
+          </div>
+          <div class="remaining-text" id="weeklyRem">Calculando...</div>
+        </div>
+      </div>
+
+      <h4 class="section-title">Actividad Hoy</h4>
+      <div class="daily-log" id="dailyLogList"></div>
+      <button class="fab" id="mainFab">+</button>
+    </div>
+
+    <!-- PENDING TAB (CHECKLIST) -->
+    <div class="screen" id="screenPending">
+      <div class="header-row">
+        <span class="app-title">Pendientes</span>
+      </div>
+      
+      <div class="bonus-alert" id="bonusAlert">¡BONO! COMPLETA 3 PARA +1 PT</div>
+      
+      <!-- New task form -->
+      <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding:16px; border-radius:var(--radius-md); margin-bottom:15px; flex-shrink:0;">
+        <input type="hidden" id="editPenIdx">
+        <input type="text" id="pendingInput" placeholder="Nombre de la tarea pendiente..." style="margin-bottom:10px;">
+        <div style="display:flex; gap:10px;">
+          <input type="number" id="pendingPoints" placeholder="Pts" value="5" style="width:80px; text-align:center; margin-bottom:0;">
+          <button class="btn-save" id="btnSavePen">Guardar</button>
+        </div>
+      </div>
+    
+      <div class="pending-grid" id="pendingListDisplay"></div>
+    </div>
+
+    <!-- METRICS TAB (CHARTS AND STATS) -->
+    <div class="screen" id="screenMetrics" style="overflow-y:auto;">
+      <div class="header-row">
+        <span class="app-title">Estadísticas</span>
+      </div>
+      
+      <h4 class="section-title">Progreso Hoy (%)</h4>
+      <div class="percent-container" id="userPercentDisplay"></div>
+
+      <!-- Month total accumulator card -->
+      <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: 1px solid var(--card-border); padding:20px; border-radius:var(--radius-md); margin-bottom:20px; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.15);">
+        <div style="font-size:0.75rem; opacity:0.8; letter-spacing:0.05em; font-weight:700; text-transform:uppercase; color: rgba(255,255,255,0.9);">TOTAL MES ACUMULADO</div>
+        <div style="font-size:2.5rem; font-weight:900; font-family: var(--font-title); margin-top:4px;" id="monthTotal">0</div>
+      </div>
+      
+      <h4 class="section-title">Tiempo vs Puntos (Hoy)</h4>
+      <div style="display:block; height:240px; margin-bottom:20px; background: var(--card-bg); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--card-border); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
+        <canvas id="timeChart"></canvas>
+      </div>
+      
+      <!-- Copy Room Code widget -->
+      <div style="text-align:center; padding:18px; background: rgba(15, 23, 42, 0.03); border-radius:var(--radius-md); border:1px dashed var(--card-border); margin-top:20px;">
+        <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); letter-spacing:0.05em; text-transform:uppercase;">CÓDIGO DE LA SALA</span>
+        <div style="font-size:1.6rem; font-weight:900; color:#3b82f6; margin:6px 0; cursor:pointer; font-family: var(--font-title);" id="codeDisplay" title="Click para copiar">---</div>
+      </div>
+      
+      <button id="btnLogout" class="btn-close-txt">Salir de Sala</button>
+    </div>
+
+    <!-- BOTTOM TAB NAVIGATION -->
+    <div class="bottom-nav">
+      <button class="nav-item active" id="navTrackerBtn">
+          <span>📝</span>
+          <span>Hoy</span>
+      </button>
+      <button class="nav-item" id="navPendingBtn">
+          <span>📌</span>
+          <span>Tareas</span>
+      </button>
+      <button class="nav-item" id="navMetricsBtn">
+          <span>📊</span>
+          <span>Stats</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ROUTINES & TEMPLATES MODAL -->
+  <div class="modal-overlay" id="templateModal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0; font-family: var(--font-title); font-weight:800;">Rutinas Guardadas</h3>
+        <button id="btnCloseTplModal" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer;">×</button>
+      </div>
+    
+      <!-- Savings Balance Display -->
+      <div class="bank-widget" id="bankWidget">
+          <div>
+              <div style="font-size:0.65rem; opacity:0.9; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;">AHORRO DISPONIBLE</div>
+              <div class="bank-balance" id="bankBalanceDisplay">0 pts</div>
+          </div>
+          <button class="btn-redeem" id="btnRedeemBank">USAR SALDO 📥</button>
+      </div>
+     
+      <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Buscar rutina...">
+      <div class="template-list" id="templateListDisplay"></div>
+
+      <!-- Add/Edit template item form -->
+      <div style="background: rgba(15, 23, 42, 0.03); border: 1px solid var(--card-border); padding:12px; border-radius:var(--radius-md);">
+        <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); margin-bottom:8px; letter-spacing:0.05em;" id="tplFormTitle">NUEVA RUTINA</div>
+        <input type="hidden" id="editTplIndex">
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="tplName" placeholder="Ej: Ejercicio" style="flex:2; margin:0;">
+          <input type="number" id="tplPts" placeholder="Pts" style="width:70px; text-align:center; margin:0;">
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button class="btn-save" id="btnSaveTpl" style="flex:1;">Guardar</button>
+          <button class="btn-save" id="btnDeleteTpl" style="background: var(--danger); width:auto; display:none;">Borrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIGURATION MODAL -->
+  <div class="modal-overlay" id="configModal">
+    <div class="modal-content">
+      <h3 style="text-align:center; margin-top:0; margin-bottom:20px; font-family: var(--font-title); font-weight:800;">Ajustes de Sala</h3>
+      
+      <button class="btn-save" style="background:#3b82f6; font-size:1rem; padding:15px; margin-bottom:20px; box-shadow: 0 4px 6px rgba(59,130,246,0.25);" id="btnOpenUsers">
+          👥 Gestionar Usuarios y Metas
+      </button>
+    
+      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px; letter-spacing:0.02em;">Cambiar Nombre de Sala</label>
+      <div style="display:flex; gap:8px; margin-bottom:20px;">
+          <input type="text" id="newRoomNameInput" placeholder="Ej: EMMA" style="margin:0;">
+          <button class="btn-save" style="background:#f59e0b; width:auto; box-shadow:none;" id="btnRenameRoom">Renombrar</button>
+      </div>
+
+      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px; letter-spacing:0.02em;">Días por Semana (Global)</label>
+      <select id="inputWorkDays" style="margin-bottom: 25px;">
+            <option value="4">4 días</option>
+            <option value="5">5 días</option>
+            <option value="6">6 días</option>
+            <option value="7">7 días</option>
+      </select>
+    
+      <button class="btn-save" id="btnSaveConfig">Guardar Cambios</button>
+      
+      <div style="border-top: 1px dashed var(--card-border); margin: 20px 0;"></div>
+
+      <button class="btn-save" style="background:#f97316; box-shadow:none; margin-top:5px;" id="btnWeeklyReset">🔄 RESETEO SEMANAL</button>
+      <button class="btn-save" style="background:var(--danger); box-shadow:none; margin-top:10px;" id="btnHardReset">⚠️ RESETEAR TODO</button>
+      
+      <button class="btn-close-txt" id="btnCloseConfig">Cerrar Ajustes</button>
+    </div>
+  </div>
+
+  <!-- USERS MANAGEMENT MODAL -->
+  <div class="modal-overlay" id="usersModal">
+    <div class="modal-content" style="max-height: 90vh; background: #ffffff;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0; font-family: var(--font-title); font-weight:800; color: var(--text-main);">Equipo de la Sala</h3>
+        <button id="btnCloseUsers" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer;">×</button>
+      </div>
+
+      <div id="userConfigListFull" style="margin-bottom: 15px;"></div>
+      
+      <button class="btn-save" style="background:var(--success); font-size:1rem; padding:12px; margin-bottom: 15px; box-shadow:none;" id="btnAddNewUser">+ Añadir Persona</button>
+      <button class="btn-close-txt" style="background:rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: var(--radius-md);" id="btnBackToConfig">Volver a Configuración</button>
+    </div>
+  </div>
+
+  <!-- REPORT OVERLAY VIEW -->
+  <div id="reportOverlay">
+    <button class="close-doc" id="btnCloseReport">✕</button>
+    <button class="pdf-btn" id="btnDownloadPDF">Descargar PDF</button>
+    <div id="reportContent" class="report-container">
+        <div class="report-header">
+            <h1 class="report-title">REGISTRO DE PRODUCTIVIDAD</h1>
+            <div class="report-date" id="docDate"></div>
+        </div>
+      
+        <div class="summary-grid" id="reportSummary"></div>
+      
+        <div class="report-subtitle">DETALLE DE ACTIVIDADES</div>
+        <table class="doc-table">
+            <thead>
+              <tr>
+                <th>HORA</th>
+                <th>USUARIO</th>
+                <th>ACTIVIDAD</th>
+                <th style="text-align:right;">PTS</th>
+              </tr>
+            </thead>
+            <tbody id="docBody"></tbody>
+        </table>
+    </div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
