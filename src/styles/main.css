@@ -1602,3 +1602,72 @@ input:focus, select:focus {
   color: var(--text-main);
   background: rgba(15, 23, 42, 0.02);
 }
+
+/* --- FOCUS TREE TIMELINE WIDGET --- */
+.tree-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border: 1px solid transparent;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
+}
+
+.tree-status-badge.watered {
+  background: rgba(14, 165, 233, 0.1);
+  color: #0284c7;
+  border-color: rgba(14, 165, 233, 0.2);
+}
+
+.tree-status-badge.fertilized {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.tree-status-badge.bloomed {
+  background: rgba(244, 114, 182, 0.1);
+  color: #db2777;
+  border-color: rgba(244, 114, 182, 0.2);
+}
+
+.tree-status-badge.withered {
+  background: rgba(100, 116, 139, 0.1);
+  color: #475569;
+  border-color: rgba(100, 116, 139, 0.2);
+}
+
+/* Tree SVG Interactions */
+.tree-leaf, .tree-flower, .tree-decor-leaf {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s ease;
+}
+
+.tree-leaf:hover, .tree-flower:hover, .tree-decor-leaf:hover {
+  transform: scale(1.5);
+  transform-origin: center;
+  filter: brightness(1.2) drop-shadow(0 2px 4px rgba(15, 23, 42, 0.15));
+}
+
+#btnTreeInfo:hover {
+  background: rgba(15, 23, 42, 0.08) !important;
+  color: var(--text-main) !important;
+  transform: scale(1.05);
+}
+
+/* Glow animations for watered tree branches */
+@keyframes branch-glow {
+  0% { stroke-opacity: 0.75; }
+  50% { stroke-opacity: 1; filter: drop-shadow(0 0 1px var(--active-color)); }
+  100% { stroke-opacity: 0.75; }
+}
+
+.watered-branch {
+  animation: branch-glow 3s infinite ease-in-out;
+}
+

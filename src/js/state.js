@@ -54,7 +54,7 @@ export function setRoomState(roomId, newState) {
     store = { ...store, ...newState };
     
     // Ensure all critical arrays exist
-    ['todayLog', 'history', 'pendingList', 'templates'].forEach(k => {
+    ['todayLog', 'history', 'pendingList', 'templates', 'roadmapHistory'].forEach(k => {
       if (!Array.isArray(store[k])) store[k] = [];
     });
     
@@ -156,6 +156,23 @@ export function checkDateAutoClose() {
     // Weekly reset check double check
     if (now.getDay() === 1) {
       store.history = [];
+    }
+
+    // Archive daily roadmaps to history before clearing
+    if (!store.roadmapHistory) store.roadmapHistory = [];
+    Object.keys(store.roadmaps || {}).forEach(uId => {
+      const plan = store.roadmaps[uId];
+      if (plan && plan.items && plan.items.length > 0) {
+        store.roadmapHistory.push({
+          date: store.lastActiveDate, // archive under the day that just ended
+          userId: uId,
+          items: plan.items
+        });
+      }
+    });
+    // Keep last 100 historical entries
+    if (store.roadmapHistory.length > 100) {
+      store.roadmapHistory = store.roadmapHistory.slice(-100);
     }
 
     // Clear daily arrays and update date marker
@@ -336,7 +353,8 @@ export function hardResetState() {
     history: [], 
     pendingList: [], 
     templates: [],
-    roadmaps: {}
+    roadmaps: {},
+    roadmapHistory: []
   };
   localProfileId = 'u1';
   localStorage.setItem('localProfileId', localProfileId);
@@ -350,6 +368,7 @@ export function weeklyResetState() {
   store.history = [];
   store.todayLog = [];
   store.roadmaps = {};
+  store.roadmapHistory = [];
   store.lastActiveDate = new Date().toDateString();
   store.bonusCounters = {};
   saveState();
@@ -405,6 +424,15 @@ export function toggleRoadmapItem(itemId) {
   const item = items.find(x => x.id === itemId);
   if (item) {
     item.completed = !item.completed;
+    if (item.completed) {
+      item.completedAt = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } else {
+      delete item.completedAt;
+    }
     saveState();
   }
 }

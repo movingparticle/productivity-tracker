@@ -75,6 +75,20 @@ export function initDomElements() {
     btnAddCustomToRoadmap: document.getElementById('btnAddCustomToRoadmap'),
     btnTabRoadmapView: document.getElementById('btnTabRoadmapView'),
     btnTabRoadmapBuilder: document.getElementById('btnTabRoadmapBuilder'),
+    btnShowProgressTree: document.getElementById('btnShowProgressTree'),
+    modalProgressTree: document.getElementById('modalProgressTree'),
+    btnCloseTreeModal: document.getElementById('btnCloseTreeModal'),
+    btnTreeInfo: document.getElementById('btnTreeInfo'),
+    modalTreeInfo: document.getElementById('modalTreeInfo'),
+    btnCloseTreeInfo: document.getElementById('btnCloseTreeInfo'),
+    btnCloseTreeInfoOk: document.getElementById('btnCloseTreeInfoOk'),
+    badgeWater: document.getElementById('badgeWater'),
+    badgeFertilized: document.getElementById('badgeFertilized'),
+    badgeBloomed: document.getElementById('badgeBloomed'),
+    badgeWithered: document.getElementById('badgeWithered'),
+    focusTreeSvgContainer: document.getElementById('focusTreeSvgContainer'),
+    treeTooltip: document.getElementById('treeTooltip'),
+    treeStatusHint: document.getElementById('treeStatusHint'),
     
     bonusAlert: document.getElementById('bonusAlert'),
     pendingInput: document.getElementById('pendingInput'),
@@ -1204,6 +1218,11 @@ export function renderRoadmap() {
     }
     list.appendChild(actionDiv);
   }
+
+  // Re-render tree if the modal is open to keep it in sync in real time
+  if (elements.modalProgressTree && elements.modalProgressTree.classList.contains('visible')) {
+    renderFocusTree();
+  }
 }
 
 /**
@@ -1226,6 +1245,297 @@ export function toggleRoadmapTab(tabName) {
     if (viewBtn) viewBtn.classList.remove('active');
     if (builderBtn) builderBtn.classList.add('active');
   }
+}
+
+/**
+ * Render the Weekly Focus Tree (Árbol de Enfoque) dynamic SVG inside the modal
+ */
+export function renderFocusTree() {
+  const activeUser = state.store.config.users.find(u => u.id === state.localProfileId) || state.store.config.users[0];
+  if (!activeUser) return;
+
+  const todayStr = new Date().toDateString();
+  const yesterdayStr = new Date(new Date().setDate(new Date().getDate() - 1)).toDateString();
+
+  // Helper to get completed tasks for a specific date
+  function getCompletedTasksForDay(dayStr) {
+    const isToday = dayStr === todayStr;
+    let items = [];
+    if (isToday) {
+      const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
+      items = plan && Array.isArray(plan.items) ? plan.items : [];
+    } else {
+      const historyEntries = state.store.roadmapHistory || [];
+      const entry = historyEntries.find(x => x.date === dayStr && x.userId === state.localProfileId);
+      items = entry && Array.isArray(entry.items) ? entry.items : [];
+    }
+    return items.filter(x => x.completed);
+  }
+
+  // Generate last 7 days
+  const daysList = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    daysList.push({
+      dateStr: d.toDateString(),
+      niceName: d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })
+    });
+  }
+
+  // 1. Calculate Gamification Metrics
+  const fullBranchesCount = daysList.filter(day => getCompletedTasksForDay(day.dateStr).length >= 3).length;
+  const isBloomed = fullBranchesCount >= 5;
+
+  // Watered: at least 1 activity in "Hoy" tab today
+  const userDailyLogs = state.store.todayLog.filter(x => x.who === state.localProfileId);
+  const isWatered = userDailyLogs.length >= 1;
+
+  // Fertilized: today's points >= daily meta
+  let todayPts = 0;
+  userDailyLogs.forEach(x => todayPts += x.pts);
+  const userMeta = Number(activeUser.meta) || 15;
+  const isFertilized = todayPts >= userMeta;
+
+  // Withered: 0 completed tasks yesterday and today
+  const yesterdayCount = getCompletedTasksForDay(yesterdayStr).length;
+  const todayCount = getCompletedTasksForDay(todayStr).length;
+  const isWithered = yesterdayCount === 0 && todayCount === 0;
+
+  // Update Badge Visibilities
+  const badgeWater = elements.badgeWater;
+  const badgeFertilized = elements.badgeFertilized;
+  const badgeBloomed = elements.badgeBloomed;
+  const badgeWithered = elements.badgeWithered;
+
+  if (badgeWater) {
+    if (isWatered && !isWithered) badgeWater.classList.remove('hidden');
+    else badgeWater.classList.add('hidden');
+  }
+  if (badgeFertilized) {
+    if (isFertilized && !isWithered) badgeFertilized.classList.remove('hidden');
+    else badgeFertilized.classList.add('hidden');
+  }
+  if (badgeBloomed) {
+    if (isBloomed && !isWithered) badgeBloomed.classList.remove('hidden');
+    else badgeBloomed.classList.add('hidden');
+  }
+  if (badgeWithered) {
+    if (isWithered) badgeWithered.classList.remove('hidden');
+    else badgeWithered.classList.add('hidden');
+  }
+
+  // Set Status Hint Text
+  const statusHint = elements.treeStatusHint;
+  if (statusHint) {
+    if (isWithered) {
+      statusHint.innerHTML = `<span style="color: var(--danger); font-weight:700;">🍂 Tu árbol se está marchitando por falta de constancia.</span> ¡Completa al menos 1 tarea del roadmap hoy para revivirlo!`;
+    } else if (isBloomed) {
+      statusHint.innerHTML = `<span style="color: #db2777; font-weight:700;">🌸 ¡Espectacular! Tu árbol ha florecido.</span> Has mantenido un ritmo de enfoque excelente esta semana.`;
+    } else {
+      const daysNeeded = Math.max(0, 5 - fullBranchesCount);
+      statusHint.innerHTML = `💧 Regado y creciendo con tu constancia. Completa 3+ tareas por día para hacerlo florecer (Faltan ${daysNeeded} días de enfoque).`;
+    }
+  }
+
+  // 2. Build SVG Tree
+  let svgContent = `<svg width="100%" height="440" viewBox="0 0 400 450" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Draw Ground
+  svgContent += `<path d="M 50 420 Q 200 400 350 420 L 350 440 L 50 440 Z" fill="${isWithered ? '#94a3b8' : '#3f6212'}" opacity="0.15" />`;
+
+  // Draw Trunk
+  const trunkColor = isWithered ? '#64748b' : '#78350f';
+  svgContent += `<path d="M 192 420 Q 200 220 197 40 L 203 40 Q 200 220 208 420 Z" fill="${trunkColor}" opacity="0.95" />`;
+
+  // Draw 7 Branches
+  const yCoordinates = [360, 315, 270, 225, 180, 135, 90];
+
+  daysList.forEach((day, i) => {
+    const y = yCoordinates[i];
+    const growsLeft = i % 2 === 0;
+    const isToday = i === 6;
+
+    // Define Curve Coordinates
+    const p0 = { x: 200, y: y };
+    const p1 = growsLeft ? { x: 150, y: y + 10 } : { x: 250, y: y + 10 };
+    const p2 = growsLeft ? { x: 110, y: y - 25 } : { x: 290, y: y - 25 };
+
+    // Branch Color
+    let branchColor = trunkColor;
+    let branchStrokeWidth = 3.5;
+    let extraClass = '';
+
+    if (!isWithered) {
+      if (isToday) {
+        branchColor = activeUser.color;
+        branchStrokeWidth = 5;
+        if (isWatered) extraClass = 'watered-branch';
+      } else {
+        branchColor = '#854d0e'; // healthy brown
+      }
+    } else {
+      branchColor = '#94a3b8'; // dry slate
+    }
+
+    // Render Main Branch Path
+    svgContent += `<path d="M ${p0.x} ${p0.y} Q ${p1.x} ${p1.y} ${p2.x} ${p2.y}" stroke="${branchColor}" stroke-width="${branchStrokeWidth}" fill="none" class="${extraClass}" stroke-linecap="round" />`;
+
+    // Render Day Label
+    const textX = growsLeft ? 95 : 305;
+    const textAnchor = growsLeft ? 'end' : 'start';
+    const textFill = isToday && !isWithered ? activeUser.color : 'var(--text-muted)';
+    const textWeight = isToday ? '800' : '600';
+    const textLabel = isToday ? 'Hoy' : day.niceName;
+
+    svgContent += `<text x="${textX}" y="${y - 28}" text-anchor="${textAnchor}" font-family="var(--font-title)" font-size="10.5px" font-weight="${textWeight}" fill="${textFill}">${textLabel}</text>`;
+
+    // Get Completed tasks
+    const completedTasks = getCompletedTasksForDay(day.dateStr);
+    const M = completedTasks.length;
+
+    // Determine Leaf Colors
+    let leafColor = '#22c55e'; // default healthy green
+    if (isWithered) {
+      leafColor = '#b45309'; // dry amber
+    } else if (isToday) {
+      leafColor = activeUser.color;
+    }
+
+    // Draw Completed Tasks Hojas
+    completedTasks.forEach((task, j) => {
+      const t = 0.25 + (j / Math.max(1, M - 1)) * 0.55;
+      const P = getBezierPoint(t, p0, p1, p2);
+
+      // Branching Twig
+      const twigX = growsLeft ? P.x - 8 : P.x + 8;
+      const twigY = P.y - 12;
+
+      svgContent += `<line x1="${P.x}" y1="${P.y}" x2="${twigX}" y2="${twigY}" stroke="${isWithered ? '#94a3b8' : '#78350f'}" stroke-width="2" stroke-linecap="round" />`;
+
+      // Draw Leaf Circle
+      svgContent += `<circle cx="${twigX}" cy="${twigY}" r="6.5" fill="${leafColor}" class="tree-leaf" data-name="${task.text}" data-time="${task.completedAt || ''}" data-type="${task.type}" data-pts="${task.pts || 0}" />`;
+
+      // Fertilized extra leaf on today's tasks
+      if (isToday && isFertilized && !isWithered) {
+        const Q2 = growsLeft ? { x: P.x - 2, y: P.y - 16 } : { x: P.x + 2, y: P.y - 16 };
+        svgContent += `<line x1="${P.x}" y1="${P.y}" x2="${Q2.x}" y2="${Q2.y}" stroke="#78350f" stroke-width="1.8" />`;
+        svgContent += `<circle cx="${Q2.x}" cy="${Q2.y}" r="8.5" fill="#15803d" class="tree-leaf" data-name="${task.text} (Meta Diaria)" data-time="${task.completedAt || ''}" data-type="${task.type}" data-pts="${task.pts || 0}" />`;
+      }
+    });
+
+    // Draw Blooming Flowers/Leaves
+    if (isBloomed && !isWithered) {
+      const tipX = p2.x;
+      const tipY = p2.y;
+      
+      svgContent += `
+        <!-- Petals -->
+        <circle cx="${tipX - 4}" cy="${tipY}" r="4.5" fill="#f472b6" opacity="0.85" class="tree-flower" data-name="Flor de Enfoque" data-desc="¡Rama de Enfoque Llena!" />
+        <circle cx="${tipX + 4}" cy="${tipY}" r="4.5" fill="#f472b6" opacity="0.85" class="tree-flower" data-name="Flor de Enfoque" data-desc="¡Rama de Enfoque Llena!" />
+        <circle cx="${tipX}" cy="${tipY - 4}" r="4.5" fill="#f472b6" opacity="0.85" class="tree-flower" data-name="Flor de Enfoque" data-desc="¡Rama de Enfoque Llena!" />
+        <circle cx="${tipX}" cy="${tipY + 4}" r="4.5" fill="#f472b6" opacity="0.85" class="tree-flower" data-name="Flor de Enfoque" data-desc="¡Rama de Enfoque Llena!" />
+        <!-- Flower Center -->
+        <circle cx="${tipX}" cy="${tipY}" r="3" fill="#fef08a" />
+      `;
+
+      // Extra decorative leaves sprouted along the branch
+      const tDecors = [0.15, 0.45, 0.75];
+      tDecors.forEach(td => {
+        const P = getBezierPoint(td, p0, p1, p2);
+        const leafOffsetX = growsLeft ? -6 : 6;
+        const leafOffsetY = -4;
+        svgContent += `<path d="M ${P.x} ${P.y} Q ${P.x + leafOffsetX/2} ${P.y - 8} ${P.x + leafOffsetX} ${P.y + leafOffsetY} Z" fill="#10b981" opacity="0.9" class="tree-decor-leaf" data-name="Follaje Florecido" data-desc="El árbol rebosa vida" />`;
+      });
+    }
+  });
+
+  // Extra decorative blossoms on the trunk if bloomed
+  if (isBloomed && !isWithered) {
+    svgContent += `
+      <circle cx="194" cy="180" r="4.5" fill="#f472b6" opacity="0.9" />
+      <circle cx="204" cy="240" r="5" fill="#f472b6" opacity="0.9" />
+      <circle cx="196" cy="300" r="4" fill="#f472b6" opacity="0.9" />
+    `;
+  }
+
+  svgContent += `</svg>`;
+
+  // Render SVG in Container
+  const svgContainer = elements.focusTreeSvgContainer;
+  if (svgContainer) {
+    svgContainer.innerHTML = svgContent + `<div id="treeTooltip" class="hidden" style="position: absolute; background: rgba(15, 23, 42, 0.9); color: #ffffff; padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; pointer-events: none; z-index: 1200; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: var(--font-main); transition: opacity 0.15s; max-width: 200px; text-align: left;"></div>`;
+  }
+
+  bindTreeTooltips();
+}
+
+/**
+ * Handle Tooltips display for Tree SVG elements
+ */
+function bindTreeTooltips() {
+  const container = elements.focusTreeSvgContainer;
+  if (!container) return;
+
+  const tooltip = document.getElementById('treeTooltip');
+  if (!tooltip) return;
+
+  const leaves = container.querySelectorAll('.tree-leaf, .tree-flower, .tree-decor-leaf');
+
+  leaves.forEach(leaf => {
+    leaf.onmouseover = (e) => {
+      const name = leaf.getAttribute('data-name');
+      const time = leaf.getAttribute('data-time');
+      const type = leaf.getAttribute('data-type');
+      const pts = leaf.getAttribute('data-pts');
+      const desc = leaf.getAttribute('data-desc');
+
+      let text = `<strong>${name}</strong>`;
+      
+      if (desc) {
+        text += `<br/><span style="color: #cbd5e1;">${desc}</span>`;
+      } else {
+        let typeText = "Personal";
+        if (type === 'pending') typeText = `Pendiente (${pts} pts)`;
+        else if (type === 'routine') typeText = `Rutina (+${pts} pts)`;
+        
+        text += `<br/><span style="color: #cbd5e1;">${typeText}</span>`;
+        if (time) {
+          text += `<br/><span style="color: #94a3b8; font-size: 0.7rem;">Completado: ${time}</span>`;
+        }
+      }
+
+      tooltip.innerHTML = text;
+      tooltip.classList.remove('hidden');
+
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left + 15;
+      const y = e.clientY - rect.top - 15;
+
+      tooltip.style.left = `${x}px`;
+      tooltip.style.top = `${y}px`;
+    };
+
+    leaf.onmousemove = (e) => {
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left + 15;
+      const y = e.clientY - rect.top - 15;
+      tooltip.style.left = `${x}px`;
+      tooltip.style.top = `${y}px`;
+    };
+
+    leaf.onmouseout = () => {
+      tooltip.classList.add('hidden');
+    };
+  });
+}
+
+// Bezier curve point helper
+function getBezierPoint(t, p0, p1, p2) {
+  const x = (1-t)*(1-t)*p0.x + 2*(1-t)*t*p1.x + t*t*p2.x;
+  const y = (1-t)*(1-t)*p0.y + 2*(1-t)*t*p1.y + t*t*p2.y;
+  return { x, y };
 }
 
 export { elements };

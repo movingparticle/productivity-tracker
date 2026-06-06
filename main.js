@@ -562,6 +562,26 @@ function bindEvents() {
     ui.elements.btnTabRoadmapBuilder.onclick = () => ui.toggleRoadmapTab('builder');
   }
 
+  // Tree Progress Modal bindings
+  if (ui.elements.btnShowProgressTree) {
+    ui.elements.btnShowProgressTree.onclick = () => {
+      ui.openModal(ui.elements.modalProgressTree);
+      ui.renderFocusTree();
+    };
+  }
+  if (ui.elements.btnCloseTreeModal) {
+    ui.elements.btnCloseTreeModal.onclick = () => ui.closeModal(ui.elements.modalProgressTree);
+  }
+  if (ui.elements.btnTreeInfo) {
+    ui.elements.btnTreeInfo.onclick = () => ui.openModal(ui.elements.modalTreeInfo);
+  }
+  if (ui.elements.btnCloseTreeInfo) {
+    ui.elements.btnCloseTreeInfo.onclick = () => ui.closeModal(ui.elements.modalTreeInfo);
+  }
+  if (ui.elements.btnCloseTreeInfoOk) {
+    ui.elements.btnCloseTreeInfoOk.onclick = () => ui.closeModal(ui.elements.modalTreeInfo);
+  }
+
   // Roadmap Lego Builder actions (Add Pending, Add Routine, Add Custom)
   if (ui.elements.btnAddPendingToRoadmap) {
     ui.elements.btnAddPendingToRoadmap.onclick = () => {

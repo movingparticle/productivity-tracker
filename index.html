@@ -172,6 +172,10 @@
             <!-- Dynamically populated Lego block items -->
           </div>
         </div>
+        
+        <button id="btnShowProgressTree" class="btn-save" style="background: var(--active-color); font-weight: 700; width: 100%; margin-top: 15px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>Ver el Árbol</span> 🌳
+        </button>
       </div>
 
       <!-- TAB 2: BUILD ROADMAP -->
@@ -444,6 +448,93 @@
             </thead>
             <tbody id="docBody"></tbody>
         </table>
+    </div>
+  </div>
+
+  <!-- FOCUS TREE MODAL -->
+  <div class="modal-overlay" id="modalProgressTree" style="z-index: 1100;">
+    <div class="modal-content tree-modal-content" style="max-width: 600px; width: 95%; max-height: 90vh; background: #ffffff; padding: 20px; position: relative; display: flex; flex-direction: column;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.4rem;">🌳</span>
+          <h3 style="margin:0; font-family: var(--font-title); font-weight:800; color: var(--text-main); font-size: 1.1rem;">Árbol de Enfoque Semanal</h3>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button id="btnTreeInfo" style="border:none; background: rgba(15,23,42,0.05); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; color: var(--text-muted); cursor:pointer; transition: var(--transition);" title="¿Cómo funciona?">i</button>
+          <button id="btnCloseTreeModal" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer; line-height: 1;">×</button>
+        </div>
+      </div>
+
+      <!-- State Badges Row -->
+      <div class="tree-badges-row" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; justify-content: center;">
+        <span id="badgeWater" class="tree-status-badge watered hidden">💧 Regado</span>
+        <span id="badgeFertilized" class="tree-status-badge fertilized hidden">🌱 Abonado</span>
+        <span id="badgeBloomed" class="tree-status-badge bloomed hidden">🌸 Florecido</span>
+        <span id="badgeWithered" class="tree-status-badge withered hidden">🍂 Marchito</span>
+      </div>
+
+      <div id="focusTreeSvgContainer" style="width: 100%; flex: 1; min-height: 320px; display: flex; justify-content: center; align-items: center; background: rgba(15,23,42,0.01); border-radius: var(--radius-md); border: 1px solid rgba(15,23,42,0.03); overflow: hidden; position: relative;">
+        <!-- SVG injected dynamically -->
+        <div id="treeTooltip" class="hidden" style="position: absolute; background: rgba(15, 23, 42, 0.9); color: #ffffff; padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; pointer-events: none; z-index: 1200; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: var(--font-main); transition: opacity 0.15s; max-width: 200px; text-align: left;"></div>
+      </div>
+
+      <div style="margin-top: 15px; text-align: center;" id="treeStatusTextContainer">
+        <p class="rooms-hint" id="treeStatusHint" style="font-size: 0.8rem; margin: 0;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TREE LEGEND INFO MODAL -->
+  <div class="modal-overlay" id="modalTreeInfo" style="z-index: 1200;">
+    <div class="modal-content" style="max-width: 450px; width: 90%; background: #ffffff; padding: 22px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">
+        <h3 style="margin:0; font-family: var(--font-title); font-weight:800; color: var(--text-main); font-size: 1rem;">¿Cómo cultivar tu Árbol?</h3>
+        <button id="btnCloseTreeInfo" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer; line-height: 1;">×</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 15px; text-align: left;">
+        <div style="display: flex; gap: 12px;">
+          <div style="font-size: 1.3rem; margin-top: 2px;">🌿</div>
+          <div>
+            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Ramas y Hojas (Trabajo Diario)</h4>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Cada una de las 7 ramas representa un día de los últimos 7 días. Cada hoja representa una tarea del roadmap completada ese día. ¡Más hojas significan más enfoque!</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <div style="font-size: 1.3rem; margin-top: 2px;">🌸</div>
+          <div>
+            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Floración (Florecer)</h4>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Si consigues que al menos 5 días de la semana tengan 3 o más tareas completadas, el árbol florecerá con hermosos pétalos rosados y hojas decorativas en todo su esplendor.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <div style="font-size: 1.3rem; margin-top: 2px;">💧</div>
+          <div>
+            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Riego (Regar)</h4>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">El árbol se riega hoy cuando registras al menos 1 actividad en la pestaña principal "Hoy". El riego mantiene las ramas saludables, brillantes y verdes.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <div style="font-size: 1.3rem; margin-top: 2px;">🌱</div>
+          <div>
+            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Abono (Abonar)</h4>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Cumplir tu meta diaria de puntos en la pestaña "Hoy" actúa como abono, haciendo crecer hojas extra grandes y abundantes en la rama del día de hoy.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <div style="font-size: 1.3rem; margin-top: 2px;">🍂</div>
+          <div>
+            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Marchitado (Constancia)</h4>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Si dejas pasar 2 días consecutivos (ayer y hoy) sin completar ninguna tarea del roadmap, el árbol se marchitará: las ramas se vuelven grises y secas y las hojas amarillentas. ¡Haz al menos una tarea hoy para revivirlo!</p>
+          </div>
+        </div>
+      </div>
+      
+      <button class="btn-save" style="margin-top: 20px; font-size: 0.9rem; padding: 10px;" id="btnCloseTreeInfoOk">¡Entendido!</button>
     </div>
   </div>
 
