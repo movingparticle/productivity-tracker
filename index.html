@@ -466,11 +466,21 @@
       </div>
 
       <!-- State Badges Row -->
-      <div class="tree-badges-row" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; justify-content: center;">
+      <div class="tree-badges-row" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; justify-content: center;">
         <span id="badgeWater" class="tree-status-badge watered hidden">💧 Regado</span>
         <span id="badgeFertilized" class="tree-status-badge fertilized hidden">🌱 Abonado</span>
         <span id="badgeBloomed" class="tree-status-badge bloomed hidden">🌸 Florecido</span>
         <span id="badgeWithered" class="tree-status-badge withered hidden">🍂 Marchito</span>
+      </div>
+
+      <!-- Tree Difficulty Selector -->
+      <div class="tree-difficulty-container" style="display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 15px;">
+        <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Exigencia:</label>
+        <select id="selectTreeDifficulty" style="margin: 0; padding: 4px 10px; font-size: 0.8rem; border-radius: var(--radius-md); border: 1px solid var(--card-border); background: #ffffff; width: auto; font-weight: 600; color: var(--text-main); cursor: pointer;">
+          <option value="minimo">Mínimo (1 tarea · Racha 3 días)</option>
+          <option value="medio" selected>Medio (2 tareas · Racha 2 días)</option>
+          <option value="maximo">Máximo (3 tareas · Racha 1 día)</option>
+        </select>
       </div>
 
       <div id="focusTreeSvgContainer" style="width: 100%; flex: 1; min-height: 320px; display: flex; justify-content: center; align-items: center; background: rgba(15,23,42,0.01); border-radius: var(--radius-md); border: 1px solid rgba(15,23,42,0.03); overflow: hidden; position: relative;">
@@ -497,7 +507,7 @@
           <div style="font-size: 1.3rem; margin-top: 2px;">🌿</div>
           <div>
             <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Ramas y Hojas (Trabajo Diario)</h4>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Cada una de las 7 ramas representa un día de los últimos 7 días. Cada hoja representa una tarea del roadmap completada ese día. ¡Más hojas significan más enfoque!</p>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Cada una de las 7 ramas representa un día de los últimos 7 días. Las hojas representan el trabajo diario: se obtienen al completar tareas del roadmap O al registrar actividades diarias en la pestaña "Hoy".</p>
           </div>
         </div>
 
@@ -505,7 +515,7 @@
           <div style="font-size: 1.3rem; margin-top: 2px;">🌸</div>
           <div>
             <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Floración (Florecer)</h4>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Si consigues que al menos 5 días de la semana tengan 3 o más tareas completadas, el árbol florecerá con hermosos pétalos rosados y hojas decorativas en todo su esplendor.</p>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Si consigues que al menos 5 días de la semana tengan ramas "llenas", el árbol florecerá con flores de cerezo y hojas extra. Una rama está llena al completar actividades según tu nivel de exigencia (Mínimo: 1+, Medio: 2+, Máximo: 3+).</p>
           </div>
         </div>
 
@@ -513,7 +523,7 @@
           <div style="font-size: 1.3rem; margin-top: 2px;">💧</div>
           <div>
             <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Riego (Regar)</h4>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">El árbol se riega hoy cuando registras al menos 1 actividad en la pestaña principal "Hoy". El riego mantiene las ramas saludables, brillantes y verdes.</p>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">El riego mantiene las ramas saludables, brillantes y verdes. Se riega hoy al registrar al menos 1 actividad en la pestaña principal "Hoy".</p>
           </div>
         </div>
 
@@ -521,7 +531,7 @@
           <div style="font-size: 1.3rem; margin-top: 2px;">🌱</div>
           <div>
             <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Abono (Abonar)</h4>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Cumplir tu meta diaria de puntos en la pestaña "Hoy" actúa como abono, haciendo crecer hojas extra grandes y abundantes en la rama del día de hoy.</p>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Cumplir tu meta diaria de puntos en la pestaña "Hoy" actúa como abono, haciendo crecer hojas extra grandes en la rama de hoy.</p>
           </div>
         </div>
 
@@ -529,7 +539,7 @@
           <div style="font-size: 1.3rem; margin-top: 2px;">🍂</div>
           <div>
             <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Marchitado (Constancia)</h4>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Si dejas pasar 2 días consecutivos (ayer y hoy) sin completar ninguna tarea del roadmap, el árbol se marchitará: las ramas se vuelven grises y secas y las hojas amarillentas. ¡Haz al menos una tarea hoy para revivirlo!</p>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">El árbol se seca y se vuelve gris si dejas pasar varios días sin completar ninguna actividad (roadmap o tareas diarias). El límite de días depende de la exigencia (Mínimo: 3 días, Medio: 2 días, Máximo: 1 día de inactividad). ¡Haz algo hoy para revivirlo!</p>
           </div>
         </div>
       </div>

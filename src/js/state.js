@@ -67,8 +67,12 @@ export function setRoomState(roomId, newState) {
     if (!store.config) {
       store.config = { 
         users: [{ id: 'u1', name: 'User 1', color: '#3b82f6', meta: 15, bank: 0 }],
-        days: 6
+        days: 6,
+        treeDifficulty: 'medio'
       };
+    }
+    if (!store.config.treeDifficulty) {
+      store.config.treeDifficulty = 'medio';
     }
     
     // Check/sync local profile
@@ -466,6 +470,15 @@ export function lockRoadmap() {
 export function unlockRoadmap() {
   if (!localProfileId || !store.roadmaps || !store.roadmaps[localProfileId]) return;
   store.roadmaps[localProfileId].locked = false;
+  saveState();
+}
+
+/**
+ * Set the difficulty level of the focus tree
+ */
+export function setTreeDifficulty(level) {
+  if (!store.config) store.config = {};
+  store.config.treeDifficulty = level;
   saveState();
 }
 

@@ -1257,19 +1257,26 @@ export function renderFocusTree() {
   const todayStr = new Date().toDateString();
   const yesterdayStr = new Date(new Date().setDate(new Date().getDate() - 1)).toDateString();
 
-  // Helper to get completed tasks for a specific date
-  function getCompletedTasksForDay(dayStr) {
-    const isToday = dayStr === todayStr;
-    let items = [];
-    if (isToday) {
-      const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
-      items = plan && Array.isArray(plan.items) ? plan.items : [];
-    } else {
-      const historyEntries = state.store.roadmapHistory || [];
-      const entry = historyEntries.find(x => x.date === dayStr && x.userId === state.localProfileId);
-      items = entry && Array.isArray(entry.items) ? entry.items : [];
-    }
-    return items.filter(x => x.completed);
+  // 1. Get Tree Difficulty configuration
+  const difficulty = state.store.config.treeDifficulty || 'medio';
+  const diffSelect = document.getElementById('selectTreeDifficulty');
+  if (diffSelect) {
+    diffSelect.value = difficulty;
+    diffSelect.onchange = (e) => {
+      state.setTreeDifficulty(e.target.value);
+      renderFocusTree();
+      showToast(`Exigencia del árbol configurada en: ${e.target.value === 'minimo' ? 'Mínimo' : e.target.value === 'maximo' ? 'Máximo' : 'Medio'}`);
+    };
+  }
+
+  let fullBranchThreshold = 2; // medio default
+  let witheredDaysThreshold = 2; // medio default
+  if (difficulty === 'minimo') {
+    fullBranchThreshold = 1;
+    witheredDaysThreshold = 3;
+  } else if (difficulty === 'maximo') {
+    fullBranchThreshold = 3;
+    witheredDaysThreshold = 1;
   }
 
   // Generate last 7 days
@@ -1284,8 +1291,64 @@ export function renderFocusTree() {
     });
   }
 
-  // 1. Calculate Gamification Metrics
-  const fullBranchesCount = daysList.filter(day => getCompletedTasksForDay(day.dateStr).length >= 3).length;
+  // Helper to get total daily activity (completed roadmap items + logged entries)
+  function getDailyLeafItems(dayStr) {
+    const isToday = dayStr === todayStr;
+    const leafItems = [];
+    
+    // 1. Roadmap tasks
+    let roadmapItems = [];
+    if (isToday) {
+      const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
+      roadmapItems = plan && Array.isArray(plan.items) ? plan.items : [];
+    } else {
+      const historyEntries = state.store.roadmapHistory || [];
+      const entry = historyEntries.find(x => x.date === dayStr && x.userId === state.localProfileId);
+      roadmapItems = entry && Array.isArray(entry.items) ? entry.items : [];
+    }
+    roadmapItems.filter(x => x.completed).forEach(task => {
+      leafItems.push({
+        text: task.text,
+        type: task.type,
+        pts: task.pts || 0,
+        time: task.completedAt || ''
+      });
+    });
+
+    // 2. Logged daily activities in Hoy
+    if (isToday) {
+      const logs = state.store.todayLog.filter(x => x.who === state.localProfileId);
+      logs.forEach(log => {
+        leafItems.push({
+          text: log.name,
+          type: 'activityLog',
+          pts: log.pts || 0,
+          time: log.time || ''
+        });
+      });
+    } else {
+      const dObj = new Date(dayStr);
+      const niceDate = `${dObj.getDate().toString().padStart(2, '0')}/${(dObj.getMonth() + 1).toString().padStart(2, '0')}/${dObj.getFullYear()}`;
+      const hist = state.store.history || [];
+      const histEntry = hist.find(x => x.date === niceDate);
+      if (histEntry && histEntry.points && histEntry.points[state.localProfileId] !== undefined) {
+        const earned = Number(histEntry.points[state.localProfileId]) || 0;
+        const count = Math.ceil(earned / 5);
+        for (let j = 0; j < count; j++) {
+          leafItems.push({
+            text: `Actividad registrada`,
+            type: 'activityLog',
+            pts: earned,
+            time: ''
+          });
+        }
+      }
+    }
+    return leafItems;
+  }
+
+  // 2. Calculate Gamification Metrics
+  const fullBranchesCount = daysList.filter(day => getDailyLeafItems(day.dateStr).length >= fullBranchThreshold).length;
   const isBloomed = fullBranchesCount >= 5;
 
   // Watered: at least 1 activity in "Hoy" tab today
@@ -1298,10 +1361,16 @@ export function renderFocusTree() {
   const userMeta = Number(activeUser.meta) || 15;
   const isFertilized = todayPts >= userMeta;
 
-  // Withered: 0 completed tasks yesterday and today
-  const yesterdayCount = getCompletedTasksForDay(yesterdayStr).length;
-  const todayCount = getCompletedTasksForDay(todayStr).length;
-  const isWithered = yesterdayCount === 0 && todayCount === 0;
+  // Withered: 0 completed tasks/activities across the last W days
+  let isWithered = true;
+  for (let offset = 0; offset < witheredDaysThreshold; offset++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - offset);
+    if (getDailyLeafItems(d.toDateString()).length > 0) {
+      isWithered = false;
+      break;
+    }
+  }
 
   // Update Badge Visibilities
   const badgeWater = elements.badgeWater;
@@ -1330,16 +1399,16 @@ export function renderFocusTree() {
   const statusHint = elements.treeStatusHint;
   if (statusHint) {
     if (isWithered) {
-      statusHint.innerHTML = `<span style="color: var(--danger); font-weight:700;">🍂 Tu árbol se está marchitando por falta de constancia.</span> ¡Completa al menos 1 tarea del roadmap hoy para revivirlo!`;
+      statusHint.innerHTML = `<span style="color: var(--danger); font-weight:700;">🍂 Tu árbol se está marchitando por falta de constancia.</span> ¡Completa tareas del roadmap o registra actividades hoy para revivirlo!`;
     } else if (isBloomed) {
       statusHint.innerHTML = `<span style="color: #db2777; font-weight:700;">🌸 ¡Espectacular! Tu árbol ha florecido.</span> Has mantenido un ritmo de enfoque excelente esta semana.`;
     } else {
       const daysNeeded = Math.max(0, 5 - fullBranchesCount);
-      statusHint.innerHTML = `💧 Regado y creciendo con tu constancia. Completa 3+ tareas por día para hacerlo florecer (Faltan ${daysNeeded} días de enfoque).`;
+      statusHint.innerHTML = `💧 Regado y creciendo con tu constancia. Completa ${fullBranchThreshold}+ actividades por día para hacerlo florecer (Faltan ${daysNeeded} días de enfoque).`;
     }
   }
 
-  // 2. Build SVG Tree
+  // 3. Build SVG Tree
   let svgContent = `<svg width="100%" height="440" viewBox="0 0 400 450" xmlns="http://www.w3.org/2000/svg">`;
 
   // Draw Ground
@@ -1391,9 +1460,9 @@ export function renderFocusTree() {
 
     svgContent += `<text x="${textX}" y="${y - 28}" text-anchor="${textAnchor}" font-family="var(--font-title)" font-size="10.5px" font-weight="${textWeight}" fill="${textFill}">${textLabel}</text>`;
 
-    // Get Completed tasks
-    const completedTasks = getCompletedTasksForDay(day.dateStr);
-    const M = completedTasks.length;
+    // Get Completed tasks and activities for this day
+    const leafItems = getDailyLeafItems(day.dateStr);
+    const M = leafItems.length;
 
     // Determine Leaf Colors
     let leafColor = '#22c55e'; // default healthy green
@@ -1403,8 +1472,8 @@ export function renderFocusTree() {
       leafColor = activeUser.color;
     }
 
-    // Draw Completed Tasks Hojas
-    completedTasks.forEach((task, j) => {
+    // Draw Leaves
+    leafItems.forEach((task, j) => {
       const t = 0.25 + (j / Math.max(1, M - 1)) * 0.55;
       const P = getBezierPoint(t, p0, p1, p2);
 
@@ -1415,13 +1484,13 @@ export function renderFocusTree() {
       svgContent += `<line x1="${P.x}" y1="${P.y}" x2="${twigX}" y2="${twigY}" stroke="${isWithered ? '#94a3b8' : '#78350f'}" stroke-width="2" stroke-linecap="round" />`;
 
       // Draw Leaf Circle
-      svgContent += `<circle cx="${twigX}" cy="${twigY}" r="6.5" fill="${leafColor}" class="tree-leaf" data-name="${task.text}" data-time="${task.completedAt || ''}" data-type="${task.type}" data-pts="${task.pts || 0}" />`;
+      svgContent += `<circle cx="${twigX}" cy="${twigY}" r="6.5" fill="${leafColor}" class="tree-leaf" data-name="${task.text}" data-time="${task.time || ''}" data-type="${task.type}" data-pts="${task.pts || 0}" />`;
 
       // Fertilized extra leaf on today's tasks
       if (isToday && isFertilized && !isWithered) {
         const Q2 = growsLeft ? { x: P.x - 2, y: P.y - 16 } : { x: P.x + 2, y: P.y - 16 };
         svgContent += `<line x1="${P.x}" y1="${P.y}" x2="${Q2.x}" y2="${Q2.y}" stroke="#78350f" stroke-width="1.8" />`;
-        svgContent += `<circle cx="${Q2.x}" cy="${Q2.y}" r="8.5" fill="#15803d" class="tree-leaf" data-name="${task.text} (Meta Diaria)" data-time="${task.completedAt || ''}" data-type="${task.type}" data-pts="${task.pts || 0}" />`;
+        svgContent += `<circle cx="${Q2.x}" cy="${Q2.y}" r="8.5" fill="#15803d" class="tree-leaf" data-name="${task.text} (Meta Diaria)" data-time="${task.time || ''}" data-type="${task.type}" data-pts="${task.pts || 0}" />`;
       }
     });
 
