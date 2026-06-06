@@ -1,0 +1,44 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "userRooms": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$roomId": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('rooms').child($roomId).child('meta').child('ownerUid').val() === auth.uid)"
+        }
+      }
+    },
+
+    "invites": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
+    "rooms": {
+      "$roomId": {
+        ".read": "auth != null && data.child('members').child(auth.uid).exists()",
+        ".write": "auth != null && data.child('meta').child('ownerUid').val() === auth.uid",
+
+        "meta": {
+          ".write": "auth != null && (!data.parent().child('members').exists() || data.parent().child('members').child(auth.uid).child('role').val() === 'owner')",
+          ".validate": "newData.hasChildren(['name','ownerUid'])"
+        },
+
+        "store": {
+          ".write": "auth != null && newData.parent().child('members').child(auth.uid).exists()"
+        },
+
+        "members": {
+          "$memberUid": {
+            ".write": "auth != null && (data.parent().child(auth.uid).child('role').val() === 'owner' || ($memberUid === auth.uid && (data.exists() || data.parent().numChildren() < 5)))"
+          }
+        }
+      }
+    }
+  }
+}

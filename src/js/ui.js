@@ -16,9 +16,29 @@ export function initDomElements() {
     authError: document.getElementById('authError'),
     btnSignOut: document.getElementById('btnSignOut'),
 
-    loginScreen: document.getElementById('loginScreen'),
-    userInput: document.getElementById('userInput'),
-    roomInput: document.getElementById('roomInput'),
+    // Rooms screen (Mis Salas)
+    roomsScreen: document.getElementById('roomsScreen'),
+    roomsUserLabel: document.getElementById('roomsUserLabel'),
+    roomsList: document.getElementById('roomsList'),
+    roomsEmpty: document.getElementById('roomsEmpty'),
+    newRoomName: document.getElementById('newRoomName'),
+    btnCreateRoom: document.getElementById('btnCreateRoom'),
+    createRoomHint: document.getElementById('createRoomHint'),
+    joinCodeInput: document.getElementById('joinCodeInput'),
+    btnJoinRoom: document.getElementById('btnJoinRoom'),
+    roomsError: document.getElementById('roomsError'),
+    btnRoomsSignOut: document.getElementById('btnRoomsSignOut'),
+
+    // Members & invite (in config modal)
+    memberCount: document.getElementById('memberCount'),
+    membersList: document.getElementById('membersList'),
+    btnInvite: document.getElementById('btnInvite'),
+    inviteBox: document.getElementById('inviteBox'),
+    inviteLink: document.getElementById('inviteLink'),
+    btnCopyInvite: document.getElementById('btnCopyInvite'),
+    btnLeaveRoom: document.getElementById('btnLeaveRoom'),
+    btnDeleteRoom: document.getElementById('btnDeleteRoom'),
+
     appContainer: document.getElementById('appContainer'),
     syncIndicator: document.getElementById('syncIndicator'),
     
@@ -79,7 +99,6 @@ export function initDomElements() {
     docBody: document.getElementById('docBody'),
     
     // Action Buttons cached for main.js binding
-    btnEnterRoom: document.getElementById('btnEnterRoom'),
     btnOpenReport: document.getElementById('btnOpenReport'),
     btnCloseReport: document.getElementById('btnCloseReport'),
     btnDownloadPDF: document.getElementById('btnDownloadPDF'),
@@ -766,11 +785,11 @@ export function resetTplForm() {
 /* --- AUTH SCREEN HELPERS --- */
 
 /**
- * Show the email/password auth gate, hiding the room login screen.
+ * Show the Google auth gate, hiding the rooms screen.
  */
 export function showAuthScreen() {
   if (elements.authScreen) elements.authScreen.classList.remove('hidden');
-  if (elements.loginScreen) elements.loginScreen.classList.add('hidden');
+  if (elements.roomsScreen) elements.roomsScreen.classList.add('hidden');
 }
 
 /**
@@ -781,11 +800,18 @@ export function hideAuthScreen() {
 }
 
 /**
- * Show the room selection/login screen (used after auth when no room is cached).
+ * Show the "Mis Salas" screen (room list / create / join).
  */
-export function showRoomLogin() {
+export function showRoomsScreen() {
   if (elements.authScreen) elements.authScreen.classList.add('hidden');
-  if (elements.loginScreen) elements.loginScreen.classList.remove('hidden');
+  if (elements.roomsScreen) elements.roomsScreen.classList.remove('hidden');
+}
+
+/**
+ * Hide the rooms screen (when entering a room).
+ */
+export function hideRoomsScreen() {
+  if (elements.roomsScreen) elements.roomsScreen.classList.add('hidden');
 }
 
 /**
@@ -804,6 +830,112 @@ export function clearAuthError() {
   if (!elements.authError) return;
   elements.authError.innerText = '';
   elements.authError.classList.remove('show');
+}
+
+/* --- ROOMS SCREEN RENDERING --- */
+
+export function setRoomsUserLabel(text) {
+  if (elements.roomsUserLabel) elements.roomsUserLabel.innerText = text;
+}
+
+export function showRoomsError(message) {
+  if (!elements.roomsError) return;
+  elements.roomsError.innerText = message;
+  elements.roomsError.classList.add('show');
+}
+
+export function clearRoomsError() {
+  if (!elements.roomsError) return;
+  elements.roomsError.innerText = '';
+  elements.roomsError.classList.remove('show');
+}
+
+/**
+ * Render the list of rooms the user belongs to.
+ * @param {Array} rooms  [{roomId, name, role, memberCount}]
+ * @param {function} onOpen  called with roomId when a card is clicked
+ */
+export function renderRoomsList(rooms, onOpen) {
+  const list = elements.roomsList;
+  if (!list) return;
+  list.innerHTML = '';
+
+  if (!rooms || rooms.length === 0) {
+    if (elements.roomsEmpty) elements.roomsEmpty.style.display = 'block';
+    return;
+  }
+  if (elements.roomsEmpty) elements.roomsEmpty.style.display = 'none';
+
+  rooms.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'room-card';
+    const roleLabel = r.role === 'owner' ? 'Dueño' : 'Miembro';
+    const badgeClass = r.role === 'owner' ? 'badge-owner' : 'badge-member';
+    card.innerHTML = `
+      <div style="overflow:hidden;">
+        <div class="room-card-name">${r.name}</div>
+        <div class="room-card-meta">${r.memberCount} miembro${r.memberCount === 1 ? '' : 's'}</div>
+      </div>
+      <span class="room-card-badge ${badgeClass}">${roleLabel}</span>
+    `;
+    card.onclick = () => onOpen(r.roomId);
+    list.appendChild(card);
+  });
+}
+
+/**
+ * Render the member list inside the config modal.
+ * @param {Array} members  [{uid, email, name, role}]
+ * @param {string} currentUid
+ * @param {boolean} isOwner  whether the viewer can remove members
+ * @param {function} onRemove  called with member uid
+ */
+export function renderMembers(members, currentUid, isOwner, onRemove) {
+  const list = elements.membersList;
+  if (!list) return;
+  list.innerHTML = '';
+
+  if (elements.memberCount) elements.memberCount.innerText = members.length;
+
+  members.forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'member-row';
+    const roleLabel = m.role === 'owner' ? 'Dueño' : 'Miembro';
+    const isSelf = m.uid === currentUid;
+    const canRemove = isOwner && m.role !== 'owner' && !isSelf;
+
+    row.innerHTML = `
+      <div style="overflow:hidden;">
+        <div class="member-email">${m.email || m.name || 'Usuario'}</div>
+        <div class="member-role">${roleLabel}${isSelf ? ' · tú' : ''}</div>
+      </div>
+      ${canRemove ? '<button class="btn-remove-member">Quitar</button>' : ''}
+    `;
+
+    if (canRemove) {
+      row.querySelector('.btn-remove-member').onclick = () => onRemove(m.uid);
+    }
+    list.appendChild(row);
+  });
+}
+
+/**
+ * Toggle owner-only controls (invite, delete) vs member controls (leave).
+ */
+export function applyRoomRole(isOwner) {
+  if (elements.btnInvite) elements.btnInvite.style.display = isOwner ? 'block' : 'none';
+  if (elements.btnDeleteRoom) elements.btnDeleteRoom.style.display = isOwner ? 'block' : 'none';
+  if (elements.btnLeaveRoom) elements.btnLeaveRoom.style.display = isOwner ? 'none' : 'block';
+  // Only the owner can rename / reset destructive things
+  if (elements.btnRenameRoom) elements.btnRenameRoom.disabled = !isOwner;
+}
+
+/**
+ * Show an invite link/code in the config modal.
+ */
+export function showInviteLink(link) {
+  if (elements.inviteBox) elements.inviteBox.style.display = 'block';
+  if (elements.inviteLink) elements.inviteLink.value = link;
 }
 
 /* --- BASE MODAL HELPER FUNCTIONS --- */
