@@ -4,13 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Productivity Tracker Premium</title>
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-DEMq0UI3.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-CweLUHKr.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-cQzH2nJU.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-C1-lNKJR.css">
 </head>
 <body>
 
+  <!-- AUTH SCREEN (EMAIL + PASSWORD) -->
+  <div class="login-screen" id="authScreen">
+    <div class="login-header">
+      <h1 class="login-logo">Tracker Premium</h1>
+      <p class="login-subtitle" id="authSubtitle">Inicia sesión para continuar</p>
+    </div>
+
+    <div class="login-card">
+      <label class="login-label" for="authEmail">✉️ Correo electrónico</label>
+      <input type="email" id="authEmail" class="login-input" placeholder="tucorreo@ejemplo.com" autocomplete="email">
+
+      <label class="login-label" for="authPassword">🔒 Contraseña</label>
+      <input type="password" id="authPassword" class="login-input" placeholder="Mínimo 6 caracteres" autocomplete="current-password">
+
+      <div class="auth-error" id="authError"></div>
+
+      <button class="btn-login" id="btnAuthSubmit">Entrar</button>
+
+      <div class="auth-links">
+        <span id="authForgot" class="auth-link">¿Olvidaste tu contraseña?</span>
+        <span id="authToggle" class="auth-link">¿No tienes cuenta? <strong>Regístrate</strong></span>
+      </div>
+    </div>
+  </div>
+
   <!-- LOGIN SCREEN -->
-  <div class="login-screen" id="loginScreen">
+  <div class="login-screen hidden" id="loginScreen">
     <div class="login-header">
       <h1 class="login-logo">Tracker Premium</h1>
       <p class="login-subtitle">Gestión de Productividad Multiusuario</p>
@@ -218,7 +243,11 @@
 
       <button class="btn-save" style="background:#f97316; box-shadow:none; margin-top:5px;" id="btnWeeklyReset">🔄 RESETEO SEMANAL</button>
       <button class="btn-save" style="background:var(--danger); box-shadow:none; margin-top:10px;" id="btnHardReset">⚠️ RESETEAR TODO</button>
-      
+
+      <div style="border-top: 1px dashed var(--card-border); margin: 20px 0;"></div>
+
+      <button class="btn-save" style="background:#475569; box-shadow:none;" id="btnSignOut">🚪 Cerrar Sesión (Cuenta)</button>
+
       <button class="btn-close-txt" id="btnCloseConfig">Cerrar Ajustes</button>
     </div>
   </div>
