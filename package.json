@@ -11,6 +11,7 @@
   "dependencies": {
     "chart.js": "^4.4.1",
     "firebase": "^10.8.0",
+    "firebase-admin": "^13.10.0",
     "html2pdf.js": "^0.10.1"
   },
   "devDependencies": {

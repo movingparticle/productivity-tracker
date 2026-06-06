@@ -19,6 +19,18 @@
       }
     },
 
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "usage": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+
     "rooms": {
       "$roomId": {
         ".read": "auth != null && data.child('members').child(auth.uid).exists()",
