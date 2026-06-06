@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Productivity Tracker Premium</title>
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-h60TZ6kG.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-Bw79cEp-.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-B41k59g3.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-Bc6zL8kZ.css">
 </head>
 <body>
 
@@ -33,23 +33,39 @@
     </div>
   </div>
 
-  <!-- LOGIN SCREEN -->
-  <div class="login-screen hidden" id="loginScreen">
+  <!-- ROOMS SCREEN (MIS SALAS) -->
+  <div class="login-screen hidden" id="roomsScreen">
     <div class="login-header">
-      <h1 class="login-logo">Tracker Premium</h1>
-      <p class="login-subtitle">Gestión de Productividad Multiusuario</p>
+      <h1 class="login-logo">Mis Salas</h1>
+      <p class="login-subtitle" id="roomsUserLabel">Sesión iniciada</p>
     </div>
-    
+
     <div class="login-card">
-      <label class="login-label" for="userInput">👤 Nombre de Usuario</label>
-      <input type="text" id="userInput" class="login-input" placeholder="Ej: Rodrigo">
-      
+      <div id="roomsList" class="rooms-list"></div>
+      <div id="roomsEmpty" class="rooms-empty">Aún no tienes salas. Crea una nueva o únete con un código de invitación.</div>
+
+      <div class="rooms-section">
+        <label class="login-label" for="newRoomName">➕ Crear una sala nueva</label>
+        <div class="rooms-inline">
+          <input type="text" id="newRoomName" class="login-input" placeholder="Ej: Familia">
+          <button class="btn-login btn-inline" id="btnCreateRoom">Crear</button>
+        </div>
+        <div class="rooms-hint" id="createRoomHint">Puedes crear hasta 2 salas, con 5 miembros cada una.</div>
+      </div>
+
       <div class="login-divider">O</div>
-      
-      <label class="login-label" for="roomInput">🏠 Nombre de Sala</label>
-      <input type="text" id="roomInput" class="login-input" placeholder="Ej: EMMA">
-      
-      <button class="btn-login" id="btnEnterRoom">Entrar</button>
+
+      <div class="rooms-section">
+        <label class="login-label" for="joinCodeInput">🔑 Unirme con código de invitación</label>
+        <div class="rooms-inline">
+          <input type="text" id="joinCodeInput" class="login-input" placeholder="Ej: ABC123" style="text-transform:uppercase;">
+          <button class="btn-login btn-inline btn-join" id="btnJoinRoom">Unirme</button>
+        </div>
+      </div>
+
+      <div class="auth-error" id="roomsError"></div>
+
+      <span class="auth-link" id="btnRoomsSignOut" style="display:block; text-align:center; margin-top:18px;">Cerrar sesión</span>
     </div>
   </div>
 
@@ -151,13 +167,13 @@
         <canvas id="timeChart"></canvas>
       </div>
       
-      <!-- Copy Room Code widget -->
+      <!-- Current room widget -->
       <div style="text-align:center; padding:18px; background: rgba(15, 23, 42, 0.03); border-radius:var(--radius-md); border:1px dashed var(--card-border); margin-top:20px;">
-        <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); letter-spacing:0.05em; text-transform:uppercase;">CÓDIGO DE LA SALA</span>
-        <div style="font-size:1.6rem; font-weight:900; color:#3b82f6; margin:6px 0; cursor:pointer; font-family: var(--font-title);" id="codeDisplay" title="Click para copiar">---</div>
+        <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); letter-spacing:0.05em; text-transform:uppercase;">SALA ACTUAL</span>
+        <div style="font-size:1.6rem; font-weight:900; color:#3b82f6; margin:6px 0; font-family: var(--font-title);" id="codeDisplay">---</div>
       </div>
-      
-      <button id="btnLogout" class="btn-close-txt">Salir de Sala</button>
+
+      <button id="btnLogout" class="btn-close-txt">↩ Cambiar de Sala</button>
     </div>
 
     <!-- BOTTOM TAB NAVIGATION -->
@@ -219,9 +235,22 @@
       <h3 style="text-align:center; margin-top:0; margin-bottom:20px; font-family: var(--font-title); font-weight:800;">Ajustes de Sala</h3>
       
       <button class="btn-save" style="background:#3b82f6; font-size:1rem; padding:15px; margin-bottom:20px; box-shadow: 0 4px 6px rgba(59,130,246,0.25);" id="btnOpenUsers">
-          👥 Gestionar Usuarios y Metas
+          👥 Gestionar Perfiles y Metas
       </button>
-    
+
+      <!-- MEMBERS & INVITE -->
+      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px; letter-spacing:0.02em;">Miembros con acceso (<span id="memberCount">0</span>/5)</label>
+      <div id="membersList" style="margin-bottom:12px;"></div>
+
+      <button class="btn-save" style="background:var(--success); box-shadow:none; margin-bottom:6px;" id="btnInvite">✉️ Invitar a alguien</button>
+      <div id="inviteBox" style="display:none; margin-bottom:20px;">
+        <div class="rooms-hint">Comparte este enlace (o el código) con quien quieras invitar:</div>
+        <input type="text" id="inviteLink" class="login-input" readonly style="margin-top:6px; font-size:0.8rem;">
+        <button class="btn-save" style="background:#3b82f6; box-shadow:none; margin-top:6px;" id="btnCopyInvite">📋 Copiar enlace</button>
+      </div>
+
+      <div style="border-top: 1px dashed var(--card-border); margin: 18px 0;"></div>
+
       <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px; letter-spacing:0.02em;">Cambiar Nombre de Sala</label>
       <div style="display:flex; gap:8px; margin-bottom:20px;">
           <input type="text" id="newRoomNameInput" placeholder="Ej: EMMA" style="margin:0;">
@@ -245,7 +274,10 @@
 
       <div style="border-top: 1px dashed var(--card-border); margin: 20px 0;"></div>
 
-      <button class="btn-save" style="background:#475569; box-shadow:none;" id="btnSignOut">🚪 Cerrar Sesión (Cuenta)</button>
+      <button class="btn-save" style="background:#b45309; box-shadow:none; display:none;" id="btnLeaveRoom">🚪 Salir de esta sala</button>
+      <button class="btn-save" style="background:var(--danger); box-shadow:none; margin-top:10px; display:none;" id="btnDeleteRoom">🗑️ Eliminar sala (definitivo)</button>
+
+      <button class="btn-save" style="background:#475569; box-shadow:none; margin-top:10px;" id="btnSignOut">🔒 Cerrar Sesión (Cuenta)</button>
 
       <button class="btn-close-txt" id="btnCloseConfig">Cerrar Ajustes</button>
     </div>
