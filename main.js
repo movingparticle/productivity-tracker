@@ -554,6 +554,14 @@ function bindEvents() {
     };
   }
 
+  // Roadmap Sub-Tab Swapping
+  if (ui.elements.btnTabRoadmapView) {
+    ui.elements.btnTabRoadmapView.onclick = () => ui.toggleRoadmapTab('view');
+  }
+  if (ui.elements.btnTabRoadmapBuilder) {
+    ui.elements.btnTabRoadmapBuilder.onclick = () => ui.toggleRoadmapTab('builder');
+  }
+
   // Roadmap Lego Builder actions (Add Pending, Add Routine, Add Custom)
   if (ui.elements.btnAddPendingToRoadmap) {
     ui.elements.btnAddPendingToRoadmap.onclick = () => {
@@ -568,6 +576,7 @@ function bindEvents() {
         state.addRoadmapItem(task.name, 'pending', task.pts);
         ui.showToast("Tarea añadida al plan");
         select.value = "";
+        ui.toggleRoadmapTab('view'); // Redirect to plan view
       }
     };
   }
@@ -585,6 +594,7 @@ function bindEvents() {
         state.addRoadmapItem(routine.name, 'routine', routine.pts);
         ui.showToast("Rutina añadida al plan");
         select.value = "";
+        ui.toggleRoadmapTab('view'); // Redirect to plan view
       }
     };
   }
@@ -600,6 +610,7 @@ function bindEvents() {
       state.addRoadmapItem(val, 'personal', 0);
       ui.showToast("Actividad personal añadida");
       input.value = "";
+      ui.toggleRoadmapTab('view'); // Redirect to plan view
     };
   }
 }

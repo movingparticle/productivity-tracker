@@ -1557,3 +1557,48 @@ input:focus, select:focus {
   color: var(--text-muted);
   text-transform: uppercase;
 }
+
+/* --- GENERAL UTILITIES --- */
+.hidden {
+  display: none !important;
+}
+
+/* --- ROADMAP SUB-TABS --- */
+.roadmap-tabs {
+  display: flex;
+  background: rgba(15, 23, 42, 0.04);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  border: 1px solid var(--card-border);
+  gap: 4px;
+}
+
+.roadmap-tab-btn {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.roadmap-tab-btn.active {
+  background: #ffffff;
+  color: var(--text-main);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.roadmap-tab-btn:hover:not(.active) {
+  color: var(--text-main);
+  background: rgba(15, 23, 42, 0.02);
+}

@@ -73,6 +73,8 @@ export function initDomElements() {
     btnAddPendingToRoadmap: document.getElementById('btnAddPendingToRoadmap'),
     btnAddRoutineToRoadmap: document.getElementById('btnAddRoutineToRoadmap'),
     btnAddCustomToRoadmap: document.getElementById('btnAddCustomToRoadmap'),
+    btnTabRoadmapView: document.getElementById('btnTabRoadmapView'),
+    btnTabRoadmapBuilder: document.getElementById('btnTabRoadmapBuilder'),
     
     bonusAlert: document.getElementById('bonusAlert'),
     pendingInput: document.getElementById('pendingInput'),
@@ -1048,9 +1050,39 @@ export function renderRoadmap() {
 
   const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
   const items = plan && Array.isArray(plan.items) ? plan.items : [];
+  const locked = plan && plan.locked === true;
+
+  // Toggle internal sub-tabs bar visibility based on lock status
+  const tabsContainer = document.querySelector('.roadmap-tabs');
+  if (tabsContainer) {
+    if (locked) {
+      tabsContainer.classList.add('hidden');
+    } else {
+      tabsContainer.classList.remove('hidden');
+    }
+  }
+
+  // Keep view aligned based on lock state
+  const viewTab = document.getElementById('roadmapViewTab');
+  const builderTab = document.getElementById('roadmapBuilderTab');
+  if (locked) {
+    if (viewTab) viewTab.classList.remove('hidden');
+    if (builderTab) builderTab.classList.add('hidden');
+  } else {
+    // Show correct sub-tab based on active button
+    const viewBtn = elements.btnTabRoadmapView;
+    const builderBtn = elements.btnTabRoadmapBuilder;
+    if (viewBtn && viewBtn.classList.contains('active')) {
+      if (viewTab) viewTab.classList.remove('hidden');
+      if (builderTab) builderTab.classList.add('hidden');
+    } else if (builderBtn && builderBtn.classList.contains('active')) {
+      if (viewTab) viewTab.classList.add('hidden');
+      if (builderTab) builderTab.classList.remove('hidden');
+    }
+  }
 
   if (items.length === 0) {
-    list.innerHTML = `<p class="roadmap-text empty" style="padding: 15px 5px; text-align: center;">No hay bloques en el plan de hoy. ¡Construye uno abajo!</p>`;
+    list.innerHTML = `<p class="roadmap-text empty" style="padding: 15px 5px; text-align: center;">No hay bloques en el plan de hoy. ¡Construye uno en la pestaña de Actividades!</p>`;
     return;
   }
 
@@ -1086,6 +1118,10 @@ export function renderRoadmap() {
       el.style.opacity = '0.6';
     }
 
+    const deleteBtnHtml = locked
+      ? ''
+      : `<button class="btn-del-roadmap" style="display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: pointer; border: none; background: none; color: var(--danger); padding: 4px; transition: var(--transition);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>`;
+
     el.innerHTML = `
       <div style="display: flex; align-items: center; gap: 10px; overflow: hidden; flex: 1;">
         <button class="btn-check-roadmap" style="display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0; background: ${item.completed ? 'var(--success)' : 'none'}; border: 1.5px solid ${item.completed ? 'var(--success)' : 'var(--text-muted)'}; color: ${item.completed ? 'white' : 'var(--text-muted)'}; cursor: pointer; transition: var(--transition);">
@@ -1099,7 +1135,7 @@ export function renderRoadmap() {
           </div>
         </div>
       </div>
-      <button class="btn-del-roadmap" style="display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: pointer; border: none; background: none; color: var(--danger); padding: 4px; transition: var(--transition);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      ${deleteBtnHtml}
     `;
 
     // Bind check toggle
@@ -1110,14 +1146,86 @@ export function renderRoadmap() {
     };
 
     // Bind delete item
-    el.querySelector('.btn-del-roadmap').onclick = (e) => {
-      e.stopPropagation();
-      state.deleteRoadmapItem(item.id);
-      showToast("Bloque quitado del plan");
-    };
+    const delBtn = el.querySelector('.btn-del-roadmap');
+    if (delBtn) {
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        state.deleteRoadmapItem(item.id);
+        showToast("Bloque quitado del plan");
+      };
+    }
 
     list.appendChild(el);
   });
+
+  // 6. Lock/Unlock Action Button
+  if (items.length > 0) {
+    const actionDiv = document.createElement('div');
+    actionDiv.style.marginTop = '15px';
+    actionDiv.style.display = 'flex';
+    actionDiv.style.justifyContent = 'center';
+    
+    if (locked) {
+      const unlockBtn = document.createElement('button');
+      unlockBtn.className = 'btn-save';
+      unlockBtn.id = 'btnUnlockRoadmap';
+      unlockBtn.style.background = 'none';
+      unlockBtn.style.border = '1.5px dashed var(--text-muted)';
+      unlockBtn.style.color = 'var(--text-muted)';
+      unlockBtn.style.fontSize = '0.8rem';
+      unlockBtn.style.fontWeight = '600';
+      unlockBtn.style.padding = '8px 16px';
+      unlockBtn.style.width = 'auto';
+      unlockBtn.style.margin = '0';
+      unlockBtn.innerHTML = '⚙️ Modificar Plan';
+      unlockBtn.onclick = () => {
+        state.unlockRoadmap();
+        showToast("Plan desbloqueado para modificación");
+      };
+      actionDiv.appendChild(unlockBtn);
+    } else {
+      const lockBtn = document.createElement('button');
+      lockBtn.className = 'btn-save';
+      lockBtn.id = 'btnLockRoadmap';
+      lockBtn.style.background = 'var(--active-color)';
+      lockBtn.style.color = '#ffffff';
+      lockBtn.style.fontSize = '0.85rem';
+      lockBtn.style.fontWeight = '700';
+      lockBtn.style.padding = '10px 20px';
+      lockBtn.style.width = '100%';
+      lockBtn.style.margin = '0';
+      lockBtn.style.boxShadow = '0 2px 8px rgba(15, 23, 42, 0.1)';
+      lockBtn.innerHTML = '🎯 Listo, Fijar Plan de Hoy';
+      lockBtn.onclick = () => {
+        state.lockRoadmap();
+        showToast("¡Plan de hoy fijado! A enfocarse.");
+      };
+      actionDiv.appendChild(lockBtn);
+    }
+    list.appendChild(actionDiv);
+  }
+}
+
+/**
+ * Toggle between view plan and build plan tabs in Roadmap screen
+ */
+export function toggleRoadmapTab(tabName) {
+  const viewTab = document.getElementById('roadmapViewTab');
+  const builderTab = document.getElementById('roadmapBuilderTab');
+  const viewBtn = elements.btnTabRoadmapView;
+  const builderBtn = elements.btnTabRoadmapBuilder;
+  
+  if (tabName === 'view') {
+    if (viewTab) viewTab.classList.remove('hidden');
+    if (builderTab) builderTab.classList.add('hidden');
+    if (viewBtn) viewBtn.classList.add('active');
+    if (builderBtn) builderBtn.classList.remove('active');
+  } else {
+    if (viewTab) viewTab.classList.add('hidden');
+    if (builderTab) builderTab.classList.remove('hidden');
+    if (viewBtn) viewBtn.classList.remove('active');
+    if (builderBtn) builderBtn.classList.add('active');
+  }
 }
 
 export { elements };

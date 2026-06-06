@@ -418,3 +418,26 @@ export function deleteRoadmapItem(itemId) {
   store.roadmaps[localProfileId].items = items.filter(x => x.id !== itemId);
   saveState();
 }
+
+/**
+ * Lock the current daily roadmap
+ */
+export function lockRoadmap() {
+  if (!localProfileId) return;
+  if (!store.roadmaps) store.roadmaps = {};
+  if (!store.roadmaps[localProfileId]) {
+    store.roadmaps[localProfileId] = { items: [] };
+  }
+  store.roadmaps[localProfileId].locked = true;
+  saveState();
+}
+
+/**
+ * Unlock the current daily roadmap
+ */
+export function unlockRoadmap() {
+  if (!localProfileId || !store.roadmaps || !store.roadmaps[localProfileId]) return;
+  store.roadmaps[localProfileId].locked = false;
+  saveState();
+}
+
