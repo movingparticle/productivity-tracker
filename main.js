@@ -308,6 +308,7 @@ function bindEvents() {
     { id: 'navTrackerBtn', target: 'tracker' },
     { id: 'navRoadmapBtn', target: 'roadmap' },
     { id: 'navPendingBtn', target: 'pending' },
+    { id: 'navShoppingBtn', target: 'shopping' },
     { id: 'navMetricsBtn', target: 'metrics' }
   ];
   navItems.forEach(item => {
@@ -325,16 +326,11 @@ function bindEvents() {
   // --- SHOPPING LIST EVENT BINDINGS ---
   let selectedImageBase64 = null;
 
-  if (ui.elements.btnOpenShopping) {
-    ui.elements.btnOpenShopping.onclick = () => {
-      selectedImageBase64 = null;
-      ui.openShoppingModal();
-    };
+  if (ui.elements.btnTabShoppingList) {
+    ui.elements.btnTabShoppingList.onclick = () => ui.toggleShoppingTab('list');
   }
-  if (ui.elements.btnCloseShoppingModal) {
-    ui.elements.btnCloseShoppingModal.onclick = () => {
-      ui.closeModal(ui.elements.shoppingModal);
-    };
+  if (ui.elements.btnTabShoppingAdd) {
+    ui.elements.btnTabShoppingAdd.onclick = () => ui.toggleShoppingTab('add');
   }
   
   if (ui.elements.btnUploadImageTrigger) {
@@ -484,7 +480,7 @@ function bindEvents() {
       if (ui.elements.shopImagePreviewContainer) ui.elements.shopImagePreviewContainer.style.display = 'none';
       if (ui.elements.shopImagePreview) ui.elements.shopImagePreview.src = '';
       
-      ui.renderShoppingList();
+      ui.toggleShoppingTab('list');
     };
   }
   

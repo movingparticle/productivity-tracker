@@ -145,10 +145,15 @@ export function initDomElements() {
     btnBackToConfig: document.getElementById('btnBackToConfig'),
     btnRedeemBank: document.getElementById('btnRedeemBank'),
     
-    // Shopping list modal DOM caching
-    btnOpenShopping: document.getElementById('btnOpenShopping'),
-    shoppingModal: document.getElementById('shoppingModal'),
-    btnCloseShoppingModal: document.getElementById('btnCloseShoppingModal'),
+    // Shopping tab navigation and views caching
+    navShoppingBtn: document.getElementById('navShoppingBtn'),
+    screenShopping: document.getElementById('screenShopping'),
+    btnTabShoppingList: document.getElementById('btnTabShoppingList'),
+    btnTabShoppingAdd: document.getElementById('btnTabShoppingAdd'),
+    shoppingListViewTab: document.getElementById('shoppingListViewTab'),
+    shoppingAddTab: document.getElementById('shoppingAddTab'),
+    
+    // Shopping list input controls caching
     shopItemName: document.getElementById('shopItemName'),
     btnVoiceRecord: document.getElementById('btnVoiceRecord'),
     btnUploadImageTrigger: document.getElementById('btnUploadImageTrigger'),
@@ -293,6 +298,12 @@ export function navTo(screenId, navButton) {
   // Render metrics if swapping to stats screen
   if (screenId === 'metrics') {
     renderMetrics();
+  }
+  
+  // Initialize and load shopping tab contents
+  if (screenId === 'shopping') {
+    populateShoppingUsers();
+    toggleShoppingTab('list');
   }
 }
 
@@ -826,21 +837,10 @@ export function triggerDownloadPDF() {
   }
 }
 
-/* --- SHOPPING LIST RENDERING & ACTIONS --- */
-export function openShoppingModal() {
-  // Clear input fields
-  if (elements.shopItemName) elements.shopItemName.value = '';
-  if (elements.shopItemQty) elements.shopItemQty.value = '';
-  if (elements.shopItemPts) elements.shopItemPts.value = '5';
-  if (elements.shopItemImage) elements.shopItemImage.value = '';
-  if (elements.shopImageFileName) elements.shopImageFileName.innerText = 'Sin foto seleccionada';
-  if (elements.btnRemoveShopImage) elements.btnRemoveShopImage.style.display = 'none';
-  if (elements.shopImagePreviewContainer) elements.shopImagePreviewContainer.style.display = 'none';
-  if (elements.shopImagePreview) elements.shopImagePreview.src = '';
-  
-  // Populate users in user select
+export function populateShoppingUsers() {
   const select = elements.shopItemUser;
   if (select) {
+    const currentVal = select.value;
     select.innerHTML = '<option value="casa">Para la Casa 🏠</option>';
     state.store.config.users.forEach(u => {
       const opt = document.createElement('option');
@@ -848,11 +848,42 @@ export function openShoppingModal() {
       opt.innerText = `Para ${u.name} 👤`;
       select.appendChild(opt);
     });
-    select.value = 'casa';
+    if (currentVal && select.querySelector(`option[value="${currentVal}"]`)) {
+      select.value = currentVal;
+    } else {
+      select.value = 'casa';
+    }
   }
-  
-  renderShoppingList();
-  openModal(elements.shoppingModal);
+}
+
+export function toggleShoppingTab(tabId) {
+  const viewTab = document.getElementById('shoppingListViewTab');
+  const addTab = document.getElementById('shoppingAddTab');
+  const viewBtn = elements.btnTabShoppingList;
+  const addBtn = elements.btnTabShoppingAdd;
+
+  if (tabId === 'list') {
+    if (viewTab) viewTab.classList.remove('hidden');
+    if (addTab) addTab.classList.add('hidden');
+    if (viewBtn) viewBtn.classList.add('active');
+    if (addBtn) addBtn.classList.remove('active');
+    renderShoppingList();
+  } else if (tabId === 'add') {
+    if (viewTab) viewTab.classList.add('hidden');
+    if (addTab) addTab.classList.remove('hidden');
+    if (viewBtn) viewBtn.classList.remove('active');
+    if (addBtn) addBtn.classList.add('active');
+    
+    // Clear inputs in add form
+    if (elements.shopItemName) elements.shopItemName.value = '';
+    if (elements.shopItemQty) elements.shopItemQty.value = '';
+    if (elements.shopItemPts) elements.shopItemPts.value = '5';
+    if (elements.shopItemImage) elements.shopItemImage.value = '';
+    if (elements.shopImageFileName) elements.shopImageFileName.innerText = 'Sin foto seleccionada';
+    if (elements.btnRemoveShopImage) elements.btnRemoveShopImage.style.display = 'none';
+    if (elements.shopImagePreviewContainer) elements.shopImagePreviewContainer.style.display = 'none';
+    if (elements.shopImagePreview) elements.shopImagePreview.src = '';
+  }
 }
 
 export function renderShoppingList() {
