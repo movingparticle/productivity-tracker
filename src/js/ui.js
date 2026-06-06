@@ -143,7 +143,31 @@ export function initDomElements() {
     btnHardReset: document.getElementById('btnHardReset'),
     btnLogout: document.getElementById('btnLogout'),
     btnBackToConfig: document.getElementById('btnBackToConfig'),
-    btnRedeemBank: document.getElementById('btnRedeemBank')
+    btnRedeemBank: document.getElementById('btnRedeemBank'),
+    
+    // Shopping list modal DOM caching
+    btnOpenShopping: document.getElementById('btnOpenShopping'),
+    shoppingModal: document.getElementById('shoppingModal'),
+    btnCloseShoppingModal: document.getElementById('btnCloseShoppingModal'),
+    shopItemName: document.getElementById('shopItemName'),
+    btnVoiceRecord: document.getElementById('btnVoiceRecord'),
+    btnUploadImageTrigger: document.getElementById('btnUploadImageTrigger'),
+    shopItemImage: document.getElementById('shopItemImage'),
+    shopImageFileName: document.getElementById('shopImageFileName'),
+    btnRemoveShopImage: document.getElementById('btnRemoveShopImage'),
+    shopImagePreviewContainer: document.getElementById('shopImagePreviewContainer'),
+    shopImagePreview: document.getElementById('shopImagePreview'),
+    shopItemQty: document.getElementById('shopItemQty'),
+    shopItemUser: document.getElementById('shopItemUser'),
+    shopItemPts: document.getElementById('shopItemPts'),
+    btnSaveShopItem: document.getElementById('btnSaveShopItem'),
+    shoppingListDisplay: document.getElementById('shoppingListDisplay'),
+    
+    // Lightbox image viewer caching
+    imageLightbox: document.getElementById('imageLightbox'),
+    btnCloseLightbox: document.getElementById('btnCloseLightbox'),
+    lightboxImage: document.getElementById('lightboxImage'),
+    lightboxCaption: document.getElementById('lightboxCaption')
   };
 
   createToastContainer();
@@ -284,6 +308,7 @@ export function updateUI() {
   renderTemplates();
   renderUserConfigList();
   renderRoadmap();
+  renderShoppingList();
 
   if (elements.inputWorkDays) {
     elements.inputWorkDays.value = state.store.config.days || 6;
@@ -799,6 +824,134 @@ export function triggerDownloadPDF() {
   if (elements.reportContent) {
     downloadReportPDF(elements.reportContent, state.currentRoomId || "Sala");
   }
+}
+
+/* --- SHOPPING LIST RENDERING & ACTIONS --- */
+export function openShoppingModal() {
+  // Clear input fields
+  if (elements.shopItemName) elements.shopItemName.value = '';
+  if (elements.shopItemQty) elements.shopItemQty.value = '';
+  if (elements.shopItemPts) elements.shopItemPts.value = '5';
+  if (elements.shopItemImage) elements.shopItemImage.value = '';
+  if (elements.shopImageFileName) elements.shopImageFileName.innerText = 'Sin foto seleccionada';
+  if (elements.btnRemoveShopImage) elements.btnRemoveShopImage.style.display = 'none';
+  if (elements.shopImagePreviewContainer) elements.shopImagePreviewContainer.style.display = 'none';
+  if (elements.shopImagePreview) elements.shopImagePreview.src = '';
+  
+  // Populate users in user select
+  const select = elements.shopItemUser;
+  if (select) {
+    select.innerHTML = '<option value="casa">Para la Casa 🏠</option>';
+    state.store.config.users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.id;
+      opt.innerText = `Para ${u.name} 👤`;
+      select.appendChild(opt);
+    });
+    select.value = 'casa';
+  }
+  
+  renderShoppingList();
+  openModal(elements.shoppingModal);
+}
+
+export function renderShoppingList() {
+  const list = elements.shoppingListDisplay;
+  if (!list) return;
+  list.innerHTML = '';
+
+  const items = state.store.shoppingList || [];
+  if (items.length === 0) {
+    list.innerHTML = `
+      <div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+        No hay compras pendientes. ¡Todo al día! 🎉
+      </div>
+    `;
+    return;
+  }
+
+  items.forEach((item, index) => {
+    const el = document.createElement('div');
+    el.className = 'tpl-item';
+    el.style.display = 'flex';
+    el.style.justifyContent = 'space-between';
+    el.style.alignItems = 'center';
+    el.style.padding = '12px 14px';
+    el.style.cursor = 'default';
+
+    // Badge styling for assignment
+    let targetBadge = '';
+    if (item.assignedTo === 'casa') {
+      targetBadge = `<span class="badge" style="background: rgba(15, 23, 42, 0.05); color: var(--text-muted); border: none; font-size: 0.65rem; padding: 2px 6px; font-weight: 700;">🏠 Casa</span>`;
+    } else {
+      const assignedUser = state.store.config.users.find(u => u.id === item.assignedTo);
+      const color = assignedUser ? assignedUser.color : 'var(--text-muted)';
+      const name = assignedUser ? assignedUser.name : '???';
+      targetBadge = `<span class="badge" style="background: ${color}15; color: ${color}; border: 1px solid ${color}30; font-size: 0.65rem; padding: 2px 6px; font-weight: 700;">👤 ${name}</span>`;
+    }
+
+    // Thumbnail html
+    const imageHtml = item.image 
+      ? `<img class="shop-thumbnail" src="${item.image}" alt="${item.name}">` 
+      : '';
+
+    el.innerHTML = `
+      <div style="display:flex; align-items:center; gap:10px; flex:1; overflow:hidden; margin-right:10px;">
+        ${imageHtml}
+        <div style="display:flex; flex-direction:column; gap:3px; flex:1; overflow:hidden;">
+          <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+            <span style="font-weight:700; font-size:0.95rem; color: var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</span>
+            ${item.qty ? `<span style="font-size:0.75rem; color:var(--text-muted); background:rgba(15,23,42,0.05); padding:1px 6px; border-radius:4px; font-weight:600; flex-shrink:0;">${item.qty}</span>` : ''}
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            ${targetBadge}
+            <span class="badge" style="font-size:0.6rem; padding:1px 4px; border:none; background:rgba(16, 185, 129, 0.08); color:var(--success); font-weight:700;">+${item.pts} pts</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
+        <button class="btn-buy-shop" style="display:flex; align-items:center; justify-content:center; background:var(--success); color:white; border:none; border-radius:8px; padding:6px; cursor:pointer; width:32px; height:32px; transition:var(--transition);" title="Marcar como comprado y ganar puntos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+        <button class="btn-del-shop" style="display:flex; align-items:center; justify-content:center; background:rgba(239, 68, 68, 0.1); color:var(--danger); border:none; border-radius:8px; padding:6px; cursor:pointer; width:32px; height:32px; transition:var(--transition);" title="Eliminar de la lista"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+    `;
+
+    // Bind check toggle
+    el.querySelector('.btn-buy-shop').onclick = (e) => {
+      e.stopPropagation();
+      const activeUser = state.store.config.users.find(u => u.id === state.localProfileId);
+      const buyerName = activeUser ? activeUser.name : 'Usuario';
+      
+      showConfirm(`¿Compraste "${item.name}"? Se te asignarán +${item.pts} pts.`, () => {
+        state.buyShoppingItem(index);
+        showToast(`🛒 ¡${buyerName} compró ${item.name}! +${item.pts} pts`);
+      });
+    };
+
+    // Bind delete item
+    el.querySelector('.btn-del-shop').onclick = (e) => {
+      e.stopPropagation();
+      showConfirm(`¿Eliminar "${item.name}" de la lista de compras?`, () => {
+        state.deleteShoppingItem(index);
+        showToast("Artículo eliminado de la lista");
+      });
+    };
+
+    // Bind image lightbox
+    if (item.image) {
+      el.querySelector('.shop-thumbnail').onclick = (e) => {
+        e.stopPropagation();
+        openLightbox(item.image, `${item.name} ${item.qty ? '(' + item.qty + ')' : ''}`);
+      };
+    }
+
+    list.appendChild(el);
+  });
+}
+
+export function openLightbox(src, caption) {
+  if (elements.lightboxImage) elements.lightboxImage.src = src;
+  if (elements.lightboxCaption) elements.lightboxCaption.innerText = caption;
+  openModal(elements.imageLightbox);
 }
 
 /* --- TEMPLATE FORM RESET --- */

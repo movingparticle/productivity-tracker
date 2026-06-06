@@ -96,7 +96,8 @@ function defaultStore() {
     todayLog: [],
     history: [],
     pendingList: [],
-    templates: []
+    templates: [],
+    shoppingList: []
   };
 }
 

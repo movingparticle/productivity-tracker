@@ -1671,3 +1671,71 @@ input:focus, select:focus {
   animation: branch-glow 3s infinite ease-in-out;
 }
 
+/* --- SHOPPING MODULE STYLES --- */
+.btn-buy-shop:hover {
+  filter: brightness(1.15);
+  transform: scale(1.08);
+}
+
+.btn-del-shop:hover {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: var(--danger) !important;
+  transform: scale(1.08);
+}
+
+#btnVoiceRecord {
+  transition: var(--transition);
+}
+
+#btnVoiceRecord:hover {
+  background: rgba(15, 23, 42, 0.08) !important;
+  color: var(--text-main) !important;
+  transform: scale(1.05);
+}
+
+#btnVoiceRecord:active {
+  transform: scale(0.95);
+}
+
+#btnUploadImageTrigger {
+  transition: var(--transition);
+}
+
+#btnUploadImageTrigger:hover {
+  filter: brightness(1.15);
+}
+
+#btnUploadImageTrigger:active {
+  transform: scale(0.95);
+}
+
+.shop-thumbnail {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  cursor: pointer;
+  border: 1px solid var(--card-border);
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.shop-thumbnail:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+#imageLightbox {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#imageLightbox.visible {
+  opacity: 1;
+}
+
+#btnCloseLightbox:hover {
+  color: var(--danger);
+  transform: scale(1.1);
+}
+

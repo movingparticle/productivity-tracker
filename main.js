@@ -321,6 +321,178 @@ function bindEvents() {
   if (ui.elements.btnOpenReport) {
     ui.elements.btnOpenReport.onclick = () => ui.showReport();
   }
+  
+  // --- SHOPPING LIST EVENT BINDINGS ---
+  let selectedImageBase64 = null;
+
+  if (ui.elements.btnOpenShopping) {
+    ui.elements.btnOpenShopping.onclick = () => {
+      selectedImageBase64 = null;
+      ui.openShoppingModal();
+    };
+  }
+  if (ui.elements.btnCloseShoppingModal) {
+    ui.elements.btnCloseShoppingModal.onclick = () => {
+      ui.closeModal(ui.elements.shoppingModal);
+    };
+  }
+  
+  if (ui.elements.btnUploadImageTrigger) {
+    ui.elements.btnUploadImageTrigger.onclick = (e) => {
+      e.preventDefault();
+      if (ui.elements.shopItemImage) ui.elements.shopItemImage.click();
+    };
+  }
+  
+  if (ui.elements.shopItemImage) {
+    ui.elements.shopItemImage.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      if (ui.elements.shopImageFileName) ui.elements.shopImageFileName.innerText = file.name;
+      
+      const reader = new FileReader();
+      reader.onload = (readerEvent) => {
+        const image = new Image();
+        image.onload = () => {
+          const canvas = document.createElement('canvas');
+          const max_size = 300;
+          let width = image.width;
+          let height = image.height;
+          
+          if (width > height) {
+            if (width > max_size) {
+              height *= max_size / width;
+              width = max_size;
+            }
+          } else {
+            if (height > max_size) {
+              width *= max_size / height;
+              height = max_size;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(image, 0, 0, width, height);
+          
+          selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          
+          if (ui.elements.shopImagePreview) ui.elements.shopImagePreview.src = selectedImageBase64;
+          if (ui.elements.shopImagePreviewContainer) ui.elements.shopImagePreviewContainer.style.display = 'block';
+          if (ui.elements.btnRemoveShopImage) ui.elements.btnRemoveShopImage.style.display = 'inline-block';
+        };
+        image.src = readerEvent.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+  
+  if (ui.elements.btnRemoveShopImage) {
+    ui.elements.btnRemoveShopImage.onclick = (e) => {
+      e.preventDefault();
+      selectedImageBase64 = null;
+      if (ui.elements.shopItemImage) ui.elements.shopItemImage.value = '';
+      if (ui.elements.shopImageFileName) ui.elements.shopImageFileName.innerText = 'Sin foto seleccionada';
+      if (ui.elements.btnRemoveShopImage) ui.elements.btnRemoveShopImage.style.display = 'none';
+      if (ui.elements.shopImagePreviewContainer) ui.elements.shopImagePreviewContainer.style.display = 'none';
+      if (ui.elements.shopImagePreview) ui.elements.shopImagePreview.src = '';
+    };
+  }
+  
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognition && ui.elements.btnVoiceRecord) {
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    
+    let isRecording = false;
+    
+    ui.elements.btnVoiceRecord.onclick = (e) => {
+      e.preventDefault();
+      if (!isRecording) {
+        try {
+          recognition.start();
+          isRecording = true;
+          ui.elements.btnVoiceRecord.style.background = 'rgba(239, 68, 68, 0.1)';
+          ui.elements.btnVoiceRecord.style.color = 'var(--danger)';
+          ui.elements.btnVoiceRecord.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+          ui.showToast("Escuchando... Habla ahora", "info");
+        } catch (err) {
+          console.error("Speech recognition error on start:", err);
+        }
+      } else {
+        recognition.stop();
+      }
+    };
+    
+    recognition.onresult = (event) => {
+      const text = event.results[0][0].transcript;
+      if (ui.elements.shopItemName) {
+        ui.elements.shopItemName.value = text;
+      }
+      ui.showToast("Texto reconocido: " + text);
+    };
+    
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error event:", event.error);
+      ui.showToast("Error de dictado: " + event.error, "error");
+      stopRecording();
+    };
+    
+    recognition.onend = () => {
+      stopRecording();
+    };
+    
+    function stopRecording() {
+      isRecording = false;
+      if (ui.elements.btnVoiceRecord) {
+        ui.elements.btnVoiceRecord.style.background = 'rgba(15, 23, 42, 0.03)';
+        ui.elements.btnVoiceRecord.style.color = 'var(--text-muted)';
+        ui.elements.btnVoiceRecord.style.borderColor = 'var(--card-border)';
+      }
+    }
+  } else if (ui.elements.btnVoiceRecord) {
+    ui.elements.btnVoiceRecord.style.display = 'none';
+  }
+  
+  if (ui.elements.btnSaveShopItem) {
+    ui.elements.btnSaveShopItem.onclick = () => {
+      const name = ui.elements.shopItemName.value.trim();
+      const qty = ui.elements.shopItemQty.value.trim();
+      const user = ui.elements.shopItemUser.value;
+      const pts = parseInt(ui.elements.shopItemPts.value) || 5;
+      
+      if (!name) {
+        ui.showToast("Escribe el nombre del artículo a comprar.", "warning");
+        return;
+      }
+      
+      state.saveShoppingItem(name, qty, user, pts, selectedImageBase64);
+      ui.showToast("Artículo añadido a la lista");
+      
+      ui.elements.shopItemName.value = '';
+      ui.elements.shopItemQty.value = '';
+      ui.elements.shopItemPts.value = '5';
+      selectedImageBase64 = null;
+      if (ui.elements.shopItemImage) ui.elements.shopItemImage.value = '';
+      if (ui.elements.shopImageFileName) ui.elements.shopImageFileName.innerText = 'Sin foto seleccionada';
+      if (ui.elements.btnRemoveShopImage) ui.elements.btnRemoveShopImage.style.display = 'none';
+      if (ui.elements.shopImagePreviewContainer) ui.elements.shopImagePreviewContainer.style.display = 'none';
+      if (ui.elements.shopImagePreview) ui.elements.shopImagePreview.src = '';
+      
+      ui.renderShoppingList();
+    };
+  }
+  
+  if (ui.elements.btnCloseLightbox) {
+    ui.elements.btnCloseLightbox.onclick = () => {
+      ui.closeModal(ui.elements.imageLightbox);
+    };
+  }
   if (ui.elements.btnCloseReport) {
     ui.elements.btnCloseReport.onclick = () => ui.closeReport();
   }

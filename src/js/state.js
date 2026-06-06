@@ -54,7 +54,7 @@ export function setRoomState(roomId, newState) {
     store = { ...store, ...newState };
     
     // Ensure all critical arrays exist
-    ['todayLog', 'history', 'pendingList', 'templates', 'roadmapHistory'].forEach(k => {
+    ['todayLog', 'history', 'pendingList', 'templates', 'roadmapHistory', 'shoppingList'].forEach(k => {
       if (!Array.isArray(store[k])) store[k] = [];
     });
     
@@ -479,6 +479,50 @@ export function unlockRoadmap() {
 export function setTreeDifficulty(level) {
   if (!store.config) store.config = {};
   store.config.treeDifficulty = level;
+  saveState();
+}
+
+/**
+ * Adds a new item to the shopping list
+ */
+export function saveShoppingItem(name, qty, assignedTo, pts, imageBase64) {
+  if (!store.shoppingList) store.shoppingList = [];
+  const ptsNum = Number(pts) || 5;
+  store.shoppingList.push({
+    id: 'shop_' + Date.now(),
+    name: name,
+    qty: qty || "",
+    assignedTo: assignedTo || "casa",
+    pts: ptsNum,
+    addedBy: localProfileId,
+    image: imageBase64 || null,
+    dateAdded: new Date().toISOString()
+  });
+  saveState();
+}
+
+/**
+ * Deletes a shopping item
+ */
+export function deleteShoppingItem(index) {
+  if (!store.shoppingList) return;
+  store.shoppingList.splice(index, 1);
+  saveState();
+}
+
+/**
+ * Marks shopping item as bought: logs activity to buyer and removes item
+ */
+export function buyShoppingItem(index) {
+  if (!store.shoppingList || !store.shoppingList[index]) return;
+  const item = store.shoppingList[index];
+  
+  // Award points to the current active profile
+  addLogEntry(`Compró: ${item.name}${item.qty ? ' (' + item.qty + ')' : ''}`, item.pts);
+  
+  // Remove item from shopping list
+  store.shoppingList.splice(index, 1);
+  
   saveState();
 }
 
