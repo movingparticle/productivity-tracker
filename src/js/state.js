@@ -375,15 +375,46 @@ export function setCurrentRoomId(id) {
 }
 
 /**
- * Saves or updates the current profile's daily roadmap
+ * Add an item to the current profile's daily roadmap
  */
-export function saveRoadmap(goalText, endText, status) {
+export function addRoadmapItem(text, type, pts = 0) {
   if (!localProfileId) return;
   if (!store.roadmaps) store.roadmaps = {};
-  store.roadmaps[localProfileId] = {
-    goal: goalText,
-    end: endText,
-    status: status || 'todo'
-  };
+  if (!store.roadmaps[localProfileId]) {
+    store.roadmaps[localProfileId] = { items: [] };
+  }
+  if (!Array.isArray(store.roadmaps[localProfileId].items)) {
+    store.roadmaps[localProfileId].items = [];
+  }
+  store.roadmaps[localProfileId].items.push({
+    id: 'r_' + Date.now(),
+    text,
+    type,
+    pts: Number(pts),
+    completed: false
+  });
+  saveState();
+}
+
+/**
+ * Toggle completion of a roadmap item
+ */
+export function toggleRoadmapItem(itemId) {
+  if (!localProfileId || !store.roadmaps || !store.roadmaps[localProfileId]) return;
+  const items = store.roadmaps[localProfileId].items || [];
+  const item = items.find(x => x.id === itemId);
+  if (item) {
+    item.completed = !item.completed;
+    saveState();
+  }
+}
+
+/**
+ * Delete a roadmap item
+ */
+export function deleteRoadmapItem(itemId) {
+  if (!localProfileId || !store.roadmaps || !store.roadmaps[localProfileId]) return;
+  const items = store.roadmaps[localProfileId].items || [];
+  store.roadmaps[localProfileId].items = items.filter(x => x.id !== itemId);
   saveState();
 }

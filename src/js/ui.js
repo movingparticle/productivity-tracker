@@ -64,17 +64,15 @@ export function initDomElements() {
     
     // Roadmap elements
     roadmapContainer: document.getElementById('roadmapContainer'),
-    btnEditRoadmap: document.getElementById('btnEditRoadmap'),
-    roadmapView: document.getElementById('roadmapView'),
-    roadmapGoalText: document.getElementById('roadmapGoalText'),
-    roadmapEndText: document.getElementById('roadmapEndText'),
-    roadmapStatusBadge: document.getElementById('roadmapStatusBadge'),
-    roadmapForm: document.getElementById('roadmapForm'),
-    inputRoadmapGoal: document.getElementById('inputRoadmapGoal'),
-    inputRoadmapEnd: document.getElementById('inputRoadmapEnd'),
-    selectRoadmapStatus: document.getElementById('selectRoadmapStatus'),
-    btnCancelRoadmap: document.getElementById('btnCancelRoadmap'),
-    btnSaveRoadmap: document.getElementById('btnSaveRoadmap'),
+    roadmapProfileSwitcher: document.getElementById('roadmapProfileSwitcher'),
+    roadmapUserTitle: document.getElementById('roadmapUserTitle'),
+    roadmapItemsList: document.getElementById('roadmapItemsList'),
+    selectRoadmapPending: document.getElementById('selectRoadmapPending'),
+    selectRoadmapRoutine: document.getElementById('selectRoadmapRoutine'),
+    inputRoadmapCustom: document.getElementById('inputRoadmapCustom'),
+    btnAddPendingToRoadmap: document.getElementById('btnAddPendingToRoadmap'),
+    btnAddRoutineToRoadmap: document.getElementById('btnAddRoutineToRoadmap'),
+    btnAddCustomToRoadmap: document.getElementById('btnAddCustomToRoadmap'),
     
     bonusAlert: document.getElementById('bonusAlert'),
     pendingInput: document.getElementById('pendingInput'),
@@ -974,84 +972,152 @@ export function closeModal(modalEl) {
 }
 
 /**
- * Render the current profile's daily roadmap
+ * Render the current profile's daily roadmap (Lego planner style)
  */
 export function renderRoadmap() {
   const activeUser = state.store.config.users.find(u => u.id === state.localProfileId) || state.store.config.users[0];
   if (!activeUser) return;
 
-  const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
-  
+  // 1. Render Profile Switcher for Roadmap Screen
+  const switcher = elements.roadmapProfileSwitcher;
+  if (switcher) {
+    switcher.innerHTML = '';
+    state.store.config.users.forEach(u => {
+      const btn = document.createElement('button');
+      btn.className = `profile-btn ${state.localProfileId === u.id ? 'active' : ''}`;
+      btn.innerText = u.name;
+      
+      if (state.localProfileId === u.id) {
+        btn.style.color = u.color;
+        btn.style.borderBottom = `2px solid ${u.color}`;
+      }
+      btn.onclick = () => {
+        state.changeProfile(u.id);
+      };
+      switcher.appendChild(btn);
+    });
+  }
+
+  // 2. Set border color of the card
   if (elements.roadmapContainer) {
     elements.roadmapContainer.style.borderLeftColor = activeUser.color;
   }
+  
+  if (elements.roadmapUserTitle) {
+    elements.roadmapUserTitle.innerText = `Plan de Hoy · ${activeUser.name}`;
+    elements.roadmapUserTitle.style.color = activeUser.color;
+  }
 
-  if (plan && (plan.goal || plan.end)) {
-    if (elements.roadmapGoalText) {
-      elements.roadmapGoalText.innerText = plan.goal || "Sin plan establecido.";
-      elements.roadmapGoalText.classList.remove('empty');
-    }
-    if (elements.roadmapEndText) {
-      elements.roadmapEndText.innerText = plan.end || "Sin plan establecido.";
-      elements.roadmapEndText.classList.remove('empty');
-    }
-    if (elements.roadmapStatusBadge) {
-      let statusText = "Sin iniciar";
-      let statusClass = "status-todo";
-      
-      switch(plan.status) {
-        case 'doing':
-          statusText = "En progreso";
-          statusClass = "status-doing";
-          break;
-        case 'done':
-          statusText = "¡Cumplido!";
-          statusClass = "status-done";
-          break;
-        case 'partial':
-          statusText = "Parcialmente cumplido";
-          statusClass = "status-partial";
-          break;
-      }
-      
-      elements.roadmapStatusBadge.innerText = statusText;
-      elements.roadmapStatusBadge.className = `roadmap-badge ${statusClass}`;
-    }
-  } else {
-    if (elements.roadmapGoalText) {
-      elements.roadmapGoalText.innerText = "Sin plan establecido para hoy.";
-      elements.roadmapGoalText.classList.add('empty');
-    }
-    if (elements.roadmapEndText) {
-      elements.roadmapEndText.innerText = "Sin plan establecido para hoy.";
-      elements.roadmapEndText.classList.add('empty');
-    }
-    if (elements.roadmapStatusBadge) {
-      elements.roadmapStatusBadge.innerText = "Sin iniciar";
-      elements.roadmapStatusBadge.className = "roadmap-badge status-todo";
+  // 3. Populate Pending drop-down (only show tasks from pending list)
+  const pendingSelect = elements.selectRoadmapPending;
+  if (pendingSelect) {
+    const currentVal = pendingSelect.value;
+    pendingSelect.innerHTML = '<option value="">-- Seleccionar Tarea --</option>';
+    state.store.pendingList.forEach((t, index) => {
+      const opt = document.createElement('option');
+      opt.value = index;
+      opt.innerText = `📌 ${t.name} (${t.pts} pts)`;
+      pendingSelect.appendChild(opt);
+    });
+    // Restore value if still exists
+    if (state.store.pendingList[currentVal]) {
+      pendingSelect.value = currentVal;
     }
   }
-}
 
-/**
- * Toggle roadmap edit mode inline
- */
-export function toggleRoadmapForm(show) {
-  if (show) {
-    if (elements.roadmapForm) elements.roadmapForm.classList.remove('hidden');
-    if (elements.roadmapView) elements.roadmapView.classList.add('hidden');
-    
-    // Populate form inputs
-    const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
-    if (elements.inputRoadmapGoal) elements.inputRoadmapGoal.value = plan ? plan.goal || '' : '';
-    if (elements.inputRoadmapEnd) elements.inputRoadmapEnd.value = plan ? plan.end || '' : '';
-    if (elements.selectRoadmapStatus) elements.selectRoadmapStatus.value = plan ? plan.status || 'todo' : 'todo';
-    
-    if (elements.inputRoadmapGoal) elements.inputRoadmapGoal.focus();
-  } else {
-    if (elements.roadmapForm) elements.roadmapForm.classList.add('hidden');
-    if (elements.roadmapView) elements.roadmapView.classList.remove('hidden');
+  // 4. Populate Routine drop-down
+  const routineSelect = elements.selectRoadmapRoutine;
+  if (routineSelect) {
+    const currentVal = routineSelect.value;
+    routineSelect.innerHTML = '<option value="">-- Seleccionar Rutina --</option>';
+    state.store.templates.forEach((t, index) => {
+      const opt = document.createElement('option');
+      opt.value = index;
+      opt.innerText = `🔄 ${t.name} (+${t.pts} pts)`;
+      routineSelect.appendChild(opt);
+    });
+    if (state.store.templates[currentVal]) {
+      routineSelect.value = currentVal;
+    }
   }
+
+  // 5. Render Plan Items list
+  const list = elements.roadmapItemsList;
+  if (!list) return;
+  list.innerHTML = '';
+
+  const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
+  const items = plan && Array.isArray(plan.items) ? plan.items : [];
+
+  if (items.length === 0) {
+    list.innerHTML = `<p class="roadmap-text empty" style="padding: 15px 5px; text-align: center;">No hay bloques en el plan de hoy. ¡Construye uno abajo!</p>`;
+    return;
+  }
+
+  items.forEach(item => {
+    const el = document.createElement('div');
+    
+    // Determine badge and colors based on block type
+    let badgeText = "Personal";
+    let badgeStyle = "background: rgba(100, 116, 139, 0.1); color: var(--text-muted);";
+    let pointsHtml = "";
+
+    if (item.type === 'pending') {
+      badgeText = "Pendiente";
+      badgeStyle = "background: rgba(59, 130, 246, 0.1); color: #2563eb;";
+      if (item.pts) pointsHtml = `<span class="badge" style="padding: 1px 5px; font-size: 0.6rem; margin-left: 6px;">${item.pts} pts</span>`;
+    } else if (item.type === 'routine') {
+      badgeText = "Rutina";
+      badgeStyle = "background: rgba(16, 185, 129, 0.1); color: #059669;";
+      if (item.pts) pointsHtml = `<span class="badge" style="padding: 1px 5px; font-size: 0.6rem; margin-left: 6px;">+${item.pts} pts</span>`;
+    }
+
+    el.className = `roadmap-item-row`;
+    el.style.padding = '10px 12px';
+    el.style.background = 'rgba(15, 23, 42, 0.02)';
+    el.style.border = '1px solid var(--card-border)';
+    el.style.borderRadius = 'var(--radius-md)';
+    el.style.display = 'flex';
+    el.style.justifyContent = 'space-between';
+    el.style.alignItems = 'center';
+    el.style.transition = 'var(--transition)';
+
+    if (item.completed) {
+      el.style.opacity = '0.6';
+    }
+
+    el.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 10px; overflow: hidden; flex: 1;">
+        <button class="btn-check-roadmap" style="display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0; background: ${item.completed ? 'var(--success)' : 'none'}; border: 1.5px solid ${item.completed ? 'var(--success)' : 'var(--text-muted)'}; color: ${item.completed ? 'white' : 'var(--text-muted)'}; cursor: pointer; transition: var(--transition);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display: ${item.completed ? 'block' : 'none'}"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </button>
+        <div style="display: flex; flex-direction: column; overflow: hidden;">
+          <span style="font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); ${item.completed ? 'text-decoration: line-through;' : ''}">${item.text}</span>
+          <div style="display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+            <span class="roadmap-badge" style="${badgeStyle} padding: 1px 6px; font-size: 0.6rem; font-weight: 800;">${badgeText}</span>
+            ${pointsHtml}
+          </div>
+        </div>
+      </div>
+      <button class="btn-del-roadmap" style="display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: pointer; border: none; background: none; color: var(--danger); padding: 4px; transition: var(--transition);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    `;
+
+    // Bind check toggle
+    el.querySelector('.btn-check-roadmap').onclick = (e) => {
+      e.stopPropagation();
+      state.toggleRoadmapItem(item.id);
+      showToast(item.completed ? "Bloque pendiente" : "¡Bloque completado!");
+    };
+
+    // Bind delete item
+    el.querySelector('.btn-del-roadmap').onclick = (e) => {
+      e.stopPropagation();
+      state.deleteRoadmapItem(item.id);
+      showToast("Bloque quitado del plan");
+    };
+
+    list.appendChild(el);
+  });
 }
 
 export { elements };

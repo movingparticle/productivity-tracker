@@ -554,22 +554,52 @@ function bindEvents() {
     };
   }
 
-  // Roadmap Edit, Cancel, Save
-  if (ui.elements.btnEditRoadmap) {
-    ui.elements.btnEditRoadmap.onclick = () => ui.toggleRoadmapForm(true);
+  // Roadmap Lego Builder actions (Add Pending, Add Routine, Add Custom)
+  if (ui.elements.btnAddPendingToRoadmap) {
+    ui.elements.btnAddPendingToRoadmap.onclick = () => {
+      const select = ui.elements.selectRoadmapPending;
+      const val = select.value;
+      if (val === "") {
+        ui.showToast("Selecciona una tarea pendiente.", "warning");
+        return;
+      }
+      const task = state.store.pendingList[parseInt(val)];
+      if (task) {
+        state.addRoadmapItem(task.name, 'pending', task.pts);
+        ui.showToast("Tarea añadida al plan");
+        select.value = "";
+      }
+    };
   }
-  if (ui.elements.btnCancelRoadmap) {
-    ui.elements.btnCancelRoadmap.onclick = () => ui.toggleRoadmapForm(false);
+
+  if (ui.elements.btnAddRoutineToRoadmap) {
+    ui.elements.btnAddRoutineToRoadmap.onclick = () => {
+      const select = ui.elements.selectRoadmapRoutine;
+      const val = select.value;
+      if (val === "") {
+        ui.showToast("Selecciona una rutina.", "warning");
+        return;
+      }
+      const routine = state.store.templates[parseInt(val)];
+      if (routine) {
+        state.addRoadmapItem(routine.name, 'routine', routine.pts);
+        ui.showToast("Rutina añadida al plan");
+        select.value = "";
+      }
+    };
   }
-  if (ui.elements.btnSaveRoadmap) {
-    ui.elements.btnSaveRoadmap.onclick = () => {
-      const goal = ui.elements.inputRoadmapGoal.value.trim();
-      const end = ui.elements.inputRoadmapEnd.value.trim();
-      const status = ui.elements.selectRoadmapStatus.value;
-      
-      state.saveRoadmap(goal, end, status);
-      ui.toggleRoadmapForm(false);
-      ui.showToast("Plan diario guardado");
+
+  if (ui.elements.btnAddCustomToRoadmap) {
+    ui.elements.btnAddCustomToRoadmap.onclick = () => {
+      const input = ui.elements.inputRoadmapCustom;
+      const val = input.value.trim();
+      if (!val) {
+        ui.showToast("Escribe una actividad personal.", "warning");
+        return;
+      }
+      state.addRoadmapItem(val, 'personal', 0);
+      ui.showToast("Actividad personal añadida");
+      input.value = "";
     };
   }
 }
