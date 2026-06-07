@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, update, onValue, get, push, child } from "firebase/database";
+import { getDatabase, ref, set, update, onValue, get, push, child, runTransaction } from "firebase/database";
+import { isValidAccessCode, normalizeCode } from "./accessCodes";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -33,8 +34,29 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 // Product limits
-export const MAX_ROOMS_PER_OWNER = 2;
+//
+// Room creation is gated by the user's "tier":
+//   - free  -> can only JOIN rooms they are invited to (0 own rooms)
+//   - pro   -> can create up to MAX_ROOMS_PRO rooms (unlocked by a trial code
+//              or, in the future, a paid subscription)
+// Owner accounts (the app admin) can create many rooms to hand out to friends.
+export const MAX_ROOMS_FREE = 0;
+export const MAX_ROOMS_PRO = 2;
+export const MAX_ROOMS_OWNER = 50;
 export const MAX_MEMBERS_PER_ROOM = 5;
+
+// Kept for backwards compatibility with older imports.
+export const MAX_ROOMS_PER_OWNER = MAX_ROOMS_PRO;
+
+// Admin account(s): always treated as Pro so they can create/distribute rooms.
+export const OWNER_EMAILS = ['anfarmac@gmail.com'];
+
+/**
+ * Is this email one of the app admins?
+ */
+export function isOwnerEmail(email) {
+  return OWNER_EMAILS.includes((email || '').trim().toLowerCase());
+}
 
 let currentOnValueUnsubscribe = null;
 
@@ -143,6 +165,96 @@ export async function countOwnedRooms(uid) {
   return Object.values(entries).filter(r => r && r.role === 'owner').length;
 }
 
+/* ------------------------------------------------------------------ */
+/* TIER (free / pro) & TRIAL CODES                                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Read a user's tier ('free' by default).
+ */
+export async function getUserTier(uid) {
+  try {
+    const snap = await get(ref(db, `users/${uid}/tier`));
+    return snap.exists() ? snap.val() : 'free';
+  } catch (e) {
+    return 'free';
+  }
+}
+
+/**
+ * Is the user "Pro" (paid / redeemed a trial code / app admin)?
+ */
+export async function isProUser(user) {
+  if (!user) return false;
+  if (isOwnerEmail(user.email)) return true;
+  const tier = await getUserTier(user.uid);
+  return tier === 'pro';
+}
+
+/**
+ * How many rooms is this user allowed to OWN.
+ */
+export async function getRoomAllowance(user) {
+  if (!user) return MAX_ROOMS_FREE;
+  if (isOwnerEmail(user.email)) return MAX_ROOMS_OWNER;
+  const tier = await getUserTier(user.uid);
+  return tier === 'pro' ? MAX_ROOMS_PRO : MAX_ROOMS_FREE;
+}
+
+/**
+ * Redeem a trial access code: marks it as used (single-use) and upgrades the
+ * user to Pro. The code must be one of the codes configured in /access-codes.
+ *
+ * Throws:
+ *   err.code === 'code/invalid' -> not a real code
+ *   err.code === 'code/used'    -> already redeemed by someone else
+ */
+export async function redeemAccessCode(rawCode, user) {
+  if (!user) throw new Error('No autenticado');
+  const code = normalizeCode(rawCode);
+
+  if (!isValidAccessCode(code)) {
+    const err = new Error('invalid-code');
+    err.code = 'code/invalid';
+    throw err;
+  }
+
+  // Claim the code atomically: the first person to redeem it wins.
+  const codeRef = ref(db, `accessCodes/${code}`);
+  let result;
+  try {
+    result = await runTransaction(codeRef, (curr) => {
+      if (curr && curr.redeemedBy && curr.redeemedBy !== user.uid) {
+        return; // abort: already used by someone else
+      }
+      return {
+        redeemedBy: user.uid,
+        email: user.email || '',
+        redeemedAt: Date.now()
+      };
+    });
+  } catch (e) {
+    const err = new Error('claim-failed');
+    err.code = 'code/used';
+    throw err;
+  }
+
+  if (!result.committed) {
+    const err = new Error('already-used');
+    err.code = 'code/used';
+    throw err;
+  }
+
+  // Upgrade the user to Pro.
+  await update(ref(db, `users/${user.uid}`), {
+    tier: 'pro',
+    proSince: Date.now(),
+    proVia: 'code'
+  });
+
+  return true;
+}
+
 /**
  * Create a brand new room owned by the given user.
  * Enforces the per-owner room limit.
@@ -151,10 +263,13 @@ export async function countOwnedRooms(uid) {
 export async function createRoom(user, name) {
   const cleanName = (name || '').trim() || 'Mi Sala';
 
+  const allowance = await getRoomAllowance(user);
   const owned = await countOwnedRooms(user.uid);
-  if (owned >= MAX_ROOMS_PER_OWNER) {
+  if (owned >= allowance) {
     const err = new Error('room-limit');
-    err.code = 'limit/rooms';
+    // allowance 0 means the user needs Pro (a code or subscription) to create
+    // any room at all; otherwise they simply hit their cap.
+    err.code = allowance === 0 ? 'limit/needPro' : 'limit/rooms';
     throw err;
   }
 

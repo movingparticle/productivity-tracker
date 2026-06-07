@@ -16,9 +16,13 @@ import {
   removeMember,
   deleteRoom,
   renameRoom,
-  MAX_ROOMS_PER_OWNER,
+  redeemAccessCode,
+  isProUser,
+  getRoomAllowance,
+  MAX_ROOMS_PRO,
   MAX_MEMBERS_PER_ROOM
 } from "./src/js/firebase";
+import { askAssistant, fixShoppingListWithAI } from "./src/js/agent";
 
 // Ensures the session only starts once per authenticated session
 let appStarted = false;
@@ -98,6 +102,7 @@ async function connectToRoom(roomId) {
   currentIsOwner = !!(meta && user && meta.ownerUid === user.uid);
 
   const roomName = meta ? meta.name : 'Sala';
+  state.setCurrentRoomName(roomName);
   if (ui.elements.codeDisplay) ui.elements.codeDisplay.innerText = roomName;
   if (ui.elements.roomTitleDisplay) ui.elements.roomTitleDisplay.innerText = roomName;
 
@@ -135,10 +140,24 @@ async function refreshRoomsList() {
   try {
     const rooms = await getUserRooms(user.uid);
     ui.renderRoomsList(rooms, (roomId) => connectToRoom(roomId));
+
     const owned = rooms.filter(r => r.role === 'owner').length;
+    const [allowance, pro] = await Promise.all([
+      getRoomAllowance(user),
+      isProUser(user)
+    ]);
+
+    // Pro users don't need the redeem-code box anymore.
+    ui.setRedeemVisible(!pro);
+
     if (ui.elements.createRoomHint) {
-      ui.elements.createRoomHint.innerText =
-        `Tienes ${owned}/${MAX_ROOMS_PER_OWNER} salas propias. Cada sala admite hasta ${MAX_MEMBERS_PER_ROOM} miembros.`;
+      if (allowance <= 0) {
+        ui.elements.createRoomHint.innerText =
+          'Para crear tu propia sala necesitas un código de acceso o una suscripción. Mientras tanto, puedes unirte a salas con un código de invitación.';
+      } else {
+        ui.elements.createRoomHint.innerText =
+          `Tienes ${owned}/${allowance} salas propias. Cada sala admite hasta ${MAX_MEMBERS_PER_ROOM} miembros.`;
+      }
     }
   } catch (e) {
     console.error(e);
@@ -161,14 +180,49 @@ async function handleCreateRoom() {
     await connectToRoom(roomId);
     ui.showToast(`Sala "${name}" creada`);
   } catch (e) {
-    if (e.code === 'limit/rooms') {
-      ui.showRoomsError(`Solo puedes crear ${MAX_ROOMS_PER_OWNER} salas. Elimina una para crear otra.`);
+    if (e.code === 'limit/needPro') {
+      ui.showRoomsError("Necesitas un código de acceso o una suscripción para crear salas. Usa el campo \"Tengo un código de acceso\".");
+    } else if (e.code === 'limit/rooms') {
+      ui.showRoomsError(`Llegaste a tu límite de ${MAX_ROOMS_PRO} salas. Elimina una para crear otra.`);
     } else {
       console.error(e);
       ui.showRoomsError("No se pudo crear la sala. Revisa las reglas de Firebase.");
     }
   } finally {
     ui.elements.btnCreateRoom.disabled = false;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* ACCESS CODE REDEMPTION (free trial -> Pro)                         */
+/* ------------------------------------------------------------------ */
+
+async function handleRedeemCode() {
+  const user = getCurrentUser();
+  const input = ui.elements.redeemCodeInput;
+  const code = input ? input.value.trim() : '';
+  if (!code) {
+    ui.showRoomsError("Escribe tu código de acceso.");
+    return;
+  }
+  ui.clearRoomsError();
+  if (ui.elements.btnRedeemCode) ui.elements.btnRedeemCode.disabled = true;
+  try {
+    await redeemAccessCode(code, user);
+    if (input) input.value = '';
+    ui.showToast("🎉 ¡Código activado! Ya puedes crear salas y usar el asistente.");
+    await refreshRoomsList();
+  } catch (e) {
+    if (e.code === 'code/invalid') {
+      ui.showRoomsError("Código inválido. Revisa que esté bien escrito.");
+    } else if (e.code === 'code/used') {
+      ui.showRoomsError("Ese código ya fue usado por otra persona.");
+    } else {
+      console.error(e);
+      ui.showRoomsError("No se pudo activar el código. Intenta de nuevo.");
+    }
+  } finally {
+    if (ui.elements.btnRedeemCode) ui.elements.btnRedeemCode.disabled = false;
   }
 }
 
@@ -240,6 +294,87 @@ function backToRooms() {
 }
 
 /* ------------------------------------------------------------------ */
+/* QUICK ROOM SWITCHER                                                 */
+/* ------------------------------------------------------------------ */
+
+async function openRoomSwitcher() {
+  const user = getCurrentUser();
+  if (!user) return;
+  ui.openModal(ui.elements.roomSwitcherModal);
+  try {
+    const rooms = await getUserRooms(user.uid);
+    ui.renderRoomSwitcher(rooms, state.currentRoomId, (roomId) => switchRoom(roomId));
+  } catch (e) {
+    console.error(e);
+    ui.showToast("No se pudieron cargar tus salas.", "error");
+  }
+}
+
+// Switch to another room in place (no full page reload).
+async function switchRoom(roomId) {
+  if (!roomId || roomId === state.currentRoomId) {
+    ui.closeModal(ui.elements.roomSwitcherModal);
+    return;
+  }
+  ui.closeModal(ui.elements.roomSwitcherModal);
+  disconnectRoomDb();
+  if (currentMembersUnsub) currentMembersUnsub();
+  await connectToRoom(roomId);
+  // Reset to the main tab for the new room.
+  const trackerBtn = document.getElementById('navTrackerBtn');
+  if (trackerBtn) ui.navTo('tracker', trackerBtn);
+  ui.showToast("Sala cambiada");
+}
+
+/* ------------------------------------------------------------------ */
+/* AI ASSISTANT                                                        */
+/* ------------------------------------------------------------------ */
+
+let agentBusy = false;
+
+function openAssistant() {
+  ui.openModal(ui.elements.agentModal);
+  setTimeout(() => {
+    if (ui.elements.agentInput) ui.elements.agentInput.focus();
+  }, 200);
+}
+
+async function sendAgentMessage(text) {
+  const prompt = (text || (ui.elements.agentInput ? ui.elements.agentInput.value : '')).trim();
+  if (!prompt || agentBusy) return;
+
+  agentBusy = true;
+  if (ui.elements.agentInput) ui.elements.agentInput.value = '';
+  ui.appendAgentMessage(prompt, 'user');
+
+  const thinking = ui.appendAgentMessage('Pensando…', 'bot');
+  if (thinking) thinking.classList.add('agent-thinking');
+
+  try {
+    const reply = await askAssistant(prompt);
+    if (thinking) {
+      thinking.classList.remove('agent-thinking');
+      thinking.innerText = reply || 'No tengo una respuesta para eso.';
+    }
+  } catch (e) {
+    let msg = "No pude contactar al asistente. Revisa la configuración del agente.";
+    if (e.code === 'limit') {
+      msg = e.message || "Llegaste a tu límite diario gratis del asistente. Vuelve mañana.";
+    } else if (e.message) {
+      msg = e.message;
+    }
+    if (thinking) {
+      thinking.classList.remove('agent-thinking');
+      thinking.classList.add('agent-msg-error');
+      thinking.innerText = msg;
+    }
+  } finally {
+    agentBusy = false;
+    ui.scrollAgentToBottom();
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* AUTH                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -299,6 +434,26 @@ function bindRoomsEvents() {
   if (ui.elements.joinCodeInput) {
     ui.elements.joinCodeInput.onkeyup = (e) => { if (e.key === 'Enter') handleJoinRoom(); };
   }
+  if (ui.elements.btnRedeemCode) {
+    ui.elements.btnRedeemCode.onclick = handleRedeemCode;
+  }
+  if (ui.elements.redeemCodeInput) {
+    ui.elements.redeemCodeInput.onkeyup = (e) => { if (e.key === 'Enter') handleRedeemCode(); };
+  }
+}
+
+/**
+ * Split a free-form block of text into shopping items.
+ * Items are separated by new lines or commas. Each becomes { name, qty:'' }.
+ */
+function parseBulkLines(raw) {
+  return String(raw || '')
+    .split(/[\n,]+/)
+    .map(s => s.trim())
+    // Drop leading bullets/numbers like "1.", "- ", "• "
+    .map(s => s.replace(/^[-*•\d.\)\s]+/, '').trim())
+    .filter(Boolean)
+    .map(name => ({ name, qty: '' }));
 }
 
 // Event Bindings (in-app)
@@ -322,7 +477,40 @@ function bindEvents() {
   if (ui.elements.btnOpenReport) {
     ui.elements.btnOpenReport.onclick = () => ui.showReport();
   }
-  
+
+  // --- QUICK ROOM SWITCHER ---
+  if (ui.elements.btnRoomSwitcher) {
+    ui.elements.btnRoomSwitcher.onclick = () => openRoomSwitcher();
+  }
+  if (ui.elements.btnCloseRoomSwitcher) {
+    ui.elements.btnCloseRoomSwitcher.onclick = () => ui.closeModal(ui.elements.roomSwitcherModal);
+  }
+  if (ui.elements.btnGoToRooms) {
+    ui.elements.btnGoToRooms.onclick = () => {
+      ui.closeModal(ui.elements.roomSwitcherModal);
+      ui.showConfirm("¿Ir a tus salas (crear o unirte)?", () => backToRooms());
+    };
+  }
+
+  // --- AI ASSISTANT ---
+  if (ui.elements.btnOpenAssistant) {
+    ui.elements.btnOpenAssistant.onclick = () => openAssistant();
+  }
+  if (ui.elements.btnCloseAgent) {
+    ui.elements.btnCloseAgent.onclick = () => ui.closeModal(ui.elements.agentModal);
+  }
+  if (ui.elements.btnSendAgent) {
+    ui.elements.btnSendAgent.onclick = () => sendAgentMessage();
+  }
+  if (ui.elements.agentInput) {
+    ui.elements.agentInput.onkeyup = (e) => { if (e.key === 'Enter') sendAgentMessage(); };
+  }
+  if (ui.elements.agentSuggestions) {
+    ui.elements.agentSuggestions.querySelectorAll('.agent-chip').forEach(chip => {
+      chip.onclick = () => sendAgentMessage(chip.getAttribute('data-q'));
+    });
+  }
+
   // --- SHOPPING LIST EVENT BINDINGS ---
   let selectedImageBase64 = null;
 
@@ -398,92 +586,96 @@ function bindEvents() {
     };
   }
   
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (SpeechRecognition && ui.elements.btnVoiceRecord) {
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'es-ES';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    
-    let isRecording = false;
-    
-    ui.elements.btnVoiceRecord.onclick = (e) => {
-      e.preventDefault();
-      if (!isRecording) {
-        try {
-          recognition.start();
-          isRecording = true;
-          ui.elements.btnVoiceRecord.style.background = 'rgba(239, 68, 68, 0.1)';
-          ui.elements.btnVoiceRecord.style.color = 'var(--danger)';
-          ui.elements.btnVoiceRecord.style.borderColor = 'rgba(239, 68, 68, 0.25)';
-          ui.showToast("Escuchando... Habla ahora", "info");
-        } catch (err) {
-          console.error("Speech recognition error on start:", err);
-        }
-      } else {
-        recognition.stop();
-      }
-    };
-    
-    recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript;
-      if (ui.elements.shopItemName) {
-        ui.elements.shopItemName.value = text;
-      }
-      ui.showToast("Texto reconocido: " + text);
-    };
-    
-    recognition.onerror = (event) => {
-      console.error("Speech recognition error event:", event.error);
-      ui.showToast("Error de dictado: " + event.error, "error");
-      stopRecording();
-    };
-    
-    recognition.onend = () => {
-      stopRecording();
-    };
-    
-    function stopRecording() {
-      isRecording = false;
-      if (ui.elements.btnVoiceRecord) {
-        ui.elements.btnVoiceRecord.style.background = 'rgba(15, 23, 42, 0.03)';
-        ui.elements.btnVoiceRecord.style.color = 'var(--text-muted)';
-        ui.elements.btnVoiceRecord.style.borderColor = 'var(--card-border)';
-      }
-    }
-  } else if (ui.elements.btnVoiceRecord) {
-    ui.elements.btnVoiceRecord.style.display = 'none';
-  }
-  
+  const resetShopForm = () => {
+    if (ui.elements.shopItemName) ui.elements.shopItemName.value = '';
+    if (ui.elements.shopItemQty) ui.elements.shopItemQty.value = '';
+    selectedImageBase64 = null;
+    if (ui.elements.shopItemImage) ui.elements.shopItemImage.value = '';
+    if (ui.elements.shopImageFileName) ui.elements.shopImageFileName.innerText = 'Sin foto seleccionada';
+    if (ui.elements.btnRemoveShopImage) ui.elements.btnRemoveShopImage.style.display = 'none';
+    if (ui.elements.shopImagePreviewContainer) ui.elements.shopImagePreviewContainer.style.display = 'none';
+    if (ui.elements.shopImagePreview) ui.elements.shopImagePreview.src = '';
+  };
+
   if (ui.elements.btnSaveShopItem) {
     ui.elements.btnSaveShopItem.onclick = () => {
       const name = ui.elements.shopItemName.value.trim();
       const qty = ui.elements.shopItemQty.value.trim();
-      const user = ui.elements.shopItemUser.value;
-      const pts = parseInt(ui.elements.shopItemPts.value) || 5;
-      
-      if (!name) {
-        ui.showToast("Escribe el nombre del artículo a comprar.", "warning");
+      const target = ui.elements.shopItemUser.value;
+
+      // A photo on its own is enough (no name required).
+      if (!name && !selectedImageBase64) {
+        ui.showToast("Escribe el artículo o sube una foto.", "warning");
         return;
       }
-      
-      state.saveShoppingItem(name, qty, user, pts, selectedImageBase64);
+
+      state.saveShoppingItem(name, qty, target, selectedImageBase64);
       ui.showToast("Artículo añadido a la lista");
-      
-      ui.elements.shopItemName.value = '';
-      ui.elements.shopItemQty.value = '';
-      ui.elements.shopItemPts.value = '5';
-      selectedImageBase64 = null;
-      if (ui.elements.shopItemImage) ui.elements.shopItemImage.value = '';
-      if (ui.elements.shopImageFileName) ui.elements.shopImageFileName.innerText = 'Sin foto seleccionada';
-      if (ui.elements.btnRemoveShopImage) ui.elements.btnRemoveShopImage.style.display = 'none';
-      if (ui.elements.shopImagePreviewContainer) ui.elements.shopImagePreviewContainer.style.display = 'none';
-      if (ui.elements.shopImagePreview) ui.elements.shopImagePreview.src = '';
-      
+      resetShopForm();
       ui.toggleShoppingTab('list');
     };
   }
-  
+
+  // Bulk: add the whole pasted/typed list as-is (one item per line/comma).
+  if (ui.elements.btnAddBulkList) {
+    ui.elements.btnAddBulkList.onclick = () => {
+      const raw = ui.elements.shopBulkInput ? ui.elements.shopBulkInput.value : '';
+      const target = ui.elements.shopItemUser ? ui.elements.shopItemUser.value : 'casa';
+      const items = parseBulkLines(raw);
+      if (items.length === 0) {
+        ui.showToast("Escribe al menos un artículo.", "warning");
+        return;
+      }
+      const count = state.saveShoppingItemsBulk(items, target);
+      if (ui.elements.shopBulkInput) ui.elements.shopBulkInput.value = '';
+      ui.showToast(`${count} artículo${count === 1 ? '' : 's'} añadido${count === 1 ? '' : 's'}`);
+      ui.toggleShoppingTab('list');
+    };
+  }
+
+  // Bulk: let the AI clean up the messy list into proper items.
+  if (ui.elements.btnFixListAI) {
+    ui.elements.btnFixListAI.onclick = async () => {
+      const raw = ui.elements.shopBulkInput ? ui.elements.shopBulkInput.value.trim() : '';
+      const target = ui.elements.shopItemUser ? ui.elements.shopItemUser.value : 'casa';
+      if (!raw) {
+        ui.showToast("Escribe tu lista primero.", "warning");
+        return;
+      }
+      const btn = ui.elements.btnFixListAI;
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '✨ Ordenando...';
+      try {
+        const items = await fixShoppingListWithAI(raw);
+        if (!items.length) {
+          ui.showToast("No pude ordenar la lista. Intenta de nuevo.", "error");
+          return;
+        }
+        const count = state.saveShoppingItemsBulk(items, target);
+        if (ui.elements.shopBulkInput) ui.elements.shopBulkInput.value = '';
+        ui.showToast(`✨ ${count} artículo${count === 1 ? '' : 's'} ordenado${count === 1 ? '' : 's'} y añadido${count === 1 ? '' : 's'}`);
+        ui.toggleShoppingTab('list');
+      } catch (e) {
+        let msg = "No se pudo usar la IA. Revisa la configuración del agente.";
+        if (e.code === 'limit') msg = e.message || msg;
+        else if (e.message) msg = e.message;
+        ui.showToast(msg, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    };
+  }
+
+  // Fullscreen shopping list
+  if (ui.elements.btnShoppingFullscreen) {
+    ui.elements.btnShoppingFullscreen.onclick = () => ui.openShoppingFullscreen();
+  }
+  if (ui.elements.btnCloseShoppingFullscreen) {
+    ui.elements.btnCloseShoppingFullscreen.onclick = () => ui.closeShoppingFullscreen();
+  }
+
   if (ui.elements.btnCloseLightbox) {
     ui.elements.btnCloseLightbox.onclick = () => {
       ui.closeModal(ui.elements.imageLightbox);
@@ -521,6 +713,7 @@ function bindEvents() {
     ui.elements.btnSavePen.onclick = () => {
       const name = ui.elements.pendingInput.value.trim();
       const pts = ui.elements.pendingPoints.value.trim();
+      const priority = ui.elements.pendingPriority ? ui.elements.pendingPriority.value : 'media';
       const idx = ui.elements.editPenIdx.value;
 
       if (!name) {
@@ -528,11 +721,12 @@ function bindEvents() {
         return;
       }
 
-      state.savePendingTask(name, pts, idx);
+      state.savePendingTask(name, pts, priority, idx);
       ui.showToast(idx !== "" ? "Tarea actualizada" : "Tarea guardada");
 
       ui.elements.pendingInput.value = "";
       ui.elements.editPenIdx.value = "";
+      if (ui.elements.pendingPriority) ui.elements.pendingPriority.value = 'media';
       ui.elements.btnSavePen.innerText = "Guardar";
     };
   }
@@ -650,6 +844,7 @@ function bindEvents() {
         try {
           await renameRoom(state.currentRoomId, newName);
           currentRoomMeta = { ...(currentRoomMeta || {}), name: newName };
+          state.setCurrentRoomName(newName);
           if (ui.elements.roomTitleDisplay) ui.elements.roomTitleDisplay.innerText = newName;
           if (ui.elements.codeDisplay) ui.elements.codeDisplay.innerText = newName;
           ui.elements.newRoomNameInput.value = "";

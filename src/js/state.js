@@ -4,7 +4,11 @@ import { saveToCloudDb } from "./firebase";
 export const COLORS = ['#3b82f6', '#ec4899', '#f59e0b', '#10b981', '#a855f7', '#f97316', '#14b8a6'];
 
 export let currentRoomId = localStorage.getItem('prodTrackerRoom') || null;
+export let currentRoomName = localStorage.getItem('prodTrackerRoomName') || 'la Sala';
 export let localProfileId = localStorage.getItem('localProfileId') || null;
+
+// Priority weights used to rank pending tasks by urgency.
+export const PRIORITY_ORDER = { alta: 3, media: 2, baja: 1 };
 
 // Guard: blocks any write to the cloud until the room's real data has been
 // loaded from Firebase. Without this, the default in-memory store (or the
@@ -80,9 +84,20 @@ export function setRoomState(roomId, newState) {
       localProfileId = store.config.users[0].id;
       localStorage.setItem('localProfileId', localProfileId);
     }
-    
+
+    // Migrate older pending tasks so they have a priority + creation date
+    // (needed for the urgency/priority feature). Persist once if anything
+    // was missing.
+    let migrated = false;
+    (store.pendingList || []).forEach(t => {
+      if (!t.priority) { t.priority = 'media'; migrated = true; }
+      if (!t.createdAt) { t.createdAt = Date.now(); migrated = true; }
+    });
+
     // Check for day change
     checkDateAutoClose();
+
+    if (migrated) saveState();
   } else {
     // If room is empty, save initial store to Firebase
     saveState();
@@ -223,19 +238,53 @@ export function deleteLogEntry(id) {
 }
 
 /**
- * Adds or updates a pending task
+ * Adds or updates a pending task.
+ * Tasks carry a priority ('alta' | 'media' | 'baja') and a createdAt timestamp
+ * so the UI can rank them by urgency (priority + how long they've been waiting).
  */
-export function savePendingTask(name, pts, editIndexStr) {
+export function savePendingTask(name, pts, priority, editIndexStr) {
   const ptsNum = Number(pts) || 5;
+  const prio = PRIORITY_ORDER[priority] ? priority : 'media';
   if (editIndexStr !== "") {
     const idx = parseInt(editIndexStr);
     if (store.pendingList[idx]) {
-      store.pendingList[idx] = { name, pts: ptsNum };
+      const existing = store.pendingList[idx];
+      store.pendingList[idx] = {
+        name,
+        pts: ptsNum,
+        priority: prio,
+        // Keep the original creation date so urgency keeps growing on edit.
+        createdAt: existing.createdAt || Date.now()
+      };
     }
   } else {
-    store.pendingList.push({ name, pts: ptsNum });
+    store.pendingList.push({
+      name,
+      pts: ptsNum,
+      priority: prio,
+      createdAt: Date.now()
+    });
   }
   saveState();
+}
+
+/**
+ * Compute an urgency score for a pending task. Higher = more urgent.
+ * Combines its priority with how many days it has been waiting.
+ */
+export function taskUrgencyScore(task) {
+  const weight = PRIORITY_ORDER[task.priority] || PRIORITY_ORDER.media;
+  const created = Number(task.createdAt) || Date.now();
+  const ageDays = Math.floor((Date.now() - created) / 86400000);
+  return weight * 1000 + ageDays;
+}
+
+/**
+ * Days a task has been waiting since it was created.
+ */
+export function taskAgeDays(task) {
+  const created = Number(task.createdAt) || Date.now();
+  return Math.floor((Date.now() - created) / 86400000);
 }
 
 /**
@@ -398,6 +447,14 @@ export function setCurrentRoomId(id) {
 }
 
 /**
+ * Remember the human-readable name of the current room (used in Shopping, etc).
+ */
+export function setCurrentRoomName(name) {
+  currentRoomName = (name || '').trim() || 'la Sala';
+  localStorage.setItem('prodTrackerRoomName', currentRoomName);
+}
+
+/**
  * Add an item to the current profile's daily roadmap
  */
 export function addRoadmapItem(text, type, pts = 0) {
@@ -483,22 +540,47 @@ export function setTreeDifficulty(level) {
 }
 
 /**
- * Adds a new item to the shopping list
+ * Adds a new item to the shopping list.
+ * Shopping items no longer use points. The name is optional when there is a
+ * photo (e.g. the user just snaps a picture of what's needed).
  */
-export function saveShoppingItem(name, qty, assignedTo, pts, imageBase64) {
+export function saveShoppingItem(name, qty, assignedTo, imageBase64) {
   if (!store.shoppingList) store.shoppingList = [];
-  const ptsNum = Number(pts) || 5;
   store.shoppingList.push({
-    id: 'shop_' + Date.now(),
-    name: name,
+    id: 'shop_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    name: (name || '').trim(),
     qty: qty || "",
     assignedTo: assignedTo || "casa",
-    pts: ptsNum,
     addedBy: localProfileId,
     image: imageBase64 || null,
     dateAdded: new Date().toISOString()
   });
   saveState();
+}
+
+/**
+ * Add many shopping items at once from a list of { name, qty } objects.
+ * Used by the bulk text box and the "fix list with AI" feature.
+ */
+export function saveShoppingItemsBulk(items, assignedTo) {
+  if (!store.shoppingList) store.shoppingList = [];
+  let count = 0;
+  (items || []).forEach((it, i) => {
+    const name = (it.name || '').trim();
+    if (!name) return;
+    store.shoppingList.push({
+      id: 'shop_' + Date.now() + '_' + i + '_' + Math.floor(Math.random() * 1000),
+      name,
+      qty: (it.qty || '').trim(),
+      assignedTo: assignedTo || 'casa',
+      addedBy: localProfileId,
+      image: null,
+      dateAdded: new Date().toISOString()
+    });
+    count++;
+  });
+  if (count > 0) saveState();
+  return count;
 }
 
 /**
@@ -511,18 +593,12 @@ export function deleteShoppingItem(index) {
 }
 
 /**
- * Marks shopping item as bought: logs activity to buyer and removes item
+ * Marks a shopping item as bought (just removes it from the list — shopping
+ * items no longer award points).
  */
 export function buyShoppingItem(index) {
   if (!store.shoppingList || !store.shoppingList[index]) return;
-  const item = store.shoppingList[index];
-  
-  // Award points to the current active profile
-  addLogEntry(`Compró: ${item.name}${item.qty ? ' (' + item.qty + ')' : ''}`, item.pts);
-  
-  // Remove item from shopping list
   store.shoppingList.splice(index, 1);
-  
   saveState();
 }
 

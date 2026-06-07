@@ -1,0 +1,28 @@
+# ==========================================================
+#  TUS 20 CÓDIGOS DE PRUEBA GRATIS
+#  - Un código por línea.
+#  - Reemplaza estos ejemplos por los tuyos (los que quieras).
+#  - Después de una coma o un # puedes poner una nota (la app la ignora).
+#  - Lee README.md para más detalles.
+# ==========================================================
+
+PRUEBA-AB12C, ejemplo 1
+PRUEBA-DE34F, ejemplo 2
+PRUEBA-GH56J, ejemplo 3
+PRUEBA-KL78M, ejemplo 4
+PRUEBA-NP90Q, ejemplo 5
+PRUEBA-RS12T, ejemplo 6
+PRUEBA-UV34W, ejemplo 7
+PRUEBA-XY56Z, ejemplo 8
+PRUEBA-AC78D, ejemplo 9
+PRUEBA-EF90G, ejemplo 10
+PRUEBA-HJ12K, ejemplo 11
+PRUEBA-LM34N, ejemplo 12
+PRUEBA-PQ56R, ejemplo 13
+PRUEBA-ST78U, ejemplo 14
+PRUEBA-VW90X, ejemplo 15
+PRUEBA-YZ12A, ejemplo 16
+PRUEBA-BD34C, ejemplo 17
+PRUEBA-FG56E, ejemplo 18
+PRUEBA-HK78J, ejemplo 19
+PRUEBA-LN90M, ejemplo 20

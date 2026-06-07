@@ -1739,3 +1739,209 @@ input:focus, select:focus {
   transform: scale(1.1);
 }
 
+/* ============================================================= */
+/*  NEW FEATURES: room switcher, priority tasks, AI assistant,   */
+/*  fullscreen shopping list                                     */
+/* ============================================================= */
+
+/* --- Room switcher (clickable room title in header) --- */
+.room-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 2px 6px 2px 0;
+  margin: 0;
+  cursor: pointer;
+  color: inherit;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+.room-switch-btn:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+.room-switch-caret {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.room-card-current {
+  border-color: var(--success) !important;
+  background: rgba(16, 185, 129, 0.04) !important;
+  cursor: default;
+}
+
+/* --- Priority / urgency on pending tasks --- */
+.prio-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 20px;
+  letter-spacing: 0.01em;
+}
+.task-age {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.urgency-flag {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+  padding: 1px 7px;
+  border-radius: 20px;
+}
+.pending-card.pending-urgent {
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.18), 0 6px 16px rgba(239, 68, 68, 0.08);
+}
+
+/* --- Shopping fullscreen button --- */
+.btn-fullscreen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid var(--card-border);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.btn-fullscreen:hover {
+  color: var(--text-main);
+  background: rgba(15, 23, 42, 0.07);
+}
+
+/* --- Fullscreen shopping overlay --- */
+.fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--app-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 9000;
+  display: none;
+  flex-direction: column;
+  padding: 18px;
+  max-width: 700px;
+  margin: 0 auto;
+  width: 100%;
+}
+.fullscreen-overlay.open {
+  display: flex;
+}
+.fullscreen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--card-border);
+}
+.fullscreen-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* --- AI assistant chat --- */
+.agent-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 2px 12px;
+  margin-bottom: 8px;
+}
+.agent-msg {
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.agent-msg-bot {
+  align-self: flex-start;
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--text-main);
+  border-bottom-left-radius: 4px;
+}
+.agent-msg-user {
+  align-self: flex-end;
+  background: var(--active-color);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+.agent-msg-error {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: var(--danger) !important;
+}
+.agent-thinking {
+  opacity: 0.65;
+  font-style: italic;
+}
+.agent-suggestions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.agent-chip {
+  background: rgba(124, 58, 237, 0.08);
+  color: #6d28d9;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.agent-chip:hover {
+  background: rgba(124, 58, 237, 0.16);
+}
+.agent-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.agent-input-row input {
+  flex: 1;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+}
+.agent-send-btn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.agent-send-btn:hover {
+  transform: scale(1.05);
+}
+

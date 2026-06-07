@@ -155,7 +155,6 @@ export function initDomElements() {
     
     // Shopping list input controls caching
     shopItemName: document.getElementById('shopItemName'),
-    btnVoiceRecord: document.getElementById('btnVoiceRecord'),
     btnUploadImageTrigger: document.getElementById('btnUploadImageTrigger'),
     shopItemImage: document.getElementById('shopItemImage'),
     shopImageFileName: document.getElementById('shopImageFileName'),
@@ -164,7 +163,6 @@ export function initDomElements() {
     shopImagePreview: document.getElementById('shopImagePreview'),
     shopItemQty: document.getElementById('shopItemQty'),
     shopItemUser: document.getElementById('shopItemUser'),
-    shopItemPts: document.getElementById('shopItemPts'),
     btnSaveShopItem: document.getElementById('btnSaveShopItem'),
     shoppingListDisplay: document.getElementById('shoppingListDisplay'),
     
@@ -172,7 +170,40 @@ export function initDomElements() {
     imageLightbox: document.getElementById('imageLightbox'),
     btnCloseLightbox: document.getElementById('btnCloseLightbox'),
     lightboxImage: document.getElementById('lightboxImage'),
-    lightboxCaption: document.getElementById('lightboxCaption')
+    lightboxCaption: document.getElementById('lightboxCaption'),
+
+    // Pending task priority
+    pendingPriority: document.getElementById('pendingPriority'),
+
+    // Room switcher (quick change room)
+    btnRoomSwitcher: document.getElementById('btnRoomSwitcher'),
+    roomSwitcherModal: document.getElementById('roomSwitcherModal'),
+    roomSwitcherList: document.getElementById('roomSwitcherList'),
+    btnCloseRoomSwitcher: document.getElementById('btnCloseRoomSwitcher'),
+    btnGoToRooms: document.getElementById('btnGoToRooms'),
+
+    // AI assistant
+    btnOpenAssistant: document.getElementById('btnOpenAssistant'),
+    agentModal: document.getElementById('agentModal'),
+    agentMessages: document.getElementById('agentMessages'),
+    agentInput: document.getElementById('agentInput'),
+    btnSendAgent: document.getElementById('btnSendAgent'),
+    btnCloseAgent: document.getElementById('btnCloseAgent'),
+    agentSuggestions: document.getElementById('agentSuggestions'),
+
+    // Shopping bulk + fullscreen
+    shopBulkInput: document.getElementById('shopBulkInput'),
+    btnAddBulkList: document.getElementById('btnAddBulkList'),
+    btnFixListAI: document.getElementById('btnFixListAI'),
+    btnShoppingFullscreen: document.getElementById('btnShoppingFullscreen'),
+    shoppingFullscreenModal: document.getElementById('shoppingFullscreenModal'),
+    shoppingListFullscreenDisplay: document.getElementById('shoppingListFullscreenDisplay'),
+    btnCloseShoppingFullscreen: document.getElementById('btnCloseShoppingFullscreen'),
+
+    // Access code redemption (rooms screen)
+    redeemSection: document.getElementById('redeemSection'),
+    redeemCodeInput: document.getElementById('redeemCodeInput'),
+    btnRedeemCode: document.getElementById('btnRedeemCode')
   };
 
   createToastContainer();
@@ -474,23 +505,59 @@ function renderTracker() {
   });
 }
 
+// Visual config per priority level.
+const PRIORITY_META = {
+  alta:  { color: '#ef4444', label: 'Alta',  dot: '🔴' },
+  media: { color: '#f59e0b', label: 'Media', dot: '🟡' },
+  baja:  { color: '#3b82f6', label: 'Baja',  dot: '🔵' }
+};
+
 function renderPending() {
   const list = elements.pendingListDisplay;
   if (!list) return;
-  
+
   list.innerHTML = '';
-  
-  state.store.pendingList.forEach((t, i) => {
+
+  // Keep the original index so actions still target the right task,
+  // then sort a copy by urgency (priority + how long it has waited).
+  const ordered = state.store.pendingList
+    .map((t, i) => ({ t, i }))
+    .sort((a, b) => state.taskUrgencyScore(b.t) - state.taskUrgencyScore(a.t));
+
+  if (ordered.length === 0) {
+    list.innerHTML = `<div style="padding: 30px 20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">No tienes tareas pendientes. ¡Buen trabajo! 🎉</div>`;
+    return;
+  }
+
+  ordered.forEach(({ t, i }) => {
+    const prio = PRIORITY_META[t.priority] || PRIORITY_META.media;
+    const ageDays = state.taskAgeDays(t);
+
+    // Urgency escalates with priority and waiting time.
+    const isUrgent = t.priority === 'alta' || ageDays >= 3;
+
+    let ageLabel;
+    if (ageDays <= 0) ageLabel = 'Hoy';
+    else if (ageDays === 1) ageLabel = 'Hace 1 día';
+    else ageLabel = `Hace ${ageDays} días`;
+
+    const urgentBadge = isUrgent
+      ? `<span class="urgency-flag">🔥 Urgente</span>`
+      : '';
+
     const card = document.createElement('div');
-    card.className = 'pending-card';
-    card.style.borderLeftColor = state.store.config.users[i % state.store.config.users.length]?.color || 'var(--text-muted)';
+    card.className = 'pending-card' + (isUrgent ? ' pending-urgent' : '');
+    card.style.borderLeftColor = prio.color;
     card.innerHTML = `
       <div style="display:flex; align-items:center; gap:12px; flex:1; overflow:hidden;">
         <button class="btn-check-card" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
         <div style="display:flex; flex-direction:column; overflow:hidden;">
           <span style="font-weight:700; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.name}</span>
-          <div style="display:flex; gap:5px; margin-top:2px;">
+          <div style="display:flex; gap:5px; margin-top:3px; align-items:center; flex-wrap:wrap;">
+            <span class="prio-pill" style="color:${prio.color}; background:${prio.color}18; border:1px solid ${prio.color}33;">${prio.dot} ${prio.label}</span>
             <span class="badge" style="padding:1px 6px; font-size:0.65rem;">${t.pts} pts</span>
+            <span class="task-age">${ageLabel}</span>
+            ${urgentBadge}
           </div>
         </div>
       </div>
@@ -510,6 +577,7 @@ function renderPending() {
     card.querySelector('.btn-edit-pen').onclick = () => {
       elements.pendingInput.value = t.name;
       elements.pendingPoints.value = t.pts;
+      if (elements.pendingPriority) elements.pendingPriority.value = t.priority || 'media';
       elements.editPenIdx.value = i;
       elements.btnSavePen.innerText = "Actualizar";
       elements.pendingInput.focus();
@@ -841,11 +909,16 @@ export function populateShoppingUsers() {
   const select = elements.shopItemUser;
   if (select) {
     const currentVal = select.value;
-    select.innerHTML = '<option value="casa">Para la Casa 🏠</option>';
+    const roomName = state.currentRoomName || 'la Sala';
+    select.innerHTML = '';
+    const roomOpt = document.createElement('option');
+    roomOpt.value = 'casa';
+    roomOpt.innerText = roomName;
+    select.appendChild(roomOpt);
     state.store.config.users.forEach(u => {
       const opt = document.createElement('option');
       opt.value = u.id;
-      opt.innerText = `Para ${u.name} 👤`;
+      opt.innerText = u.name;
       select.appendChild(opt);
     });
     if (currentVal && select.querySelector(`option[value="${currentVal}"]`)) {
@@ -877,7 +950,6 @@ export function toggleShoppingTab(tabId) {
     // Clear inputs in add form
     if (elements.shopItemName) elements.shopItemName.value = '';
     if (elements.shopItemQty) elements.shopItemQty.value = '';
-    if (elements.shopItemPts) elements.shopItemPts.value = '5';
     if (elements.shopItemImage) elements.shopItemImage.value = '';
     if (elements.shopImageFileName) elements.shopImageFileName.innerText = 'Sin foto seleccionada';
     if (elements.btnRemoveShopImage) elements.btnRemoveShopImage.style.display = 'none';
@@ -887,7 +959,19 @@ export function toggleShoppingTab(tabId) {
 }
 
 export function renderShoppingList() {
-  const list = elements.shoppingListDisplay;
+  renderShoppingItemsInto(elements.shoppingListDisplay, false);
+  // Keep the fullscreen view in sync if it is open.
+  if (elements.shoppingFullscreenModal && elements.shoppingFullscreenModal.classList.contains('open')) {
+    renderShoppingItemsInto(elements.shoppingListFullscreenDisplay, true);
+  }
+}
+
+/**
+ * Render the shopping items into a given container.
+ * @param {HTMLElement} list  target element
+ * @param {boolean} large     bigger layout for the fullscreen view
+ */
+function renderShoppingItemsInto(list, large) {
   if (!list) return;
   list.innerHTML = '';
 
@@ -901,29 +985,37 @@ export function renderShoppingList() {
     return;
   }
 
+  const roomName = state.currentRoomName || 'la Sala';
+  const nameSize = large ? '1.15rem' : '0.95rem';
+  const pad = large ? '16px 18px' : '12px 14px';
+
   items.forEach((item, index) => {
     const el = document.createElement('div');
     el.className = 'tpl-item';
     el.style.display = 'flex';
     el.style.justifyContent = 'space-between';
     el.style.alignItems = 'center';
-    el.style.padding = '12px 14px';
+    el.style.padding = pad;
     el.style.cursor = 'default';
 
-    // Badge styling for assignment
+    // Badge styling for assignment (room name instead of "Para la Casa")
     let targetBadge = '';
-    if (item.assignedTo === 'casa') {
-      targetBadge = `<span class="badge" style="background: rgba(15, 23, 42, 0.05); color: var(--text-muted); border: none; font-size: 0.65rem; padding: 2px 6px; font-weight: 700;">🏠 Casa</span>`;
+    if (!item.assignedTo || item.assignedTo === 'casa') {
+      targetBadge = `<span class="badge" style="background: rgba(15, 23, 42, 0.05); color: var(--text-muted); border: none; font-size: 0.65rem; padding: 2px 6px; font-weight: 700;">${roomName}</span>`;
     } else {
       const assignedUser = state.store.config.users.find(u => u.id === item.assignedTo);
       const color = assignedUser ? assignedUser.color : 'var(--text-muted)';
       const name = assignedUser ? assignedUser.name : '???';
-      targetBadge = `<span class="badge" style="background: ${color}15; color: ${color}; border: 1px solid ${color}30; font-size: 0.65rem; padding: 2px 6px; font-weight: 700;">👤 ${name}</span>`;
+      targetBadge = `<span class="badge" style="background: ${color}15; color: ${color}; border: 1px solid ${color}30; font-size: 0.65rem; padding: 2px 6px; font-weight: 700;">${name}</span>`;
     }
 
+    // Photo-only items have no name: show a gentle placeholder.
+    const displayName = item.name && item.name.trim() ? item.name : '📷 Artículo en foto';
+
     // Thumbnail html
-    const imageHtml = item.image 
-      ? `<img class="shop-thumbnail" src="${item.image}" alt="${item.name}">` 
+    const thumbSize = large ? 'width:64px;height:64px;' : '';
+    const imageHtml = item.image
+      ? `<img class="shop-thumbnail" src="${item.image}" alt="${displayName}" style="${thumbSize}">`
       : '';
 
     el.innerHTML = `
@@ -931,37 +1023,33 @@ export function renderShoppingList() {
         ${imageHtml}
         <div style="display:flex; flex-direction:column; gap:3px; flex:1; overflow:hidden;">
           <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
-            <span style="font-weight:700; font-size:0.95rem; color: var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</span>
+            <span style="font-weight:700; font-size:${nameSize}; color: var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${displayName}</span>
             ${item.qty ? `<span style="font-size:0.75rem; color:var(--text-muted); background:rgba(15,23,42,0.05); padding:1px 6px; border-radius:4px; font-weight:600; flex-shrink:0;">${item.qty}</span>` : ''}
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
             ${targetBadge}
-            <span class="badge" style="font-size:0.6rem; padding:1px 4px; border:none; background:rgba(16, 185, 129, 0.08); color:var(--success); font-weight:700;">+${item.pts} pts</span>
           </div>
         </div>
       </div>
       <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
-        <button class="btn-buy-shop" style="display:flex; align-items:center; justify-content:center; background:var(--success); color:white; border:none; border-radius:8px; padding:6px; cursor:pointer; width:32px; height:32px; transition:var(--transition);" title="Marcar como comprado y ganar puntos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
-        <button class="btn-del-shop" style="display:flex; align-items:center; justify-content:center; background:rgba(239, 68, 68, 0.1); color:var(--danger); border:none; border-radius:8px; padding:6px; cursor:pointer; width:32px; height:32px; transition:var(--transition);" title="Eliminar de la lista"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        <button class="btn-buy-shop" style="display:flex; align-items:center; justify-content:center; background:var(--success); color:white; border:none; border-radius:8px; padding:6px; cursor:pointer; width:34px; height:34px; transition:var(--transition);" title="Marcar como comprado"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+        <button class="btn-del-shop" style="display:flex; align-items:center; justify-content:center; background:rgba(239, 68, 68, 0.1); color:var(--danger); border:none; border-radius:8px; padding:6px; cursor:pointer; width:34px; height:34px; transition:var(--transition);" title="Eliminar de la lista"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
     `;
 
-    // Bind check toggle
+    // Mark as bought (no points anymore — just removes it)
     el.querySelector('.btn-buy-shop').onclick = (e) => {
       e.stopPropagation();
-      const activeUser = state.store.config.users.find(u => u.id === state.localProfileId);
-      const buyerName = activeUser ? activeUser.name : 'Usuario';
-      
-      showConfirm(`¿Compraste "${item.name}"? Se te asignarán +${item.pts} pts.`, () => {
+      showConfirm(`¿Marcar "${displayName}" como comprado?`, () => {
         state.buyShoppingItem(index);
-        showToast(`🛒 ¡${buyerName} compró ${item.name}! +${item.pts} pts`);
+        showToast(`✅ ${displayName} comprado`);
       });
     };
 
     // Bind delete item
     el.querySelector('.btn-del-shop').onclick = (e) => {
       e.stopPropagation();
-      showConfirm(`¿Eliminar "${item.name}" de la lista de compras?`, () => {
+      showConfirm(`¿Eliminar "${displayName}" de la lista de compras?`, () => {
         state.deleteShoppingItem(index);
         showToast("Artículo eliminado de la lista");
       });
@@ -971,12 +1059,28 @@ export function renderShoppingList() {
     if (item.image) {
       el.querySelector('.shop-thumbnail').onclick = (e) => {
         e.stopPropagation();
-        openLightbox(item.image, `${item.name} ${item.qty ? '(' + item.qty + ')' : ''}`);
+        openLightbox(item.image, `${displayName} ${item.qty ? '(' + item.qty + ')' : ''}`);
       };
     }
 
     list.appendChild(el);
   });
+}
+
+/**
+ * Open / close the fullscreen shopping list view.
+ */
+export function openShoppingFullscreen() {
+  const modal = elements.shoppingFullscreenModal;
+  if (!modal) return;
+  renderShoppingItemsInto(elements.shoppingListFullscreenDisplay, true);
+  modal.classList.add('open');
+}
+
+export function closeShoppingFullscreen() {
+  if (elements.shoppingFullscreenModal) {
+    elements.shoppingFullscreenModal.classList.remove('open');
+  }
 }
 
 export function openLightbox(src, caption) {
@@ -1789,6 +1893,77 @@ function getBezierPoint(t, p0, p1, p2) {
   const x = (1-t)*(1-t)*p0.x + 2*(1-t)*t*p1.x + t*t*p2.x;
   const y = (1-t)*(1-t)*p0.y + 2*(1-t)*t*p1.y + t*t*p2.y;
   return { x, y };
+}
+
+/* --- ROOM SWITCHER --- */
+
+/**
+ * Render the quick room-switcher list.
+ * @param {Array} rooms [{roomId, name, role, memberCount}]
+ * @param {string} currentRoomId
+ * @param {function} onSwitch  called with roomId when a room is chosen
+ */
+export function renderRoomSwitcher(rooms, currentRoomId, onSwitch) {
+  const list = elements.roomSwitcherList;
+  if (!list) return;
+  list.innerHTML = '';
+
+  if (!rooms || rooms.length === 0) {
+    list.innerHTML = `<div class="rooms-hint" style="padding:10px 0;">No tienes otras salas.</div>`;
+    return;
+  }
+
+  rooms.forEach(r => {
+    const isCurrent = r.roomId === currentRoomId;
+    const card = document.createElement('div');
+    card.className = 'room-card' + (isCurrent ? ' room-card-current' : '');
+    const roleLabel = r.role === 'owner' ? 'Dueño' : 'Miembro';
+    const badgeClass = r.role === 'owner' ? 'badge-owner' : 'badge-member';
+    card.innerHTML = `
+      <div style="overflow:hidden;">
+        <div class="room-card-name">${r.name}${isCurrent ? ' <span style="color:var(--success); font-size:0.7rem;">• actual</span>' : ''}</div>
+        <div class="room-card-meta">${r.memberCount} miembro${r.memberCount === 1 ? '' : 's'}</div>
+      </div>
+      <span class="room-card-badge ${badgeClass}">${roleLabel}</span>
+    `;
+    if (!isCurrent) {
+      card.onclick = () => onSwitch(r.roomId);
+    }
+    list.appendChild(card);
+  });
+}
+
+/* --- AI ASSISTANT --- */
+
+/**
+ * Append a message bubble to the assistant chat. Returns the element so the
+ * caller can update it (e.g. replace a "thinking…" placeholder with the reply).
+ */
+export function appendAgentMessage(text, who) {
+  const wrap = elements.agentMessages;
+  if (!wrap) return null;
+  const msg = document.createElement('div');
+  msg.className = `agent-msg agent-msg-${who === 'user' ? 'user' : 'bot'}`;
+  msg.innerText = text;
+  wrap.appendChild(msg);
+  wrap.scrollTop = wrap.scrollHeight;
+  return msg;
+}
+
+export function scrollAgentToBottom() {
+  const wrap = elements.agentMessages;
+  if (wrap) wrap.scrollTop = wrap.scrollHeight;
+}
+
+/* --- ACCESS CODE SECTION --- */
+
+/**
+ * Hide the "redeem code" section once the user is already Pro.
+ */
+export function setRedeemVisible(visible) {
+  if (elements.redeemSection) {
+    elements.redeemSection.style.display = visible ? '' : 'none';
+  }
 }
 
 export { elements };
