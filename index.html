@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Productivity Tracker Premium</title>
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-B8JuvRsX.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-DX8TiNE9.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-D0cjdqIZ.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-4D0s8ABo.css">
 </head>
 <body>
 
@@ -69,6 +69,21 @@
         </div>
       </div>
 
+      <div class="login-divider">O</div>
+
+      <!-- ACCESS CODE (free trial -> unlocks creating rooms + AI assistant) -->
+      <div class="rooms-section" id="redeemSection">
+        <label class="login-label" for="redeemCodeInput" style="display: flex; align-items: center; gap: 6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          Tengo un código de acceso (prueba gratis)
+        </label>
+        <div class="rooms-inline">
+          <input type="text" id="redeemCodeInput" class="login-input" placeholder="Ej: PRUEBA-AB12C" style="text-transform:uppercase;">
+          <button class="btn-login btn-inline" id="btnRedeemCode" style="background:linear-gradient(135deg, #7c3aed, #4f46e5);">Activar</button>
+        </div>
+        <div class="rooms-hint">Con un código desbloqueas crear salas y el asistente de IA.</div>
+      </div>
+
       <div class="auth-error" id="roomsError"></div>
 
       <span class="auth-link" id="btnRoomsSignOut" style="display:block; text-align:center; margin-top:18px;">Cerrar sesión</span>
@@ -84,10 +99,16 @@
     <div class="screen active" id="screenTracker">
       <div class="header-row">
         <div class="header-info">
-          <span class="app-title" id="roomTitleDisplay">Sala</span>
+          <button class="room-switch-btn" id="btnRoomSwitcher" title="Cambiar de sala">
+            <span class="app-title" id="roomTitleDisplay">Sala</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="room-switch-caret"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
           <span class="live-clock" id="liveClockDisplay">--:--</span>
         </div>
         <div class="header-actions">
+          <button class="btn-icon" id="btnOpenAssistant" title="Asistente IA">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
+          </button>
           <button class="btn-icon" id="btnOpenConfig" title="Ajustes">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           </button>
@@ -228,12 +249,18 @@
       <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding:16px; border-radius:var(--radius-md); margin-bottom:15px; flex-shrink:0;">
         <input type="hidden" id="editPenIdx">
         <input type="text" id="pendingInput" placeholder="Nombre de la tarea pendiente..." style="margin-bottom:10px;">
-        <div style="display:flex; gap:10px;">
-          <input type="number" id="pendingPoints" placeholder="Pts" value="5" style="width:80px; text-align:center; margin-bottom:0;">
-          <button class="btn-save" id="btnSavePen">Guardar</button>
+        <div style="display:flex; gap:8px; align-items:stretch;">
+          <input type="number" id="pendingPoints" placeholder="Pts" value="5" style="width:62px; text-align:center; margin-bottom:0;">
+          <select id="pendingPriority" title="Prioridad" style="flex:1; margin-bottom:0; padding:11px; font-size:0.85rem;">
+            <option value="alta">🔴 Alta</option>
+            <option value="media" selected>🟡 Media</option>
+            <option value="baja">🔵 Baja</option>
+          </select>
+          <button class="btn-save" id="btnSavePen" style="width:auto; margin:0; padding:10px 18px;">Guardar</button>
         </div>
+        <div class="rooms-hint" style="margin-top:8px;">Las tareas se ordenan por urgencia: la prioridad y los días que llevan esperando.</div>
       </div>
-    
+
       <div class="pending-grid" id="pendingListDisplay"></div>
     </div>
 
@@ -297,25 +324,39 @@
 
       <!-- TAB 1: VIEW SHOPPING LIST -->
       <div id="shoppingListViewTab">
-        <div class="template-list" id="shoppingListDisplay" style="margin-top: 5px; min-height: 250px; border: none; background: transparent; overflow-y: visible; max-height: none; margin-bottom: 90px;">
+        <div style="display:flex; justify-content:flex-end; margin-top:5px;">
+          <button id="btnShoppingFullscreen" class="btn-fullscreen" title="Ver en pantalla completa">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
+            Pantalla completa
+          </button>
+        </div>
+        <div class="template-list" id="shoppingListDisplay" style="margin-top: 8px; min-height: 250px; border: none; background: transparent; overflow-y: visible; max-height: none; margin-bottom: 90px;">
           <!-- Dynamically populated shopping items -->
         </div>
       </div>
 
       <!-- TAB 2: ADD SHOPPING ITEM -->
       <div id="shoppingAddTab" class="hidden">
-        <h4 class="section-title">Solicitar Artículo</h4>
+
+        <!-- BULK: pegar/escribir toda la lista de una y ordenarla con IA -->
+        <h4 class="section-title">Lista rápida</h4>
+        <div class="roadmap-builder-card" style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
+          <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📝 Escribe todo de corrido</label>
+          <textarea id="shopBulkInput" placeholder="Ej:&#10;Leche 2L&#10;Pan&#10;Jabón, arroz, 3 manzanas..." style="width:100%; min-height:90px; resize:vertical; padding:11px; border:1px solid var(--card-border); border-radius:var(--radius-md); font-family:var(--font-body); font-size:0.9rem;"></textarea>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-save" id="btnAddBulkList" style="flex:1; margin:0; background:#475569; box-shadow:none; font-size:0.85rem; padding:11px;">Añadir tal cual</button>
+            <button class="btn-save" id="btnFixListAI" style="flex:1; margin:0; background:linear-gradient(135deg, #7c3aed, #4f46e5); box-shadow:none; font-size:0.85rem; padding:11px; display:flex; align-items:center; justify-content:center; gap:6px;">✨ Arreglar con IA</button>
+          </div>
+          <div class="rooms-hint">Pega tu lista entera y la IA la separa en artículos ordenados.</div>
+        </div>
+
+        <h4 class="section-title">Solicitar un artículo</h4>
         <div class="roadmap-builder-card" style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 15px; margin-bottom: 90px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
-          
-          <!-- Nombre + Dictado -->
+
+          <!-- Nombre (opcional si hay foto) -->
           <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px;">
-            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🛒 Nombre del Artículo</label>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <input type="text" id="shopItemName" placeholder="¿Qué se necesita? Ej: Leche, Jabón..." style="margin:0; flex:1;">
-              <button id="btnVoiceRecord" style="border:1px solid var(--card-border); background:rgba(15,23,42,0.03); color:var(--text-muted); width:42px; height:42px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:var(--transition); flex-shrink:0;" title="Dictar por voz">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-              </button>
-            </div>
+            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🛒 Nombre del Artículo <span style="text-transform:none; font-weight:600; color:var(--text-muted);">(o solo sube una foto)</span></label>
+            <input type="text" id="shopItemName" placeholder="¿Qué se necesita? Ej: Leche, Jabón..." style="margin:0;">
           </div>
 
           <!-- Foto (Opcional) -->
@@ -335,7 +376,7 @@
             </div>
           </div>
 
-          <!-- Detalles de compra (Cant, Asignado, Puntos) -->
+          <!-- Detalles de compra (Cant, Asignado) -->
           <div style="display:flex; gap:8px; align-items:flex-end;">
             <div style="flex:1;">
               <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:block; margin-bottom:4px;">Cantidad</label>
@@ -344,12 +385,8 @@
             <div style="flex:1.5;">
               <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:block; margin-bottom:4px;">Para quién</label>
               <select id="shopItemUser" style="margin:0; font-size:0.85rem; padding: 11px;">
-                <option value="casa">Para la Casa 🏠</option>
+                <option value="casa">La Sala</option>
               </select>
-            </div>
-            <div style="width:70px;">
-              <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:block; margin-bottom:4px; text-align:center;">Puntos</label>
-              <input type="number" id="shopItemPts" placeholder="Pts" value="5" style="margin:0; text-align:center;">
             </div>
           </div>
 
@@ -653,6 +690,62 @@
       <img id="lightboxImage" style="max-width: 100%; max-height: 75vh; border-radius: var(--radius-md); box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain;">
       <div id="lightboxCaption" style="color: white; margin-top: 12px; font-family: var(--font-title); font-weight: 600; text-align: center; font-size: 1rem;"></div>
     </div>
+  </div>
+
+  <!-- ROOM SWITCHER MODAL (cambio rápido de sala) -->
+  <div class="modal-overlay" id="roomSwitcherModal">
+    <div class="modal-content" style="max-height: 80vh;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0; font-family: var(--font-title); font-weight:800;">Cambiar de sala</h3>
+        <button id="btnCloseRoomSwitcher" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer; line-height:1;">×</button>
+      </div>
+      <div id="roomSwitcherList" class="rooms-list" style="margin-bottom: 12px;"></div>
+      <button class="btn-save" id="btnGoToRooms" style="background:#475569; box-shadow:none; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        Ir a "Mis Salas" (crear / unirme)
+      </button>
+    </div>
+  </div>
+
+  <!-- AI ASSISTANT MODAL -->
+  <div class="modal-overlay" id="agentModal">
+    <div class="modal-content" style="max-height: 88vh; height: 88vh;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.3rem;">🤖</span>
+          <h3 style="margin:0; font-family: var(--font-title); font-weight:800;">Asistente</h3>
+        </div>
+        <button id="btnCloseAgent" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer; line-height:1;">×</button>
+      </div>
+
+      <div id="agentMessages" class="agent-messages">
+        <div class="agent-msg agent-msg-bot">
+          ¡Hola! Soy tu asistente. Conozco tus tareas, compras y rutinas de esta sala. ¿En qué te ayudo?
+        </div>
+      </div>
+
+      <div class="agent-suggestions" id="agentSuggestions">
+        <button class="agent-chip" data-q="¿Qué tareas debería priorizar hoy?">¿Qué priorizo hoy?</button>
+        <button class="agent-chip" data-q="Organiza mi día con mis tareas pendientes.">Organiza mi día</button>
+        <button class="agent-chip" data-q="Dame ideas de recetas con lo que tengo en la lista de compras.">Ideas con mis compras</button>
+      </div>
+
+      <div class="agent-input-row">
+        <input type="text" id="agentInput" placeholder="Escribe tu pregunta..." autocomplete="off">
+        <button id="btnSendAgent" class="agent-send-btn" title="Enviar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOPPING LIST FULLSCREEN -->
+  <div class="fullscreen-overlay" id="shoppingFullscreenModal">
+    <div class="fullscreen-header">
+      <h3 style="margin:0; font-family: var(--font-title); font-weight:800;">🛒 Lista de Compras</h3>
+      <button id="btnCloseShoppingFullscreen" style="border:none; background:none; font-size:2rem; color: var(--text-muted); cursor:pointer; line-height:1;">×</button>
+    </div>
+    <div id="shoppingListFullscreenDisplay" class="fullscreen-body"></div>
   </div>
 
 </body>
