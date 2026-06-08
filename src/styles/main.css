@@ -2383,6 +2383,7 @@ input:focus, select:focus {
 }
 .shop-tile-info {
   padding: 10px;
+  flex: 1;
 }
 .shop-tile-name {
   display: block;
@@ -2423,7 +2424,7 @@ input:focus, select:focus {
 #shoppingListFullscreenDisplay.shop-grid-2 .shop-card-tile { border-radius: var(--radius-md); }
 #shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-img-wrap { aspect-ratio: 3/2; }
 #shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-name { font-size: 1rem; }
-#shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-info { padding: 12px; }
+#shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-info { padding: 12px; min-height: 90px; }
 #shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-btns { margin-top: 8px; }
 
 /* ============================================================

@@ -1080,6 +1080,7 @@ function _applyShopGrid(container) {
       container.style.gap = '10px';
       container.style.gridTemplateColumns = '';
       container.style.alignContent = '';
+      container.style.alignItems = '';
     }
   }
 }
