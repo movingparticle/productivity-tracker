@@ -1068,19 +1068,21 @@ function _applyShopGrid(container) {
   // fights with flex:1 from .fullscreen-body in some browsers.
   if (container === elements.shoppingListFullscreenDisplay) {
     if (shopCols === 2) {
-      container.style.display = 'grid';
-      container.style.gridTemplateColumns = '1fr 1fr';
+      container.style.display = 'flex';
+      container.style.flexWrap = 'wrap';
+      container.style.flexDirection = '';
       container.style.gap = '16px';
       container.style.alignContent = 'start';
-      container.style.alignItems = 'start';
-      container.style.flexDirection = '';
+      container.style.alignItems = '';
+      container.style.gridTemplateColumns = '';
     } else {
       container.style.display = 'flex';
       container.style.flexDirection = 'column';
+      container.style.flexWrap = '';
       container.style.gap = '10px';
-      container.style.gridTemplateColumns = '';
       container.style.alignContent = '';
       container.style.alignItems = '';
+      container.style.gridTemplateColumns = '';
     }
   }
 }

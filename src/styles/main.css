@@ -2415,16 +2415,19 @@ input:focus, select:focus {
 #shoppingListFullscreenDisplay.shop-grid-1 .shop-card-img { width: 64px; height: 64px; }
 
 #shoppingListFullscreenDisplay.shop-grid-2 {
-  display: grid !important;
-  grid-template-columns: 1fr 1fr;
+  display: flex !important;
+  flex-wrap: wrap;
   gap: 16px;
-  align-items: start;
   align-content: start;
 }
-#shoppingListFullscreenDisplay.shop-grid-2 .shop-card-tile { border-radius: var(--radius-md); }
+#shoppingListFullscreenDisplay.shop-grid-2 .shop-card-tile {
+  flex: 0 0 calc(50% - 8px);
+  width: calc(50% - 8px);
+  border-radius: var(--radius-md);
+}
 #shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-img-wrap { aspect-ratio: 3/2; }
 #shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-name { font-size: 1rem; }
-#shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-info { padding: 12px; min-height: 90px; }
+#shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-info { padding: 12px; }
 #shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-btns { margin-top: 8px; }
 
 /* ============================================================
