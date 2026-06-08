@@ -1102,33 +1102,27 @@ function renderShoppingItemsInto(list) {
     const displayName = item.name && item.name.trim() ? item.name : '📷 Artículo en foto';
     const hasImage = !!item.image;
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'shop-swipe-wrapper';
-
-    // Swipe-to-delete hint layer (shown as card slides left)
-    wrapper.innerHTML = `<div class="shop-swipe-hint"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar</span></div>`;
-
     const card = document.createElement('div');
     card.className = `shop-card${isTile ? ' shop-card-tile' : ''}`;
 
     if (isTile) {
-      // ─── TILE LAYOUT (2-col): image on top, info below ───
+      // ─── TILE LAYOUT (2-col): image on top, info + buttons below ───
       card.innerHTML = `
         <div class="shop-tile-img-wrap">
           ${hasImage
             ? `<img class="shop-tile-img" src="${item.image}" alt="${displayName}">`
-            : `<div class="shop-tile-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`
+            : `<div class="shop-tile-placeholder"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".25"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`
           }
-          <div class="shop-tile-actions">
-            <button class="shop-tile-btn shop-tile-buy" title="Doble tap = comprado"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
-            <button class="shop-tile-btn shop-tile-del" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-          </div>
         </div>
         <div class="shop-tile-info">
           <span class="shop-tile-name">${displayName}</span>
           <div class="shop-tile-meta">
             ${item.qty ? `<span class="shop-qty">${item.qty}</span>` : ''}
             ${targetBadge}
+          </div>
+          <div class="shop-tile-btns">
+            <button class="shop-tile-btn shop-tile-buy" title="Comprado"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Comprado</button>
+            <button class="shop-tile-btn shop-tile-del" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
         </div>
       `;
@@ -1145,8 +1139,8 @@ function renderShoppingItemsInto(list) {
             </div>
           </div>
           <div class="shop-card-btns">
-            <button class="btn-buy-shop" title="Comprado / Doble tap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
-            <button class="btn-del-shop" title="Eliminar / Desliza izq."><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            <button class="btn-buy-shop" title="Comprado"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+            <button class="btn-del-shop" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
         </div>
         <div class="shop-card-detail" style="display:none;">
@@ -1158,75 +1152,35 @@ function renderShoppingItemsInto(list) {
     }
 
     // ── Actions ──
-    const doBuy = () => {
-      card.classList.add('shop-card-bought');
-      setTimeout(() => { state.buyShoppingItem(index); showToast(`✅ ${displayName} comprado`); }, 300);
-    };
+    const doBuy = () => { state.buyShoppingItem(index); showToast(`✅ ${displayName} comprado`); };
     const doDelete = () => {
-      wrapper.classList.add('shop-swipe-gone');
-      setTimeout(() => { state.deleteShoppingItem(index); showToast("Artículo eliminado"); }, 280);
+      showConfirm(`¿Eliminar "${displayName}"?`, () => {
+        state.deleteShoppingItem(index);
+        showToast("Artículo eliminado");
+      });
     };
 
-    // Double-tap detection
-    let lastTap = 0;
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('button') || e.target.closest('img')) return;
-      const now = Date.now();
-      if (now - lastTap < 350) { doBuy(); return; }
-      lastTap = now;
-      // Single tap on row card → toggle expand
-      if (!isTile) {
+    // Single-tap on row card → toggle expand
+    if (!isTile) {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('button') || e.target.closest('img')) return;
         const detail = card.querySelector('.shop-card-detail');
         if (detail) detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
-      }
-    });
-
-    if (isTile) {
-      card.querySelector('.shop-tile-buy').onclick = (e) => { e.stopPropagation(); doBuy(); };
-      card.querySelector('.shop-tile-del').onclick = (e) => { e.stopPropagation(); doDelete(); };
-      if (hasImage) {
-        card.querySelector('.shop-tile-img').onclick = (e) => { e.stopPropagation(); openLightbox(item.image, displayName); };
-      }
-    } else {
+      });
       card.querySelector('.btn-buy-shop').onclick = (e) => { e.stopPropagation(); doBuy(); };
       card.querySelector('.btn-del-shop').onclick = (e) => { e.stopPropagation(); doDelete(); };
       if (hasImage) {
         card.querySelector('.shop-card-img').onclick = (e) => { e.stopPropagation(); openLightbox(item.image, displayName); };
       }
+    } else {
+      card.querySelector('.shop-tile-buy').onclick = (e) => { e.stopPropagation(); doBuy(); };
+      card.querySelector('.shop-tile-del').onclick = (e) => { e.stopPropagation(); doDelete(); };
+      if (hasImage) {
+        card.querySelector('.shop-tile-img').onclick = (e) => { e.stopPropagation(); openLightbox(item.image, displayName); };
+      }
     }
 
-    // ── Swipe-to-delete gesture ──
-    let swX = 0, swDx = 0, swiping = false;
-    card.addEventListener('touchstart', e => {
-      swX = e.touches[0].clientX;
-      swDx = 0;
-      swiping = false;
-    }, { passive: true });
-    card.addEventListener('touchmove', e => {
-      const dx = e.touches[0].clientX - swX;
-      if (!swiping && Math.abs(dx) > 10) swiping = true;
-      if (!swiping) return;
-      if (dx < 0) {
-        swDx = dx;
-        card.style.transform = `translateX(${Math.max(dx, -140)}px)`;
-        card.style.transition = 'none';
-        const ratio = Math.min(Math.abs(dx) / 100, 1);
-        wrapper.querySelector('.shop-swipe-hint').style.opacity = ratio;
-      }
-    }, { passive: true });
-    card.addEventListener('touchend', () => {
-      card.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
-      if (swDx < -90) {
-        card.style.transform = 'translateX(-110%)';
-        setTimeout(doDelete, 250);
-      } else {
-        card.style.transform = '';
-        wrapper.querySelector('.shop-swipe-hint').style.opacity = '0';
-      }
-    });
-
-    wrapper.appendChild(card);
-    list.appendChild(wrapper);
+    list.appendChild(card);
   });
 }
 

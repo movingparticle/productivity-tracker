@@ -1849,9 +1849,7 @@ input:focus, select:focus {
 .fullscreen-body {
   flex: 1;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  /* no display:flex here — each fullscreen child sets its own layout */
 }
 
 /* --- AI assistant chat --- */
@@ -2169,10 +2167,9 @@ input:focus, select:focus {
   color: var(--text-main);
 }
 
-/* Grid column layouts */
-.shop-grid-1 { column-count: 1; }
-.shop-grid-2 { column-count: 2; }
-.shop-grid-3 { column-count: 3; }
+/* Grid column layouts – column-count removed; handled by display:grid below */
+.shop-grid-1 { display: block; }
+.shop-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
 
 /* Column toggle buttons */
 .btn-col-toggle {
@@ -2232,8 +2229,8 @@ input:focus, select:focus {
   transition: transform 0.25s ease, opacity 0.25s ease, box-shadow 0.15s;
   position: relative;
 }
-.shop-grid-1 .shop-swipe-wrapper { margin-bottom: 8px; }
-.shop-grid-2 .shop-swipe-wrapper { margin-bottom: 0; }
+.shop-grid-1 .shop-card { margin-bottom: 8px; }
+.shop-grid-2 .shop-card { margin-bottom: 0; }
 .shop-card:active { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
 .shop-card-bought {
   opacity: 0;
@@ -2325,12 +2322,7 @@ input:focus, select:focus {
 }
 .shop-detail-label { font-weight: 700; color: var(--text-main); }
 
-/* 2-col TILE layout */
-.shop-grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
+/* 2-col TILE layout (display:grid already set above) */
 .shop-card-tile {
   padding: 0;
   overflow: hidden;
@@ -2358,26 +2350,37 @@ input:focus, select:focus {
   align-items: center;
   justify-content: center;
 }
-.shop-tile-actions {
-  position: absolute;
-  top: 6px;
-  right: 6px;
+.shop-tile-btns {
   display: flex;
-  gap: 4px;
+  gap: 6px;
+  margin-top: 8px;
 }
 .shop-tile-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
   border: none;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
   cursor: pointer;
-  backdrop-filter: blur(6px);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  padding: 6px 10px;
+  transition: var(--transition);
 }
-.shop-tile-buy  { background: rgba(16,185,129,0.85); color: white; }
-.shop-tile-del  { background: rgba(239,68,68,0.80); color: white; }
+.shop-tile-buy {
+  background: var(--success);
+  color: white;
+  flex: 1;
+}
+.shop-tile-del {
+  background: rgba(239,68,68,0.1);
+  color: var(--danger);
+  width: 32px;
+  padding: 6px;
+  flex-shrink: 0;
+}
 .shop-tile-info {
   padding: 10px;
   flex: 1;
@@ -2398,16 +2401,25 @@ input:focus, select:focus {
   align-items: center;
 }
 
-/* Fullscreen 2-col grid */
-.fullscreen-body.shop-grid-2 {
+/* ── Fullscreen shopping: 1-col ── */
+#shoppingListFullscreenDisplay.shop-grid-1 .shop-card {
+  margin-bottom: 10px;
+}
+#shoppingListFullscreenDisplay.shop-grid-1 .shop-card-name { font-size: 1.05rem; }
+#shoppingListFullscreenDisplay.shop-grid-1 .shop-card-img { width: 64px; height: 64px; }
+
+/* ── Fullscreen shopping: 2-col grid ── */
+#shoppingListFullscreenDisplay.shop-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
   align-items: start;
 }
-.fullscreen-body.shop-grid-2 .shop-card-tile { border-radius: var(--radius-md); }
-.fullscreen-body.shop-grid-2 .shop-tile-img-wrap { aspect-ratio: 4/3; }
-.fullscreen-body.shop-grid-2 .shop-tile-name { font-size: 1rem; }
+#shoppingListFullscreenDisplay.shop-grid-2 .shop-card-tile { border-radius: var(--radius-md); }
+#shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-img-wrap { aspect-ratio: 3/2; }
+#shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-name { font-size: 1rem; }
+#shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-info { padding: 12px; }
+#shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-btns { margin-top: 8px; }
 
 /* ============================================================
    NAV DRAG REORDER

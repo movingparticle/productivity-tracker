@@ -481,7 +481,7 @@ function parseBulkLines(raw) {
 /* TAB SWIPE NAVIGATION                                               */
 /* ------------------------------------------------------------------ */
 
-// Ordered tab list — matches navOrder which can be reordered by user.
+// Tab definitions for swipe navigation (fixed order).
 const TAB_DEFS = [
   { id: 'navTrackerBtn',  target: 'tracker'  },
   { id: 'navRoadmapBtn',  target: 'roadmap'  },
@@ -490,35 +490,17 @@ const TAB_DEFS = [
   { id: 'navMetricsBtn',  target: 'metrics'  }
 ];
 
-let navOrder = (() => {
-  try { return JSON.parse(localStorage.getItem('navOrder') || 'null'); } catch { return null; }
-})() || TAB_DEFS.map(t => t.target);
-
-function applyNavOrder() {
-  const navBar = document.querySelector('.bottom-nav');
-  if (!navBar) return;
-  navOrder.forEach(target => {
-    const def = TAB_DEFS.find(d => d.target === target);
-    if (!def) return;
-    const btn = document.getElementById(def.id);
-    if (btn) navBar.appendChild(btn); // move to end in order
-  });
-}
-
 function getActiveTabIndex() {
   const active = document.querySelector('.nav-item.active');
   if (!active) return 0;
-  const target = TAB_DEFS.find(d => d.id === active.id)?.target;
-  return navOrder.indexOf(target);
+  return TAB_DEFS.findIndex(d => d.id === active.id);
 }
 
 function navigateToTabIndex(idx) {
-  const clamped = Math.max(0, Math.min(navOrder.length - 1, idx));
-  const target = navOrder[clamped];
-  const def = TAB_DEFS.find(d => d.target === target);
-  if (!def) return;
+  const clamped = Math.max(0, Math.min(TAB_DEFS.length - 1, idx));
+  const def = TAB_DEFS[clamped];
   const btn = document.getElementById(def.id);
-  if (btn) ui.navTo(target, btn);
+  if (btn) ui.navTo(def.target, btn);
 }
 
 function initTabSwipe() {
@@ -557,58 +539,6 @@ function initTabSwipe() {
 /* NAV LONG-PRESS DRAG REORDER                                        */
 /* ------------------------------------------------------------------ */
 
-let navDrag = null;
-let navLongPressTimer = null;
-
-function initNavReorder() {
-  const navBar = document.querySelector('.bottom-nav');
-  if (!navBar) return;
-
-  applyNavOrder();
-
-  navBar.addEventListener('pointerdown', e => {
-    const item = e.target.closest('.nav-item');
-    if (!item) return;
-    navLongPressTimer = setTimeout(() => {
-      if (navigator.vibrate) navigator.vibrate(50);
-      navBar.classList.add('nav-reordering');
-      item.classList.add('nav-dragging');
-      navDrag = { el: item, startX: e.clientX };
-      navBar.setPointerCapture(e.pointerId);
-    }, 480);
-  });
-
-  navBar.addEventListener('pointermove', e => {
-    if (!navDrag) return;
-    // Find which item the pointer is currently over (exclude the dragged one)
-    navDrag.el.style.pointerEvents = 'none';
-    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.nav-item');
-    navDrag.el.style.pointerEvents = '';
-    if (over && over !== navDrag.el) {
-      // Swap in DOM
-      const items = [...navBar.querySelectorAll('.nav-item')];
-      const dragIdx = items.indexOf(navDrag.el);
-      const overIdx = items.indexOf(over);
-      if (dragIdx < overIdx) over.after(navDrag.el);
-      else navBar.insertBefore(navDrag.el, over);
-    }
-  });
-
-  const endDrag = () => {
-    if (navLongPressTimer) { clearTimeout(navLongPressTimer); navLongPressTimer = null; }
-    if (!navDrag) return;
-    navDrag.el.classList.remove('nav-dragging');
-    document.querySelector('.bottom-nav')?.classList.remove('nav-reordering');
-    // Persist new order
-    const items = [...navBar.querySelectorAll('.nav-item')];
-    navOrder = items.map(btn => TAB_DEFS.find(d => d.id === btn.id)?.target).filter(Boolean);
-    localStorage.setItem('navOrder', JSON.stringify(navOrder));
-    navDrag = null;
-  };
-  navBar.addEventListener('pointerup', endDrag);
-  navBar.addEventListener('pointercancel', endDrag);
-}
-
 // Event Bindings (in-app)
 function bindEvents() {
   // Navigation Item Clicks
@@ -617,7 +547,6 @@ function bindEvents() {
     const btn = document.getElementById(item.id);
     if (btn) {
       btn.onclick = () => {
-        if (navDrag) return; // ignore click at end of drag
         ui.navTo(item.target, btn);
       };
     }
@@ -1296,7 +1225,6 @@ function initApp() {
   bindAuthEvents();
   bindRoomsEvents();
   bindEvents();
-  initNavReorder();
   initTabSwipe();
 
   state.registerUiRenderer(() => ui.updateUI());
