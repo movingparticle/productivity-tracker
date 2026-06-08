@@ -1727,7 +1727,6 @@ export function renderFocusTree() {
   if (!activeUser) return;
 
   const todayStr = new Date().toDateString();
-  const yesterdayStr = new Date(new Date().setDate(new Date().getDate() - 1)).toDateString();
 
   // 1. Get Tree Difficulty configuration
   const difficulty = state.store.config.treeDifficulty || 'medio';
