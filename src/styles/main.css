@@ -2383,7 +2383,6 @@ input:focus, select:focus {
 }
 .shop-tile-info {
   padding: 10px;
-  flex: 1;
 }
 .shop-tile-name {
   display: block;

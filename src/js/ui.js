@@ -1072,6 +1072,7 @@ function _applyShopGrid(container) {
       container.style.gridTemplateColumns = '1fr 1fr';
       container.style.gap = '16px';
       container.style.alignContent = 'start';
+      container.style.alignItems = 'start';
       container.style.flexDirection = '';
     } else {
       container.style.display = 'flex';
