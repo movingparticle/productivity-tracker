@@ -1063,6 +1063,24 @@ function _applyShopGrid(container) {
   if (!container) return;
   container.classList.remove('shop-grid-1', 'shop-grid-2');
   container.classList.add(`shop-grid-${shopCols}`);
+
+  // Force inline styles on the fullscreen container — CSS class specificity
+  // fights with flex:1 from .fullscreen-body in some browsers.
+  if (container === elements.shoppingListFullscreenDisplay) {
+    if (shopCols === 2) {
+      container.style.display = 'grid';
+      container.style.gridTemplateColumns = '1fr 1fr';
+      container.style.gap = '16px';
+      container.style.alignContent = 'start';
+      container.style.flexDirection = '';
+    } else {
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.gap = '10px';
+      container.style.gridTemplateColumns = '';
+      container.style.alignContent = '';
+    }
+  }
 }
 
 export function renderShoppingList() {
