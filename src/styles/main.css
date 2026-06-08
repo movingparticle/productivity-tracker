@@ -1848,8 +1848,8 @@ input:focus, select:focus {
 }
 .fullscreen-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  /* no display:flex here — each fullscreen child sets its own layout */
 }
 
 /* --- AI assistant chat --- */
@@ -2401,19 +2401,25 @@ input:focus, select:focus {
   align-items: center;
 }
 
-/* ── Fullscreen shopping: 1-col ── */
-#shoppingListFullscreenDisplay.shop-grid-1 .shop-card {
-  margin-bottom: 10px;
+/* ── Fullscreen shopping: explicit layout overrides ── */
+#shoppingListFullscreenDisplay {
+  padding: 2px 0 16px;
 }
+#shoppingListFullscreenDisplay.shop-grid-1 {
+  display: flex !important;
+  flex-direction: column;
+  gap: 10px;
+}
+#shoppingListFullscreenDisplay.shop-grid-1 .shop-card { margin-bottom: 0; }
 #shoppingListFullscreenDisplay.shop-grid-1 .shop-card-name { font-size: 1.05rem; }
 #shoppingListFullscreenDisplay.shop-grid-1 .shop-card-img { width: 64px; height: 64px; }
 
-/* ── Fullscreen shopping: 2-col grid ── */
 #shoppingListFullscreenDisplay.shop-grid-2 {
-  display: grid;
+  display: grid !important;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   align-items: start;
+  align-content: start;
 }
 #shoppingListFullscreenDisplay.shop-grid-2 .shop-card-tile { border-radius: var(--radius-md); }
 #shoppingListFullscreenDisplay.shop-grid-2 .shop-tile-img-wrap { aspect-ratio: 3/2; }
