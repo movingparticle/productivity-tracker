@@ -319,6 +319,8 @@ async function switchRoom(roomId) {
   ui.closeModal(ui.elements.roomSwitcherModal);
   disconnectRoomDb();
   if (currentMembersUnsub) currentMembersUnsub();
+  // Wipe local store BEFORE connecting so no stale data flashes in the UI.
+  state.resetRoomState();
   await connectToRoom(roomId);
   // Reset to the main tab for the new room.
   const trackerBtn = document.getElementById('navTrackerBtn');
@@ -676,6 +678,60 @@ function bindEvents() {
     ui.elements.btnCloseShoppingFullscreen.onclick = () => ui.closeShoppingFullscreen();
   }
 
+  // Shopping column toggles (inline and fullscreen header)
+  [
+    ui.elements.btnCol1, ui.elements.btnCol2, ui.elements.btnCol3,
+    ui.elements.btnFsCol1, ui.elements.btnFsCol2, ui.elements.btnFsCol3
+  ].forEach(btn => {
+    if (btn) btn.onclick = () => ui.setShopCols(parseInt(btn.dataset.cols, 10));
+  });
+
+  // Fullscreen pending list
+  if (ui.elements.btnPendingFullscreen) {
+    ui.elements.btnPendingFullscreen.onclick = () => ui.openPendingFullscreen();
+  }
+  if (ui.elements.btnClosePendingFullscreen) {
+    ui.elements.btnClosePendingFullscreen.onclick = () => ui.closePendingFullscreen();
+  }
+
+  // Fullscreen today activity
+  if (ui.elements.btnTodayFullscreen) {
+    ui.elements.btnTodayFullscreen.onclick = () => ui.openTodayFullscreen();
+  }
+  if (ui.elements.btnCloseTodayFullscreen) {
+    ui.elements.btnCloseTodayFullscreen.onclick = () => ui.closeTodayFullscreen();
+  }
+
+  // Pending task photo upload
+  if (ui.elements.btnUploadPendingImage) {
+    ui.elements.btnUploadPendingImage.onclick = () => ui.elements.pendingImageFile && ui.elements.pendingImageFile.click();
+  }
+  if (ui.elements.pendingImageFile) {
+    ui.elements.pendingImageFile.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const b64 = ev.target.result;
+        if (ui.elements.pendingTaskImage) ui.elements.pendingTaskImage.value = b64;
+        if (ui.elements.pendingImageLabel) ui.elements.pendingImageLabel.innerText = file.name;
+        if (ui.elements.pendingImagePreview) ui.elements.pendingImagePreview.src = b64;
+        if (ui.elements.pendingImagePreviewContainer) ui.elements.pendingImagePreviewContainer.style.display = 'block';
+        if (ui.elements.btnRemovePendingImage) ui.elements.btnRemovePendingImage.style.display = 'inline-flex';
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+  if (ui.elements.btnRemovePendingImage) {
+    ui.elements.btnRemovePendingImage.onclick = () => {
+      if (ui.elements.pendingTaskImage) ui.elements.pendingTaskImage.value = '';
+      if (ui.elements.pendingImageFile) ui.elements.pendingImageFile.value = '';
+      if (ui.elements.pendingImageLabel) ui.elements.pendingImageLabel.innerText = 'Sin foto';
+      if (ui.elements.pendingImagePreviewContainer) ui.elements.pendingImagePreviewContainer.style.display = 'none';
+      if (ui.elements.btnRemovePendingImage) ui.elements.btnRemovePendingImage.style.display = 'none';
+    };
+  }
+
   if (ui.elements.btnCloseLightbox) {
     ui.elements.btnCloseLightbox.onclick = () => {
       ui.closeModal(ui.elements.imageLightbox);
@@ -721,13 +777,20 @@ function bindEvents() {
         return;
       }
 
-      state.savePendingTask(name, pts, priority, idx);
+      const imageB64 = ui.elements.pendingTaskImage ? ui.elements.pendingTaskImage.value || null : null;
+      state.savePendingTask(name, pts, priority, idx, imageB64);
       ui.showToast(idx !== "" ? "Tarea actualizada" : "Tarea guardada");
 
       ui.elements.pendingInput.value = "";
       ui.elements.editPenIdx.value = "";
       if (ui.elements.pendingPriority) ui.elements.pendingPriority.value = 'media';
       ui.elements.btnSavePen.innerText = "Guardar";
+      // Reset photo
+      if (ui.elements.pendingTaskImage) ui.elements.pendingTaskImage.value = '';
+      if (ui.elements.pendingImageFile) ui.elements.pendingImageFile.value = '';
+      if (ui.elements.pendingImageLabel) ui.elements.pendingImageLabel.innerText = 'Sin foto';
+      if (ui.elements.pendingImagePreviewContainer) ui.elements.pendingImagePreviewContainer.style.display = 'none';
+      if (ui.elements.btnRemovePendingImage) ui.elements.btnRemovePendingImage.style.display = 'none';
     };
   }
 

@@ -1945,3 +1945,255 @@ input:focus, select:focus {
   transform: scale(1.05);
 }
 
+
+/* ============================================================
+   PENDING TASKS – priority sections + expandable cards + photos
+   ============================================================ */
+.pending-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 6px 14px;
+  margin: 14px 0 6px;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.04);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.pending-section-count {
+  background: rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.pending-card-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pending-card-body {
+  flex: 1;
+  overflow: hidden;
+}
+.pending-card-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pending-card-meta {
+  display: flex;
+  gap: 5px;
+  margin-top: 3px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pending-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.btn-expand-card {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 4px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.btn-expand-card:hover { color: var(--text-main); }
+.pending-card-detail {
+  padding: 10px 0 2px 36px;
+}
+.pending-card-img {
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--card-border);
+  cursor: pointer;
+}
+
+/* ============================================================
+   SHOPPING CARDS – expandable cards + grid columns
+   ============================================================ */
+.shop-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  transition: box-shadow 0.15s ease;
+  break-inside: avoid;
+}
+.shop-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+.shop-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.shop-card-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 1px solid var(--card-border);
+}
+.shop-card-info {
+  flex: 1;
+  overflow: hidden;
+}
+.shop-card-name {
+  display: block;
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shop-card-meta {
+  display: flex;
+  gap: 5px;
+  margin-top: 3px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.shop-qty {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: rgba(15,23,42,0.05);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.shop-badge-room {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(15,23,42,0.05);
+  color: var(--text-muted);
+}
+.shop-badge-user {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+.shop-card-btns {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+  align-items: center;
+}
+.btn-expand-shop {
+  background: rgba(15,23,42,0.04);
+  border: 1px solid var(--card-border);
+  color: var(--text-muted);
+  border-radius: 7px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.15s;
+  flex-shrink: 0;
+}
+.btn-expand-shop:hover { color: var(--text-main); }
+.btn-buy-shop {
+  background: var(--success);
+  color: white;
+  border: none;
+  border-radius: 7px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.btn-del-shop {
+  background: rgba(239,68,68,0.1);
+  color: var(--danger);
+  border: none;
+  border-radius: 7px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.shop-card-detail {
+  padding: 10px 0 2px;
+  border-top: 1px solid var(--card-border);
+  margin-top: 10px;
+}
+.shop-card-detail-img {
+  width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-bottom: 8px;
+  border: 1px solid var(--card-border);
+}
+.shop-card-detail-row {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.shop-detail-label {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* Grid column layouts */
+.shop-grid-1 { column-count: 1; }
+.shop-grid-2 { column-count: 2; }
+.shop-grid-3 { column-count: 3; }
+
+/* Column toggle buttons */
+.btn-col-toggle {
+  background: rgba(15,23,42,0.04);
+  border: 1px solid var(--card-border);
+  color: var(--text-muted);
+  border-radius: 7px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.btn-col-toggle:hover { color: var(--text-main); background: rgba(15,23,42,0.08); }
+.btn-col-toggle.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+/* Pending fullscreen override – single column always */
+#pendingListFullscreenDisplay .pending-section-header { margin-top: 18px; }

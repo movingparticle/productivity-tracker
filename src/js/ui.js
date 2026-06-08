@@ -203,7 +203,36 @@ export function initDomElements() {
     // Access code redemption (rooms screen)
     redeemSection: document.getElementById('redeemSection'),
     redeemCodeInput: document.getElementById('redeemCodeInput'),
-    btnRedeemCode: document.getElementById('btnRedeemCode')
+    btnRedeemCode: document.getElementById('btnRedeemCode'),
+
+    // Pending task photo upload
+    pendingImageFile: document.getElementById('pendingImageFile'),
+    btnUploadPendingImage: document.getElementById('btnUploadPendingImage'),
+    pendingImageLabel: document.getElementById('pendingImageLabel'),
+    btnRemovePendingImage: document.getElementById('btnRemovePendingImage'),
+    pendingImagePreviewContainer: document.getElementById('pendingImagePreviewContainer'),
+    pendingImagePreview: document.getElementById('pendingImagePreview'),
+    pendingTaskImage: document.getElementById('pendingTaskImage'),
+
+    // Pending fullscreen
+    btnPendingFullscreen: document.getElementById('btnPendingFullscreen'),
+    pendingFullscreenModal: document.getElementById('pendingFullscreenModal'),
+    pendingListFullscreenDisplay: document.getElementById('pendingListFullscreenDisplay'),
+    btnClosePendingFullscreen: document.getElementById('btnClosePendingFullscreen'),
+
+    // Today fullscreen
+    btnTodayFullscreen: document.getElementById('btnTodayFullscreen'),
+    todayFullscreenModal: document.getElementById('todayFullscreenModal'),
+    todayFullscreenDisplay: document.getElementById('todayFullscreenDisplay'),
+    btnCloseTodayFullscreen: document.getElementById('btnCloseTodayFullscreen'),
+
+    // Shopping column toggles (inline + fullscreen)
+    btnCol1: document.getElementById('btnCol1'),
+    btnCol2: document.getElementById('btnCol2'),
+    btnCol3: document.getElementById('btnCol3'),
+    btnFsCol1: document.getElementById('btnFsCol1'),
+    btnFsCol2: document.getElementById('btnFsCol2'),
+    btnFsCol3: document.getElementById('btnFsCol3')
   };
 
   createToastContainer();
@@ -512,86 +541,87 @@ const PRIORITY_META = {
   baja:  { color: '#3b82f6', label: 'Baja',  dot: '🔵' }
 };
 
-function renderPending() {
-  const list = elements.pendingListDisplay;
-  if (!list) return;
+function buildPendingCard(t, i, onEdit) {
+  const prio = PRIORITY_META[t.priority] || PRIORITY_META.media;
+  const ageDays = state.taskAgeDays(t);
+  const isUrgent = t.priority === 'alta' || ageDays >= 3;
 
-  list.innerHTML = '';
+  let ageLabel;
+  if (ageDays <= 0) ageLabel = 'Hoy';
+  else if (ageDays === 1) ageLabel = 'Hace 1 día';
+  else ageLabel = `Hace ${ageDays} días`;
 
-  // Keep the original index so actions still target the right task,
-  // then sort a copy by urgency (priority + how long it has waited).
-  const ordered = state.store.pendingList
-    .map((t, i) => ({ t, i }))
-    .sort((a, b) => state.taskUrgencyScore(b.t) - state.taskUrgencyScore(a.t));
+  const card = document.createElement('div');
+  card.className = 'pending-card' + (isUrgent ? ' pending-urgent' : '');
+  card.style.borderLeftColor = prio.color;
 
-  if (ordered.length === 0) {
-    list.innerHTML = `<div style="padding: 30px 20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">No tienes tareas pendientes. ¡Buen trabajo! 🎉</div>`;
-    return;
-  }
+  const hasImage = !!t.image;
+  const hasExtra = hasImage;
 
-  ordered.forEach(({ t, i }) => {
-    const prio = PRIORITY_META[t.priority] || PRIORITY_META.media;
-    const ageDays = state.taskAgeDays(t);
-
-    // Urgency escalates with priority and waiting time.
-    const isUrgent = t.priority === 'alta' || ageDays >= 3;
-
-    let ageLabel;
-    if (ageDays <= 0) ageLabel = 'Hoy';
-    else if (ageDays === 1) ageLabel = 'Hace 1 día';
-    else ageLabel = `Hace ${ageDays} días`;
-
-    const urgentBadge = isUrgent
-      ? `<span class="urgency-flag">🔥 Urgente</span>`
-      : '';
-
-    const card = document.createElement('div');
-    card.className = 'pending-card' + (isUrgent ? ' pending-urgent' : '');
-    card.style.borderLeftColor = prio.color;
-    card.innerHTML = `
-      <div style="display:flex; align-items:center; gap:12px; flex:1; overflow:hidden;">
-        <button class="btn-check-card" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
-        <div style="display:flex; flex-direction:column; overflow:hidden;">
-          <span style="font-weight:700; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.name}</span>
-          <div style="display:flex; gap:5px; margin-top:3px; align-items:center; flex-wrap:wrap;">
-            <span class="prio-pill" style="color:${prio.color}; background:${prio.color}18; border:1px solid ${prio.color}33;">${prio.dot} ${prio.label}</span>
-            <span class="badge" style="padding:1px 6px; font-size:0.65rem;">${t.pts} pts</span>
-            <span class="task-age">${ageLabel}</span>
-            ${urgentBadge}
-          </div>
+  card.innerHTML = `
+    <div class="pending-card-main">
+      <button class="btn-check-card" title="Completar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+      <div class="pending-card-body">
+        <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+          <span class="pending-card-name">${t.name}</span>
+          ${hasExtra ? `<button class="btn-expand-card" title="Ver detalles"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>` : ''}
+        </div>
+        <div class="pending-card-meta">
+          <span class="prio-pill" style="color:${prio.color}; background:${prio.color}18; border:1px solid ${prio.color}33;">${prio.dot} ${prio.label}</span>
+          <span class="badge" style="padding:1px 6px; font-size:0.65rem;">${t.pts} pts</span>
+          <span class="task-age">${ageLabel}</span>
+          ${isUrgent ? `<span class="urgency-flag">🔥 Urgente</span>` : ''}
         </div>
       </div>
-      <div style="display:flex; gap:8px; margin-left:10px;">
-        <button class="btn-edit-pen" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-        <button class="btn-del-pen" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      <div class="pending-card-actions">
+        <button class="btn-edit-pen" title="Editar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+        <button class="btn-del-pen" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
-    `;
+    </div>
+    ${hasExtra ? `<div class="pending-card-detail" style="display:none;">
+      ${hasImage ? `<img class="pending-card-img" src="${t.image}" alt="${t.name}">` : ''}
+    </div>` : ''}
+  `;
 
-    card.querySelector('.btn-check-card').onclick = () => {
-      state.completePendingTask(i, () => {
-        showToast("🔥 ¡RACHA 3! +1 PUNTO 🔥", "warning");
-      });
-      showToast("¡Tarea completada!");
+  card.querySelector('.btn-check-card').onclick = () => {
+    state.completePendingTask(i, () => {
+      showToast("🔥 ¡RACHA 3! +1 PUNTO 🔥", "warning");
+    });
+    showToast("¡Tarea completada!");
+  };
+
+  card.querySelector('.btn-edit-pen').onclick = () => {
+    if (onEdit) onEdit(t, i);
+  };
+
+  card.querySelector('.btn-del-pen').onclick = () => {
+    showConfirm(`¿Eliminar "${t.name}"?`, () => {
+      state.deletePendingTask(i);
+      showToast("Tarea eliminada");
+    });
+  };
+
+  if (hasExtra) {
+    const expandBtn = card.querySelector('.btn-expand-card');
+    const detail = card.querySelector('.pending-card-detail');
+    expandBtn.onclick = () => {
+      const open = detail.style.display !== 'none';
+      detail.style.display = open ? 'none' : 'block';
+      expandBtn.style.transform = open ? '' : 'rotate(180deg)';
     };
+    if (hasImage) {
+      card.querySelector('.pending-card-img').onclick = () => openLightbox(t.image, t.name);
+    }
+  }
 
-    card.querySelector('.btn-edit-pen').onclick = () => {
-      elements.pendingInput.value = t.name;
-      elements.pendingPoints.value = t.pts;
-      if (elements.pendingPriority) elements.pendingPriority.value = t.priority || 'media';
-      elements.editPenIdx.value = i;
-      elements.btnSavePen.innerText = "Actualizar";
-      elements.pendingInput.focus();
-    };
+  return card;
+}
 
-    card.querySelector('.btn-del-pen').onclick = () => {
-      showConfirm(`¿Eliminar la tarea pendiente "${t.name}"?`, () => {
-        state.deletePendingTask(i);
-        showToast("Tarea eliminada");
-      });
-    };
-
-    list.appendChild(card);
-  });
+function renderPending() {
+  renderPendingInto(elements.pendingListDisplay, true);
+  if (elements.pendingFullscreenModal && elements.pendingFullscreenModal.classList.contains('open')) {
+    renderPendingInto(elements.pendingListFullscreenDisplay, false);
+  }
 
   // Streaks alert
   const bCount = (state.store.bonusCounters && state.store.bonusCounters[state.localProfileId]) || 0;
@@ -604,6 +634,61 @@ function renderPending() {
       alertEl.style.display = 'none';
     }
   }
+}
+
+function renderPendingInto(container, withEditFocus) {
+  if (!container) return;
+  container.innerHTML = '';
+
+  const allTasks = state.store.pendingList.map((t, i) => ({ t, i }));
+
+  if (allTasks.length === 0) {
+    container.innerHTML = `<div style="padding: 30px 20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">No tienes tareas pendientes. ¡Buen trabajo! 🎉</div>`;
+    return;
+  }
+
+  const onEdit = withEditFocus ? (t, i) => {
+    elements.pendingInput.value = t.name;
+    elements.pendingPoints.value = t.pts;
+    if (elements.pendingPriority) elements.pendingPriority.value = t.priority || 'media';
+    elements.editPenIdx.value = i;
+    elements.btnSavePen.innerText = "Actualizar";
+    elements.pendingInput.focus();
+    if (elements.pendingFullscreenModal) elements.pendingFullscreenModal.classList.remove('open');
+  } : (t, i) => {
+    elements.pendingInput.value = t.name;
+    elements.pendingPoints.value = t.pts;
+    if (elements.pendingPriority) elements.pendingPriority.value = t.priority || 'media';
+    elements.editPenIdx.value = i;
+    elements.btnSavePen.innerText = "Actualizar";
+    if (elements.pendingFullscreenModal) elements.pendingFullscreenModal.classList.remove('open');
+  };
+
+  // Group by priority
+  const groups = [
+    { key: 'alta', label: '🔴 Alta Prioridad' },
+    { key: 'media', label: '🟡 Media Prioridad' },
+    { key: 'baja', label: '🔵 Baja Prioridad' }
+  ];
+
+  groups.forEach(({ key, label }) => {
+    const groupTasks = allTasks
+      .filter(({ t }) => (t.priority || 'media') === key)
+      .sort((a, b) => state.taskUrgencyScore(b.t) - state.taskUrgencyScore(a.t));
+
+    if (groupTasks.length === 0) return;
+
+    const prio = PRIORITY_META[key];
+    const header = document.createElement('div');
+    header.className = 'pending-section-header';
+    header.style.borderLeftColor = prio.color;
+    header.innerHTML = `<span>${label}</span><span class="pending-section-count">${groupTasks.length}</span>`;
+    container.appendChild(header);
+
+    groupTasks.forEach(({ t, i }) => {
+      container.appendChild(buildPendingCard(t, i, onEdit));
+    });
+  });
 }
 
 export function renderMetrics() {
@@ -958,87 +1043,106 @@ export function toggleShoppingTab(tabId) {
   }
 }
 
+// Current column count for shopping (1, 2, or 3). Persisted in localStorage.
+let shopCols = parseInt(localStorage.getItem('shopCols') || '1', 10);
+
+export function setShopCols(n) {
+  shopCols = n;
+  localStorage.setItem('shopCols', n);
+  // Update toggle button active states (inline + fullscreen)
+  ['', 'Fs'].forEach(prefix => {
+    [1, 2, 3].forEach(c => {
+      const btn = elements[`btn${prefix}Col${c}`];
+      if (btn) btn.classList.toggle('active', c === n);
+    });
+  });
+  // Re-apply grid class on both containers
+  _applyShopGrid(elements.shoppingListDisplay, false);
+  _applyShopGrid(elements.shoppingListFullscreenDisplay, true);
+}
+
+function _applyShopGrid(container, large) {
+  if (!container) return;
+  container.classList.remove('shop-grid-1', 'shop-grid-2', 'shop-grid-3');
+  container.classList.add(`shop-grid-${shopCols}`);
+}
+
 export function renderShoppingList() {
-  renderShoppingItemsInto(elements.shoppingListDisplay, false);
-  // Keep the fullscreen view in sync if it is open.
+  _applyShopGrid(elements.shoppingListDisplay, false);
+  renderShoppingItemsInto(elements.shoppingListDisplay);
   if (elements.shoppingFullscreenModal && elements.shoppingFullscreenModal.classList.contains('open')) {
-    renderShoppingItemsInto(elements.shoppingListFullscreenDisplay, true);
+    _applyShopGrid(elements.shoppingListFullscreenDisplay, true);
+    renderShoppingItemsInto(elements.shoppingListFullscreenDisplay);
   }
 }
 
-/**
- * Render the shopping items into a given container.
- * @param {HTMLElement} list  target element
- * @param {boolean} large     bigger layout for the fullscreen view
- */
-function renderShoppingItemsInto(list, large) {
+function renderShoppingItemsInto(list) {
   if (!list) return;
   list.innerHTML = '';
 
   const items = state.store.shoppingList || [];
   if (items.length === 0) {
-    list.innerHTML = `
-      <div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
-        No hay compras pendientes. ¡Todo al día! 🎉
-      </div>
-    `;
+    list.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No hay compras pendientes. ¡Todo al día! 🎉</div>`;
     return;
   }
 
   const roomName = state.currentRoomName || 'la Sala';
-  const nameSize = large ? '1.15rem' : '0.95rem';
-  const pad = large ? '16px 18px' : '12px 14px';
 
   items.forEach((item, index) => {
-    const el = document.createElement('div');
-    el.className = 'tpl-item';
-    el.style.display = 'flex';
-    el.style.justifyContent = 'space-between';
-    el.style.alignItems = 'center';
-    el.style.padding = pad;
-    el.style.cursor = 'default';
-
-    // Badge styling for assignment (room name instead of "Para la Casa")
+    // Badge for assignment
     let targetBadge = '';
     if (!item.assignedTo || item.assignedTo === 'casa') {
-      targetBadge = `<span class="badge" style="background: rgba(15, 23, 42, 0.05); color: var(--text-muted); border: none; font-size: 0.65rem; padding: 2px 6px; font-weight: 700;">${roomName}</span>`;
+      targetBadge = `<span class="shop-badge-room">${roomName}</span>`;
     } else {
       const assignedUser = state.store.config.users.find(u => u.id === item.assignedTo);
       const color = assignedUser ? assignedUser.color : 'var(--text-muted)';
       const name = assignedUser ? assignedUser.name : '???';
-      targetBadge = `<span class="badge" style="background: ${color}15; color: ${color}; border: 1px solid ${color}30; font-size: 0.65rem; padding: 2px 6px; font-weight: 700;">${name}</span>`;
+      targetBadge = `<span class="shop-badge-user" style="background:${color}15; color:${color}; border-color:${color}30;">${name}</span>`;
     }
 
-    // Photo-only items have no name: show a gentle placeholder.
     const displayName = item.name && item.name.trim() ? item.name : '📷 Artículo en foto';
+    const hasImage = !!item.image;
 
-    // Thumbnail html
-    const thumbSize = large ? 'width:64px;height:64px;' : '';
-    const imageHtml = item.image
-      ? `<img class="shop-thumbnail" src="${item.image}" alt="${displayName}" style="${thumbSize}">`
-      : '';
+    const card = document.createElement('div');
+    card.className = 'shop-card';
 
-    el.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px; flex:1; overflow:hidden; margin-right:10px;">
-        ${imageHtml}
-        <div style="display:flex; flex-direction:column; gap:3px; flex:1; overflow:hidden;">
-          <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
-            <span style="font-weight:700; font-size:${nameSize}; color: var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${displayName}</span>
-            ${item.qty ? `<span style="font-size:0.75rem; color:var(--text-muted); background:rgba(15,23,42,0.05); padding:1px 6px; border-radius:4px; font-weight:600; flex-shrink:0;">${item.qty}</span>` : ''}
-          </div>
-          <div style="display:flex; align-items:center; gap:6px;">
+    // Card header: thumbnail (if any) + name + actions
+    card.innerHTML = `
+      <div class="shop-card-inner">
+        ${hasImage ? `<img class="shop-card-img" src="${item.image}" alt="${displayName}">` : ''}
+        <div class="shop-card-info">
+          <span class="shop-card-name">${displayName}</span>
+          <div class="shop-card-meta">
+            ${item.qty ? `<span class="shop-qty">${item.qty}</span>` : ''}
             ${targetBadge}
           </div>
         </div>
+        <div class="shop-card-btns">
+          ${(item.qty || targetBadge || hasImage) ? `<button class="btn-expand-shop" title="Detalles"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>` : ''}
+          <button class="btn-buy-shop" title="Comprado"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+          <button class="btn-del-shop" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
       </div>
-      <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
-        <button class="btn-buy-shop" style="display:flex; align-items:center; justify-content:center; background:var(--success); color:white; border:none; border-radius:8px; padding:6px; cursor:pointer; width:34px; height:34px; transition:var(--transition);" title="Marcar como comprado"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
-        <button class="btn-del-shop" style="display:flex; align-items:center; justify-content:center; background:rgba(239, 68, 68, 0.1); color:var(--danger); border:none; border-radius:8px; padding:6px; cursor:pointer; width:34px; height:34px; transition:var(--transition);" title="Eliminar de la lista"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      <div class="shop-card-detail" style="display:none;">
+        ${hasImage ? `<img class="shop-card-detail-img" src="${item.image}" alt="${displayName}">` : ''}
+        ${item.qty ? `<div class="shop-card-detail-row"><span class="shop-detail-label">Cantidad:</span> ${item.qty}</div>` : ''}
+        <div class="shop-card-detail-row"><span class="shop-detail-label">Para:</span> ${targetBadge}</div>
       </div>
     `;
 
-    // Mark as bought (no points anymore — just removes it)
-    el.querySelector('.btn-buy-shop').onclick = (e) => {
+    // Expand toggle
+    const expandBtn = card.querySelector('.btn-expand-shop');
+    if (expandBtn) {
+      const detail = card.querySelector('.shop-card-detail');
+      expandBtn.onclick = (e) => {
+        e.stopPropagation();
+        const open = detail.style.display !== 'none';
+        detail.style.display = open ? 'none' : 'block';
+        expandBtn.style.transform = open ? '' : 'rotate(180deg)';
+      };
+    }
+
+    card.querySelector('.btn-buy-shop').onclick = (e) => {
       e.stopPropagation();
       showConfirm(`¿Marcar "${displayName}" como comprado?`, () => {
         state.buyShoppingItem(index);
@@ -1046,34 +1150,32 @@ function renderShoppingItemsInto(list, large) {
       });
     };
 
-    // Bind delete item
-    el.querySelector('.btn-del-shop').onclick = (e) => {
+    card.querySelector('.btn-del-shop').onclick = (e) => {
       e.stopPropagation();
-      showConfirm(`¿Eliminar "${displayName}" de la lista de compras?`, () => {
+      showConfirm(`¿Eliminar "${displayName}"?`, () => {
         state.deleteShoppingItem(index);
-        showToast("Artículo eliminado de la lista");
+        showToast("Artículo eliminado");
       });
     };
 
-    // Bind image lightbox
-    if (item.image) {
-      el.querySelector('.shop-thumbnail').onclick = (e) => {
+    if (hasImage) {
+      card.querySelector('.shop-card-img').onclick = (e) => {
         e.stopPropagation();
-        openLightbox(item.image, `${displayName} ${item.qty ? '(' + item.qty + ')' : ''}`);
+        openLightbox(item.image, `${displayName}${item.qty ? ' (' + item.qty + ')' : ''}`);
       };
     }
 
-    list.appendChild(el);
+    list.appendChild(card);
   });
 }
 
-/**
- * Open / close the fullscreen shopping list view.
- */
 export function openShoppingFullscreen() {
   const modal = elements.shoppingFullscreenModal;
   if (!modal) return;
-  renderShoppingItemsInto(elements.shoppingListFullscreenDisplay, true);
+  _applyShopGrid(elements.shoppingListFullscreenDisplay, true);
+  renderShoppingItemsInto(elements.shoppingListFullscreenDisplay);
+  // Sync fs column toggle states
+  setShopCols(shopCols);
   modal.classList.add('open');
 }
 
@@ -1081,6 +1183,54 @@ export function closeShoppingFullscreen() {
   if (elements.shoppingFullscreenModal) {
     elements.shoppingFullscreenModal.classList.remove('open');
   }
+}
+
+export function openPendingFullscreen() {
+  const modal = elements.pendingFullscreenModal;
+  if (!modal) return;
+  renderPendingInto(elements.pendingListFullscreenDisplay, false);
+  modal.classList.add('open');
+}
+
+export function closePendingFullscreen() {
+  if (elements.pendingFullscreenModal) elements.pendingFullscreenModal.classList.remove('open');
+}
+
+export function openTodayFullscreen() {
+  const modal = elements.todayFullscreenModal;
+  if (!modal) return;
+  renderTodayLogInto(elements.todayFullscreenDisplay);
+  modal.classList.add('open');
+}
+
+export function closeTodayFullscreen() {
+  if (elements.todayFullscreenModal) elements.todayFullscreenModal.classList.remove('open');
+}
+
+function renderTodayLogInto(container) {
+  if (!container) return;
+  container.innerHTML = '';
+  const logs = [...state.store.todayLog].reverse();
+  if (logs.length === 0) {
+    container.innerHTML = `<div style="padding:40px 20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">No hay actividad registrada hoy todavía.</div>`;
+    return;
+  }
+  logs.forEach(x => {
+    const logUser = state.store.config.users.find(us => us.id === x.who);
+    const col = logUser ? logUser.color : 'var(--text-muted)';
+    const nam = logUser ? logUser.name : '???';
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `
+      <div>
+        <span class="log-time">${x.time}</span>
+        <span style="color:${col}; font-weight:700; margin-right:6px;">${nam.substring(0,5)}:</span>
+        <span>${x.name}</span>
+      </div>
+      <span class="badge">+${x.pts}</span>
+    `;
+    container.appendChild(item);
+  });
 }
 
 export function openLightbox(src, caption) {

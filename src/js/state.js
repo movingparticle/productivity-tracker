@@ -16,19 +16,32 @@ export const PRIORITY_ORDER = { alta: 3, media: 2, baja: 1 };
 // wiping out users, routines and tasks.
 let roomDataLoaded = false;
 
-export let store = {
-  config: { 
-    users: [{ id: 'u1', name: 'User 1', color: '#3b82f6', meta: 15, bank: 0 }], 
-    days: 6 
-  },
-  lastActiveDate: '',
-  bonusCounters: {},
-  todayLog: [], 
-  history: [], 
-  pendingList: [], 
-  templates: [],
-  roadmaps: {}
-};
+function makeEmptyStore() {
+  return {
+    config: {
+      users: [{ id: 'u1', name: 'User 1', color: '#3b82f6', meta: 15, bank: 0 }],
+      days: 6
+    },
+    lastActiveDate: '',
+    bonusCounters: {},
+    todayLog: [],
+    history: [],
+    pendingList: [],
+    templates: [],
+    roadmaps: {},
+    shoppingList: [],
+    roadmapHistory: []
+  };
+}
+
+export let store = makeEmptyStore();
+
+/** Call before connecting to a new room so stale data from the previous room
+ *  is never visible in the UI even for a single render frame. */
+export function resetRoomState() {
+  store = makeEmptyStore();
+  roomDataLoaded = false;
+}
 
 // UI Re-render callback registration
 let uiRenderCallback = null;
@@ -55,7 +68,8 @@ export function setRoomState(roomId, newState) {
   roomDataLoaded = true;
 
   if (newState) {
-    store = { ...store, ...newState };
+    // Start from a clean slate so previous room's data never bleeds in.
+    store = { ...makeEmptyStore(), ...newState };
     
     // Ensure all critical arrays exist
     ['todayLog', 'history', 'pendingList', 'templates', 'roadmapHistory', 'shoppingList'].forEach(k => {
@@ -242,7 +256,7 @@ export function deleteLogEntry(id) {
  * Tasks carry a priority ('alta' | 'media' | 'baja') and a createdAt timestamp
  * so the UI can rank them by urgency (priority + how long they've been waiting).
  */
-export function savePendingTask(name, pts, priority, editIndexStr) {
+export function savePendingTask(name, pts, priority, editIndexStr, imageBase64 = null) {
   const ptsNum = Number(pts) || 5;
   const prio = PRIORITY_ORDER[priority] ? priority : 'media';
   if (editIndexStr !== "") {
@@ -253,8 +267,8 @@ export function savePendingTask(name, pts, priority, editIndexStr) {
         name,
         pts: ptsNum,
         priority: prio,
-        // Keep the original creation date so urgency keeps growing on edit.
-        createdAt: existing.createdAt || Date.now()
+        createdAt: existing.createdAt || Date.now(),
+        image: imageBase64 !== null ? imageBase64 : (existing.image || null)
       };
     }
   } else {
@@ -262,7 +276,8 @@ export function savePendingTask(name, pts, priority, editIndexStr) {
       name,
       pts: ptsNum,
       priority: prio,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      image: imageBase64 || null
     });
   }
   saveState();
