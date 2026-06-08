@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Productivity Tracker Premium</title>
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-D9YQLFpl.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-BR76aExg.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-CdvUup-J.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-DQQPJhS9.css">
 </head>
 <body>
 
@@ -251,8 +251,6 @@
         </button>
       </div>
 
-      <div class="bonus-alert" id="bonusAlert">¡BONO! COMPLETA 3 PARA +1 PT</div>
-
       <!-- New task form -->
       <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding:16px; border-radius:var(--radius-md); margin-bottom:15px; flex-shrink:0;">
         <input type="hidden" id="editPenIdx">
@@ -347,16 +345,13 @@
       <!-- TAB 1: VIEW SHOPPING LIST -->
       <div id="shoppingListViewTab">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px; gap:8px;">
-          <!-- Column toggle -->
+          <!-- Column toggle (1 or 2 cols only) -->
           <div style="display:flex; gap:4px;">
-            <button class="btn-col-toggle active" id="btnCol1" data-cols="1" title="1 columna">
+            <button class="btn-col-toggle active" id="btnCol1" data-cols="1" title="Lista">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
             </button>
-            <button class="btn-col-toggle" id="btnCol2" data-cols="2" title="2 columnas">
+            <button class="btn-col-toggle" id="btnCol2" data-cols="2" title="Cuadrícula">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>
-            </button>
-            <button class="btn-col-toggle" id="btnCol3" data-cols="3" title="3 columnas">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="5" height="18" rx="1"/><rect x="9.5" y="3" width="5" height="18" rx="1"/><rect x="17" y="3" width="5" height="18" rx="1"/></svg>
             </button>
           </div>
           <button id="btnShoppingFullscreen" class="btn-fullscreen" title="Ver en pantalla completa">
@@ -505,9 +500,13 @@
     <div class="modal-content">
       <h3 style="text-align:center; margin-top:0; margin-bottom:20px; font-family: var(--font-title); font-weight:800;">Ajustes de Sala</h3>
       
-      <button class="btn-save" style="background:#3b82f6; font-size:1rem; padding:15px; margin-bottom:20px; box-shadow: 0 4px 6px rgba(59,130,246,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;" id="btnOpenUsers">
+      <button class="btn-save" style="background:#3b82f6; font-size:1rem; padding:15px; margin-bottom:10px; box-shadow: 0 4px 6px rgba(59,130,246,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;" id="btnOpenUsers">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           Gestionar Perfiles y Metas
+      </button>
+      <button class="btn-save" style="background:linear-gradient(135deg,#7c3aed,#4f46e5); font-size:1rem; padding:15px; margin-bottom:20px; box-shadow: 0 4px 6px rgba(124,58,237,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;" id="btnOpenGameRules">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Set Rules (Reglas del juego)
       </button>
 
       <!-- MEMBERS & INVITE -->
@@ -779,14 +778,11 @@
     <div class="fullscreen-header">
       <h3 style="margin:0; font-family: var(--font-title); font-weight:800;">🛒 Lista de Compras</h3>
       <div style="display:flex; gap:6px; align-items:center;">
-        <button class="btn-col-toggle" id="btnFsCol1" data-cols="1" title="1 columna">
+        <button class="btn-col-toggle" id="btnFsCol1" data-cols="1" title="Lista">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
         </button>
-        <button class="btn-col-toggle" id="btnFsCol2" data-cols="2" title="2 columnas">
+        <button class="btn-col-toggle" id="btnFsCol2" data-cols="2" title="Cuadrícula">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>
-        </button>
-        <button class="btn-col-toggle" id="btnFsCol3" data-cols="3" title="3 columnas">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="5" height="18" rx="1"/><rect x="9.5" y="3" width="5" height="18" rx="1"/><rect x="17" y="3" width="5" height="18" rx="1"/></svg>
         </button>
         <button id="btnCloseShoppingFullscreen" style="border:none; background:none; font-size:2rem; color: var(--text-muted); cursor:pointer; line-height:1; margin-left:8px;">×</button>
       </div>
@@ -810,6 +806,48 @@
       <button id="btnCloseTodayFullscreen" style="border:none; background:none; font-size:2rem; color: var(--text-muted); cursor:pointer; line-height:1;">×</button>
     </div>
     <div id="todayFullscreenDisplay" class="fullscreen-body"></div>
+  </div>
+
+  <!-- GAME RULES MODAL -->
+  <div class="modal-overlay" id="gameRulesModal">
+    <div class="modal-content">
+      <h3 style="text-align:center; margin-top:0; margin-bottom:6px; font-family:var(--font-title); font-weight:800;">🛡️ Set Rules</h3>
+      <p style="text-align:center; color:var(--text-muted); font-size:0.82rem; margin-bottom:20px;">Define cómo funciona el sistema de juego en esta sala</p>
+
+      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); letter-spacing:0.04em; text-transform:uppercase; display:block; margin-bottom:8px;">Rachas de tareas (Streak)</label>
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <label class="toggle-label">
+          <input type="checkbox" id="ruleStreakEnabled" checked>
+          <span class="toggle-track"></span>
+        </label>
+        <span style="font-size:0.9rem; font-weight:600; color:var(--text-main);">Activar bonos por racha</span>
+      </div>
+      <div id="streakOptions">
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+          <label style="font-size:0.8rem; color:var(--text-muted); flex:1;">Tareas para activar racha</label>
+          <input type="number" id="ruleStreakThreshold" value="3" min="2" max="10" style="width:60px; text-align:center; margin:0; padding:8px;">
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:16px;">
+          <label style="font-size:0.8rem; color:var(--text-muted); flex:1;">Puntos de bono por racha</label>
+          <input type="number" id="ruleStreakBonus" value="1" min="1" max="20" style="width:60px; text-align:center; margin:0; padding:8px;">
+        </div>
+      </div>
+
+      <div style="border-top:1px dashed var(--card-border); margin:16px 0;"></div>
+
+      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); letter-spacing:0.04em; text-transform:uppercase; display:block; margin-bottom:8px;">Urgencia de tareas</label>
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:16px;">
+        <label style="font-size:0.8rem; color:var(--text-muted); flex:1;">Días para marcar como urgente</label>
+        <input type="number" id="ruleUrgencyDays" value="3" min="1" max="14" style="width:60px; text-align:center; margin:0; padding:8px;">
+      </div>
+
+      <div style="background:rgba(124,58,237,0.06); border:1px solid rgba(124,58,237,0.15); border-radius:10px; padding:12px; margin-bottom:18px;">
+        <p style="margin:0; font-size:0.78rem; color:#6d28d9; font-weight:600;">💡 Más reglas próximamente: desafíos semanales, metas de equipo, recompensas personalizadas.</p>
+      </div>
+
+      <button class="btn-save" id="btnSaveGameRules">Guardar Reglas</button>
+      <button class="btn-close-txt" id="btnCloseGameRules">Cerrar</button>
+    </div>
   </div>
 
 </body>
