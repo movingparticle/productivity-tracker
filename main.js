@@ -24,6 +24,25 @@ import {
 } from "./src/js/firebase";
 import { askAssistant, fixShoppingListWithAI } from "./src/js/agent";
 
+/* ------------------------------------------------------------------ */
+/* GAME RULES (persisted in localStorage)                             */
+/* ------------------------------------------------------------------ */
+
+const DEFAULT_RULES = { streakEnabled: true, streakThreshold: 3, streakBonus: 1, urgencyDays: 3 };
+
+function loadGameRules() {
+  try {
+    return { ...DEFAULT_RULES, ...JSON.parse(localStorage.getItem('gameRules') || '{}') };
+  } catch { return { ...DEFAULT_RULES }; }
+}
+
+function saveGameRules(rules) {
+  localStorage.setItem('gameRules', JSON.stringify(rules));
+}
+
+// Export so state/ui can read urgency days rule
+export function getUrgencyDays() { return loadGameRules().urgencyDays; }
+
 // Ensures the session only starts once per authenticated session
 let appStarted = false;
 // Current room context
@@ -458,20 +477,149 @@ function parseBulkLines(raw) {
     .map(name => ({ name, qty: '' }));
 }
 
+/* ------------------------------------------------------------------ */
+/* TAB SWIPE NAVIGATION                                               */
+/* ------------------------------------------------------------------ */
+
+// Ordered tab list — matches navOrder which can be reordered by user.
+const TAB_DEFS = [
+  { id: 'navTrackerBtn',  target: 'tracker'  },
+  { id: 'navRoadmapBtn',  target: 'roadmap'  },
+  { id: 'navPendingBtn',  target: 'pending'  },
+  { id: 'navShoppingBtn', target: 'shopping' },
+  { id: 'navMetricsBtn',  target: 'metrics'  }
+];
+
+let navOrder = (() => {
+  try { return JSON.parse(localStorage.getItem('navOrder') || 'null'); } catch { return null; }
+})() || TAB_DEFS.map(t => t.target);
+
+function applyNavOrder() {
+  const navBar = document.querySelector('.bottom-nav');
+  if (!navBar) return;
+  navOrder.forEach(target => {
+    const def = TAB_DEFS.find(d => d.target === target);
+    if (!def) return;
+    const btn = document.getElementById(def.id);
+    if (btn) navBar.appendChild(btn); // move to end in order
+  });
+}
+
+function getActiveTabIndex() {
+  const active = document.querySelector('.nav-item.active');
+  if (!active) return 0;
+  const target = TAB_DEFS.find(d => d.id === active.id)?.target;
+  return navOrder.indexOf(target);
+}
+
+function navigateToTabIndex(idx) {
+  const clamped = Math.max(0, Math.min(navOrder.length - 1, idx));
+  const target = navOrder[clamped];
+  const def = TAB_DEFS.find(d => d.target === target);
+  if (!def) return;
+  const btn = document.getElementById(def.id);
+  if (btn) ui.navTo(target, btn);
+}
+
+function initTabSwipe() {
+  const appContainer = document.getElementById('appContainer');
+  if (!appContainer) return;
+
+  let tsX = 0, tsY = 0, isHoriz = null;
+
+  appContainer.addEventListener('touchstart', e => {
+    tsX = e.touches[0].clientX;
+    tsY = e.touches[0].clientY;
+    isHoriz = null;
+  }, { passive: true });
+
+  appContainer.addEventListener('touchmove', e => {
+    if (isHoriz === null) {
+      const dx = Math.abs(e.touches[0].clientX - tsX);
+      const dy = Math.abs(e.touches[0].clientY - tsY);
+      if (dx > 8 || dy > 8) isHoriz = dx > dy;
+    }
+    // Don't prevent default — let vertical scroll work normally
+  }, { passive: true });
+
+  appContainer.addEventListener('touchend', e => {
+    if (!isHoriz) return;
+    const dx = e.changedTouches[0].clientX - tsX;
+    if (Math.abs(dx) < 55) return;
+    // Block swipe if inside a horizontally-scrollable element
+    const target = e.target.closest('.roadmap-tabs, .profile-switch, input, textarea, select');
+    if (target) return;
+    navigateToTabIndex(getActiveTabIndex() + (dx < 0 ? 1 : -1));
+  }, { passive: true });
+}
+
+/* ------------------------------------------------------------------ */
+/* NAV LONG-PRESS DRAG REORDER                                        */
+/* ------------------------------------------------------------------ */
+
+let navDrag = null;
+let navLongPressTimer = null;
+
+function initNavReorder() {
+  const navBar = document.querySelector('.bottom-nav');
+  if (!navBar) return;
+
+  applyNavOrder();
+
+  navBar.addEventListener('pointerdown', e => {
+    const item = e.target.closest('.nav-item');
+    if (!item) return;
+    navLongPressTimer = setTimeout(() => {
+      if (navigator.vibrate) navigator.vibrate(50);
+      navBar.classList.add('nav-reordering');
+      item.classList.add('nav-dragging');
+      navDrag = { el: item, startX: e.clientX };
+      navBar.setPointerCapture(e.pointerId);
+    }, 480);
+  });
+
+  navBar.addEventListener('pointermove', e => {
+    if (!navDrag) return;
+    // Find which item the pointer is currently over (exclude the dragged one)
+    navDrag.el.style.pointerEvents = 'none';
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.nav-item');
+    navDrag.el.style.pointerEvents = '';
+    if (over && over !== navDrag.el) {
+      // Swap in DOM
+      const items = [...navBar.querySelectorAll('.nav-item')];
+      const dragIdx = items.indexOf(navDrag.el);
+      const overIdx = items.indexOf(over);
+      if (dragIdx < overIdx) over.after(navDrag.el);
+      else navBar.insertBefore(navDrag.el, over);
+    }
+  });
+
+  const endDrag = () => {
+    if (navLongPressTimer) { clearTimeout(navLongPressTimer); navLongPressTimer = null; }
+    if (!navDrag) return;
+    navDrag.el.classList.remove('nav-dragging');
+    document.querySelector('.bottom-nav')?.classList.remove('nav-reordering');
+    // Persist new order
+    const items = [...navBar.querySelectorAll('.nav-item')];
+    navOrder = items.map(btn => TAB_DEFS.find(d => d.id === btn.id)?.target).filter(Boolean);
+    localStorage.setItem('navOrder', JSON.stringify(navOrder));
+    navDrag = null;
+  };
+  navBar.addEventListener('pointerup', endDrag);
+  navBar.addEventListener('pointercancel', endDrag);
+}
+
 // Event Bindings (in-app)
 function bindEvents() {
   // Navigation Item Clicks
-  const navItems = [
-    { id: 'navTrackerBtn', target: 'tracker' },
-    { id: 'navRoadmapBtn', target: 'roadmap' },
-    { id: 'navPendingBtn', target: 'pending' },
-    { id: 'navShoppingBtn', target: 'shopping' },
-    { id: 'navMetricsBtn', target: 'metrics' }
-  ];
+  const navItems = TAB_DEFS;
   navItems.forEach(item => {
     const btn = document.getElementById(item.id);
     if (btn) {
-      btn.onclick = () => ui.navTo(item.target, btn);
+      btn.onclick = () => {
+        if (navDrag) return; // ignore click at end of drag
+        ui.navTo(item.target, btn);
+      };
     }
   });
 
@@ -678,11 +826,8 @@ function bindEvents() {
     ui.elements.btnCloseShoppingFullscreen.onclick = () => ui.closeShoppingFullscreen();
   }
 
-  // Shopping column toggles (inline and fullscreen header)
-  [
-    ui.elements.btnCol1, ui.elements.btnCol2, ui.elements.btnCol3,
-    ui.elements.btnFsCol1, ui.elements.btnFsCol2, ui.elements.btnFsCol3
-  ].forEach(btn => {
+  // Shopping column toggles (1 or 2 cols)
+  [ui.elements.btnCol1, ui.elements.btnCol2, ui.elements.btnFsCol1, ui.elements.btnFsCol2].forEach(btn => {
     if (btn) btn.onclick = () => ui.setShopCols(parseInt(btn.dataset.cols, 10));
   });
 
@@ -753,6 +898,44 @@ function bindEvents() {
     ui.elements.btnCloseConfig.onclick = () => {
       ui.closeModal(ui.elements.configModal);
     };
+  }
+
+  // Game Rules modal
+  if (ui.elements.btnOpenGameRules) {
+    ui.elements.btnOpenGameRules.onclick = () => {
+      // Load saved rules into UI
+      const rules = loadGameRules();
+      if (ui.elements.ruleStreakEnabled) ui.elements.ruleStreakEnabled.checked = rules.streakEnabled;
+      if (ui.elements.ruleStreakThreshold) ui.elements.ruleStreakThreshold.value = rules.streakThreshold;
+      if (ui.elements.ruleStreakBonus) ui.elements.ruleStreakBonus.value = rules.streakBonus;
+      if (ui.elements.ruleUrgencyDays) ui.elements.ruleUrgencyDays.value = rules.urgencyDays;
+      if (ui.elements.streakOptions) ui.elements.streakOptions.style.display = rules.streakEnabled ? '' : 'none';
+      ui.closeModal(ui.elements.configModal);
+      ui.openModal(ui.elements.gameRulesModal);
+    };
+  }
+  if (ui.elements.ruleStreakEnabled) {
+    ui.elements.ruleStreakEnabled.onchange = () => {
+      if (ui.elements.streakOptions) {
+        ui.elements.streakOptions.style.display = ui.elements.ruleStreakEnabled.checked ? '' : 'none';
+      }
+    };
+  }
+  if (ui.elements.btnSaveGameRules) {
+    ui.elements.btnSaveGameRules.onclick = () => {
+      const rules = {
+        streakEnabled: ui.elements.ruleStreakEnabled?.checked ?? true,
+        streakThreshold: parseInt(ui.elements.ruleStreakThreshold?.value || '3', 10),
+        streakBonus: parseInt(ui.elements.ruleStreakBonus?.value || '1', 10),
+        urgencyDays: parseInt(ui.elements.ruleUrgencyDays?.value || '3', 10)
+      };
+      saveGameRules(rules);
+      ui.closeModal(ui.elements.gameRulesModal);
+      ui.showToast("Reglas guardadas");
+    };
+  }
+  if (ui.elements.btnCloseGameRules) {
+    ui.elements.btnCloseGameRules.onclick = () => ui.closeModal(ui.elements.gameRulesModal);
   }
 
   if (ui.elements.mainFab) {
@@ -1113,6 +1296,8 @@ function initApp() {
   bindAuthEvents();
   bindRoomsEvents();
   bindEvents();
+  initNavReorder();
+  initTabSwipe();
 
   state.registerUiRenderer(() => ui.updateUI());
 

@@ -90,7 +90,7 @@ export function initDomElements() {
     treeTooltip: document.getElementById('treeTooltip'),
     treeStatusHint: document.getElementById('treeStatusHint'),
     
-    bonusAlert: document.getElementById('bonusAlert'),
+    bonusAlert: null, // removed – streak display now in Set Rules modal
     pendingInput: document.getElementById('pendingInput'),
     pendingPoints: document.getElementById('pendingPoints'),
     editPenIdx: document.getElementById('editPenIdx'),
@@ -226,13 +226,22 @@ export function initDomElements() {
     todayFullscreenDisplay: document.getElementById('todayFullscreenDisplay'),
     btnCloseTodayFullscreen: document.getElementById('btnCloseTodayFullscreen'),
 
-    // Shopping column toggles (inline + fullscreen)
+    // Shopping column toggles (inline + fullscreen – max 2 cols)
     btnCol1: document.getElementById('btnCol1'),
     btnCol2: document.getElementById('btnCol2'),
-    btnCol3: document.getElementById('btnCol3'),
     btnFsCol1: document.getElementById('btnFsCol1'),
     btnFsCol2: document.getElementById('btnFsCol2'),
-    btnFsCol3: document.getElementById('btnFsCol3')
+
+    // Game rules modal
+    btnOpenGameRules: document.getElementById('btnOpenGameRules'),
+    gameRulesModal: document.getElementById('gameRulesModal'),
+    btnCloseGameRules: document.getElementById('btnCloseGameRules'),
+    btnSaveGameRules: document.getElementById('btnSaveGameRules'),
+    ruleStreakEnabled: document.getElementById('ruleStreakEnabled'),
+    ruleStreakThreshold: document.getElementById('ruleStreakThreshold'),
+    ruleStreakBonus: document.getElementById('ruleStreakBonus'),
+    ruleUrgencyDays: document.getElementById('ruleUrgencyDays'),
+    streakOptions: document.getElementById('streakOptions')
   };
 
   createToastContainer();
@@ -621,18 +630,6 @@ function renderPending() {
   renderPendingInto(elements.pendingListDisplay, true);
   if (elements.pendingFullscreenModal && elements.pendingFullscreenModal.classList.contains('open')) {
     renderPendingInto(elements.pendingListFullscreenDisplay, false);
-  }
-
-  // Streaks alert
-  const bCount = (state.store.bonusCounters && state.store.bonusCounters[state.localProfileId]) || 0;
-  const alertEl = elements.bonusAlert;
-  if (alertEl) {
-    if (bCount > 0) {
-      alertEl.style.display = 'block';
-      alertEl.innerText = `¡RACHA ${bCount}/3! COMPLETA ${3 - bCount} MÁS PARA BONO`;
-    } else {
-      alertEl.style.display = 'none';
-    }
   }
 }
 
@@ -1043,27 +1040,28 @@ export function toggleShoppingTab(tabId) {
   }
 }
 
-// Current column count for shopping (1, 2, or 3). Persisted in localStorage.
-let shopCols = parseInt(localStorage.getItem('shopCols') || '1', 10);
+// Current column count for shopping (1 or 2). Persisted in localStorage.
+let shopCols = Math.min(2, parseInt(localStorage.getItem('shopCols') || '1', 10));
 
 export function setShopCols(n) {
-  shopCols = n;
-  localStorage.setItem('shopCols', n);
+  shopCols = Math.min(2, Math.max(1, n));
+  localStorage.setItem('shopCols', shopCols);
   // Update toggle button active states (inline + fullscreen)
   ['', 'Fs'].forEach(prefix => {
-    [1, 2, 3].forEach(c => {
+    [1, 2].forEach(c => {
       const btn = elements[`btn${prefix}Col${c}`];
-      if (btn) btn.classList.toggle('active', c === n);
+      if (btn) btn.classList.toggle('active', c === shopCols);
     });
   });
-  // Re-apply grid class on both containers
-  _applyShopGrid(elements.shoppingListDisplay, false);
-  _applyShopGrid(elements.shoppingListFullscreenDisplay, true);
+  _applyShopGrid(elements.shoppingListDisplay);
+  _applyShopGrid(elements.shoppingListFullscreenDisplay);
+  // Re-render to switch between row/tile layouts
+  renderShoppingList();
 }
 
-function _applyShopGrid(container, large) {
+function _applyShopGrid(container) {
   if (!container) return;
-  container.classList.remove('shop-grid-1', 'shop-grid-2', 'shop-grid-3');
+  container.classList.remove('shop-grid-1', 'shop-grid-2');
   container.classList.add(`shop-grid-${shopCols}`);
 }
 
@@ -1081,6 +1079,8 @@ function renderShoppingItemsInto(list) {
   list.innerHTML = '';
 
   const items = state.store.shoppingList || [];
+  const isTile = shopCols === 2;
+
   if (items.length === 0) {
     list.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No hay compras pendientes. ¡Todo al día! 🎉</div>`;
     return;
@@ -1089,7 +1089,6 @@ function renderShoppingItemsInto(list) {
   const roomName = state.currentRoomName || 'la Sala';
 
   items.forEach((item, index) => {
-    // Badge for assignment
     let targetBadge = '';
     if (!item.assignedTo || item.assignedTo === 'casa') {
       targetBadge = `<span class="shop-badge-room">${roomName}</span>`;
@@ -1097,75 +1096,137 @@ function renderShoppingItemsInto(list) {
       const assignedUser = state.store.config.users.find(u => u.id === item.assignedTo);
       const color = assignedUser ? assignedUser.color : 'var(--text-muted)';
       const name = assignedUser ? assignedUser.name : '???';
-      targetBadge = `<span class="shop-badge-user" style="background:${color}15; color:${color}; border-color:${color}30;">${name}</span>`;
+      targetBadge = `<span class="shop-badge-user" style="background:${color}15;color:${color};border-color:${color}30;">${name}</span>`;
     }
 
     const displayName = item.name && item.name.trim() ? item.name : '📷 Artículo en foto';
     const hasImage = !!item.image;
 
-    const card = document.createElement('div');
-    card.className = 'shop-card';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'shop-swipe-wrapper';
 
-    // Card header: thumbnail (if any) + name + actions
-    card.innerHTML = `
-      <div class="shop-card-inner">
-        ${hasImage ? `<img class="shop-card-img" src="${item.image}" alt="${displayName}">` : ''}
-        <div class="shop-card-info">
-          <span class="shop-card-name">${displayName}</span>
-          <div class="shop-card-meta">
+    // Swipe-to-delete hint layer (shown as card slides left)
+    wrapper.innerHTML = `<div class="shop-swipe-hint"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar</span></div>`;
+
+    const card = document.createElement('div');
+    card.className = `shop-card${isTile ? ' shop-card-tile' : ''}`;
+
+    if (isTile) {
+      // ─── TILE LAYOUT (2-col): image on top, info below ───
+      card.innerHTML = `
+        <div class="shop-tile-img-wrap">
+          ${hasImage
+            ? `<img class="shop-tile-img" src="${item.image}" alt="${displayName}">`
+            : `<div class="shop-tile-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`
+          }
+          <div class="shop-tile-actions">
+            <button class="shop-tile-btn shop-tile-buy" title="Doble tap = comprado"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+            <button class="shop-tile-btn shop-tile-del" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>
+        </div>
+        <div class="shop-tile-info">
+          <span class="shop-tile-name">${displayName}</span>
+          <div class="shop-tile-meta">
             ${item.qty ? `<span class="shop-qty">${item.qty}</span>` : ''}
             ${targetBadge}
           </div>
         </div>
-        <div class="shop-card-btns">
-          ${(item.qty || targetBadge || hasImage) ? `<button class="btn-expand-shop" title="Detalles"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>` : ''}
-          <button class="btn-buy-shop" title="Comprado"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
-          <button class="btn-del-shop" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      `;
+    } else {
+      // ─── ROW LAYOUT (1-col): image on left, info + actions on right ───
+      card.innerHTML = `
+        <div class="shop-card-inner">
+          ${hasImage ? `<img class="shop-card-img" src="${item.image}" alt="${displayName}">` : ''}
+          <div class="shop-card-info">
+            <span class="shop-card-name">${displayName}</span>
+            <div class="shop-card-meta">
+              ${item.qty ? `<span class="shop-qty">${item.qty}</span>` : ''}
+              ${targetBadge}
+            </div>
+          </div>
+          <div class="shop-card-btns">
+            <button class="btn-buy-shop" title="Comprado / Doble tap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+            <button class="btn-del-shop" title="Eliminar / Desliza izq."><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>
         </div>
-      </div>
-      <div class="shop-card-detail" style="display:none;">
-        ${hasImage ? `<img class="shop-card-detail-img" src="${item.image}" alt="${displayName}">` : ''}
-        ${item.qty ? `<div class="shop-card-detail-row"><span class="shop-detail-label">Cantidad:</span> ${item.qty}</div>` : ''}
-        <div class="shop-card-detail-row"><span class="shop-detail-label">Para:</span> ${targetBadge}</div>
-      </div>
-    `;
-
-    // Expand toggle
-    const expandBtn = card.querySelector('.btn-expand-shop');
-    if (expandBtn) {
-      const detail = card.querySelector('.shop-card-detail');
-      expandBtn.onclick = (e) => {
-        e.stopPropagation();
-        const open = detail.style.display !== 'none';
-        detail.style.display = open ? 'none' : 'block';
-        expandBtn.style.transform = open ? '' : 'rotate(180deg)';
-      };
+        <div class="shop-card-detail" style="display:none;">
+          ${hasImage ? `<img class="shop-card-detail-img" src="${item.image}" alt="${displayName}">` : ''}
+          ${item.qty ? `<div class="shop-card-detail-row"><span class="shop-detail-label">Cantidad:</span> ${item.qty}</div>` : ''}
+          <div class="shop-card-detail-row"><span class="shop-detail-label">Para:</span> ${targetBadge}</div>
+        </div>
+      `;
     }
 
-    card.querySelector('.btn-buy-shop').onclick = (e) => {
-      e.stopPropagation();
-      showConfirm(`¿Marcar "${displayName}" como comprado?`, () => {
-        state.buyShoppingItem(index);
-        showToast(`✅ ${displayName} comprado`);
-      });
+    // ── Actions ──
+    const doBuy = () => {
+      card.classList.add('shop-card-bought');
+      setTimeout(() => { state.buyShoppingItem(index); showToast(`✅ ${displayName} comprado`); }, 300);
+    };
+    const doDelete = () => {
+      wrapper.classList.add('shop-swipe-gone');
+      setTimeout(() => { state.deleteShoppingItem(index); showToast("Artículo eliminado"); }, 280);
     };
 
-    card.querySelector('.btn-del-shop').onclick = (e) => {
-      e.stopPropagation();
-      showConfirm(`¿Eliminar "${displayName}"?`, () => {
-        state.deleteShoppingItem(index);
-        showToast("Artículo eliminado");
-      });
-    };
+    // Double-tap detection
+    let lastTap = 0;
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('button') || e.target.closest('img')) return;
+      const now = Date.now();
+      if (now - lastTap < 350) { doBuy(); return; }
+      lastTap = now;
+      // Single tap on row card → toggle expand
+      if (!isTile) {
+        const detail = card.querySelector('.shop-card-detail');
+        if (detail) detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+      }
+    });
 
-    if (hasImage) {
-      card.querySelector('.shop-card-img').onclick = (e) => {
-        e.stopPropagation();
-        openLightbox(item.image, `${displayName}${item.qty ? ' (' + item.qty + ')' : ''}`);
-      };
+    if (isTile) {
+      card.querySelector('.shop-tile-buy').onclick = (e) => { e.stopPropagation(); doBuy(); };
+      card.querySelector('.shop-tile-del').onclick = (e) => { e.stopPropagation(); doDelete(); };
+      if (hasImage) {
+        card.querySelector('.shop-tile-img').onclick = (e) => { e.stopPropagation(); openLightbox(item.image, displayName); };
+      }
+    } else {
+      card.querySelector('.btn-buy-shop').onclick = (e) => { e.stopPropagation(); doBuy(); };
+      card.querySelector('.btn-del-shop').onclick = (e) => { e.stopPropagation(); doDelete(); };
+      if (hasImage) {
+        card.querySelector('.shop-card-img').onclick = (e) => { e.stopPropagation(); openLightbox(item.image, displayName); };
+      }
     }
 
-    list.appendChild(card);
+    // ── Swipe-to-delete gesture ──
+    let swX = 0, swDx = 0, swiping = false;
+    card.addEventListener('touchstart', e => {
+      swX = e.touches[0].clientX;
+      swDx = 0;
+      swiping = false;
+    }, { passive: true });
+    card.addEventListener('touchmove', e => {
+      const dx = e.touches[0].clientX - swX;
+      if (!swiping && Math.abs(dx) > 10) swiping = true;
+      if (!swiping) return;
+      if (dx < 0) {
+        swDx = dx;
+        card.style.transform = `translateX(${Math.max(dx, -140)}px)`;
+        card.style.transition = 'none';
+        const ratio = Math.min(Math.abs(dx) / 100, 1);
+        wrapper.querySelector('.shop-swipe-hint').style.opacity = ratio;
+      }
+    }, { passive: true });
+    card.addEventListener('touchend', () => {
+      card.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+      if (swDx < -90) {
+        card.style.transform = 'translateX(-110%)';
+        setTimeout(doDelete, 250);
+      } else {
+        card.style.transform = '';
+        wrapper.querySelector('.shop-swipe-hint').style.opacity = '0';
+      }
+    });
+
+    wrapper.appendChild(card);
+    list.appendChild(wrapper);
   });
 }
 

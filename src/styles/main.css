@@ -2197,3 +2197,259 @@ input:focus, select:focus {
 
 /* Pending fullscreen override – single column always */
 #pendingListFullscreenDisplay .pending-section-header { margin-top: 18px; }
+
+/* ============================================================
+   SHOPPING – swipe wrapper + tile cards
+   ============================================================ */
+.shop-swipe-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+}
+.shop-swipe-hint {
+  position: absolute;
+  inset: 0;
+  background: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-right: 20px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0;
+  border-radius: var(--radius-md);
+  pointer-events: none;
+  transition: opacity 0.1s;
+}
+.shop-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 13px 14px;
+  transition: transform 0.25s ease, opacity 0.25s ease, box-shadow 0.15s;
+  position: relative;
+}
+.shop-grid-1 .shop-swipe-wrapper { margin-bottom: 8px; }
+.shop-grid-2 .shop-swipe-wrapper { margin-bottom: 0; }
+.shop-card:active { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+.shop-card-bought {
+  opacity: 0;
+  transform: scale(0.9);
+}
+.shop-swipe-gone { opacity: 0; }
+
+/* 1-col row layout */
+.shop-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.shop-card-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 1px solid var(--card-border);
+}
+.shop-card-info { flex: 1; overflow: hidden; }
+.shop-card-name {
+  display: block;
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shop-card-meta {
+  display: flex;
+  gap: 5px;
+  margin-top: 3px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.shop-card-btns {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.btn-buy-shop {
+  background: var(--success);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.btn-del-shop {
+  background: rgba(239,68,68,0.1);
+  color: var(--danger);
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Expand detail panel (1-col) */
+.shop-card-detail {
+  padding: 10px 0 2px;
+  border-top: 1px solid var(--card-border);
+  margin-top: 10px;
+}
+.shop-card-detail-img {
+  width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-bottom: 8px;
+}
+.shop-card-detail-row {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.shop-detail-label { font-weight: 700; color: var(--text-main); }
+
+/* 2-col TILE layout */
+.shop-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.shop-card-tile {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.shop-tile-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: rgba(15,23,42,0.04);
+  border-bottom: 1px solid var(--card-border);
+}
+.shop-tile-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+.shop-tile-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.shop-tile-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+.shop-tile-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.shop-tile-buy  { background: rgba(16,185,129,0.85); color: white; }
+.shop-tile-del  { background: rgba(239,68,68,0.80); color: white; }
+.shop-tile-info {
+  padding: 10px;
+  flex: 1;
+}
+.shop-tile-name {
+  display: block;
+  font-weight: 700;
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+.shop-tile-meta {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Fullscreen 2-col grid */
+.fullscreen-body.shop-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.fullscreen-body.shop-grid-2 .shop-card-tile { border-radius: var(--radius-md); }
+.fullscreen-body.shop-grid-2 .shop-tile-img-wrap { aspect-ratio: 4/3; }
+.fullscreen-body.shop-grid-2 .shop-tile-name { font-size: 1rem; }
+
+/* ============================================================
+   NAV DRAG REORDER
+   ============================================================ */
+.nav-reordering .nav-item { transition: transform 0.15s ease; }
+.nav-dragging {
+  transform: scale(1.12) translateY(-4px) !important;
+  z-index: 10;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  background: var(--card-bg) !important;
+  border-radius: 12px;
+}
+
+/* ============================================================
+   GAME RULES MODAL – toggle switch
+   ============================================================ */
+.toggle-label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.toggle-label input { display: none; }
+.toggle-track {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--card-border);
+  position: relative;
+  transition: background 0.2s;
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  transition: left 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle-label input:checked + .toggle-track { background: var(--accent); }
+.toggle-label input:checked + .toggle-track::after { left: 23px; }
