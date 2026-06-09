@@ -18,10 +18,18 @@ export default defineConfig({
       registerType: 'autoUpdate',
       manifest: false, // usamos nuestro propio public/manifest.json
       workbox: {
-        // Cache-first para assets estáticos del shell de la app
-        // Los datos de Firebase siempre van a red directamente
-        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        // Solo cachear assets con hash — el HTML siempre desde red
+        globPatterns: ['**/*.{js,css,svg,woff2}'],
         runtimeCaching: [
+          {
+            // index.html siempre desde red (NetworkFirst) para que los deploys se vean inmediatamente
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-pages',
+              networkTimeoutSeconds: 3,
+            }
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
