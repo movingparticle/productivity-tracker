@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Tracker">
   <link rel="manifest" href="/productivity-tracker/manifest.json">
   <link rel="apple-touch-icon" href="/productivity-tracker/icon-192.svg">
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-B6_VrL9y.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-JUmLZV7U.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-BXodON7l.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-cbkx0c4t.css">
 <script id="vite-plugin-pwa:register-sw" src="/productivity-tracker/registerSW.js"></script></head>
 <body>
 
@@ -208,35 +208,34 @@
         </button>
       </div>
 
-      <!-- TAB 2: BUILD ROADMAP -->
+      <!-- TAB 2: BUILD ROADMAP (interactive blocks) -->
       <div id="roadmapBuilderTab" class="hidden">
-        <h4 class="section-title">Construir Plan (Bloques)</h4>
-        <div class="roadmap-builder-card" style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 15px; margin-bottom: 90px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
-          
-          <!-- 1. Cargar desde Pendientes -->
-          <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px;">
-            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📌 Cargar de Tareas Pendientes</label>
-            <div style="display: flex; gap: 8px;">
-              <select id="selectRoadmapPending" style="flex: 1; margin: 0; padding: 10px 12px; border: 1px solid rgba(15, 23, 42, 0.15); border-radius: var(--radius-md); font-size: 0.9rem; background: #ffffff;">
-                <option value="">-- Seleccionar Tarea --</option>
-              </select>
-              <button class="btn-save" id="btnAddPendingToRoadmap" style="width: auto; margin: 0; background: var(--active-color); font-size: 0.85rem; padding: 8px 16px;">Añadir</button>
-            </div>
+        <h4 class="section-title">Toca bloques para armar tu plan</h4>
+
+        <!-- Sub-tabs: Pendientes / Rutinas / Personal -->
+        <div class="builder-subtabs">
+          <button class="builder-subtab active" id="btnBuilderSubPending" data-sub="pending">📌 Pendientes</button>
+          <button class="builder-subtab" id="btnBuilderSubRoutine" data-sub="routine">🔄 Rutinas</button>
+          <button class="builder-subtab" id="btnBuilderSubPersonal" data-sub="personal">👤 Personal</button>
+        </div>
+
+        <!-- Panel: Pendientes -->
+        <div class="builder-panel" id="builderPanelPending">
+          <div class="builder-grid" id="builderGridPending">
+            <!-- Dynamically populated blocks -->
           </div>
-          
-          <!-- 2. Cargar desde Rutinas -->
-          <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px;">
-            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🔄 Cargar de Rutinas Guardadas</label>
-            <div style="display: flex; gap: 8px;">
-              <select id="selectRoadmapRoutine" style="flex: 1; margin: 0; padding: 10px 12px; border: 1px solid rgba(15, 23, 42, 0.15); border-radius: var(--radius-md); font-size: 0.9rem; background: #ffffff;">
-                <option value="">-- Seleccionar Rutina --</option>
-              </select>
-              <button class="btn-save" id="btnAddRoutineToRoadmap" style="width: auto; margin: 0; background: var(--active-color); font-size: 0.85rem; padding: 8px 16px;">Añadir</button>
-            </div>
+        </div>
+
+        <!-- Panel: Rutinas -->
+        <div class="builder-panel hidden" id="builderPanelRoutine">
+          <div class="builder-grid" id="builderGridRoutine">
+            <!-- Dynamically populated blocks -->
           </div>
-          
-          <!-- 3. Actividad Libre / Personal -->
-          <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px;">
+        </div>
+
+        <!-- Panel: Personal -->
+        <div class="builder-panel hidden" id="builderPanelPersonal">
+          <div class="builder-personal-card">
             <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">👤 Actividad Libre / Personal</label>
             <div style="display: flex; gap: 8px;">
               <input type="text" id="inputRoadmapCustom" placeholder="Ej: Cita médica, almuerzo, descanso..." style="flex: 1; margin: 0; padding: 10px 12px; border: 1px solid rgba(15, 23, 42, 0.15); border-radius: var(--radius-md); font-size: 0.9rem;">
@@ -244,6 +243,12 @@
             </div>
             <div class="rooms-hint" style="margin-top: 4px;">Las actividades personales no otorgan puntos en el historial del equipo.</div>
           </div>
+        </div>
+
+        <!-- Live footer: count + go to plan -->
+        <div class="builder-footer" id="builderFooter">
+          <span class="builder-footer-count" id="builderPlanCount">Tu plan: 0 bloques</span>
+          <button class="builder-footer-btn" id="btnBuilderGoToPlan">Ver plan →</button>
         </div>
       </div>
     </div>
