@@ -1549,6 +1549,44 @@ input:focus, select:focus {
   transform: translateY(-1px);
 }
 
+/* Drag handle + reorder states */
+.roadmap-drag-handle {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: grab;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.45;
+  touch-action: none;
+  transition: opacity 0.15s ease;
+}
+
+.roadmap-drag-handle:hover {
+  opacity: 0.9;
+}
+
+.roadmap-drag-handle:active {
+  cursor: grabbing;
+}
+
+.roadmap-item-row.roadmap-dragging {
+  opacity: 0.95 !important;
+  background: var(--card-bg) !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.2);
+  transform: scale(1.02);
+  transition: none;
+  position: relative;
+  z-index: 5;
+}
+
+.roadmap-item-row.roadmap-dragging:hover {
+  transform: scale(1.02);
+}
+
 .roadmap-badge {
   font-size: 0.7rem;
   font-weight: 800;
@@ -1581,6 +1619,10 @@ input:focus, select:focus {
 
 .builder-subtab {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: 1px solid var(--card-border);
   background: var(--card-bg);
   padding: 9px 6px;
@@ -1592,6 +1634,10 @@ input:focus, select:focus {
   cursor: pointer;
   transition: var(--transition);
   white-space: nowrap;
+}
+
+.builder-subtab svg {
+  flex-shrink: 0;
 }
 
 .builder-subtab.active {

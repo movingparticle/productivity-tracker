@@ -492,6 +492,29 @@ export function addRoadmapItem(text, type, pts = 0) {
 }
 
 /**
+ * Reorder the current profile's roadmap items to match a new order of ids.
+ * Any item not present in orderedIds is appended (safety).
+ */
+export function reorderRoadmapItems(orderedIds) {
+  if (!localProfileId || !store.roadmaps || !store.roadmaps[localProfileId]) return;
+  const items = store.roadmaps[localProfileId].items || [];
+  if (!Array.isArray(items) || items.length === 0) return;
+
+  const byId = new Map(items.map(it => [it.id, it]));
+  const reordered = [];
+  orderedIds.forEach(id => {
+    if (byId.has(id)) {
+      reordered.push(byId.get(id));
+      byId.delete(id);
+    }
+  });
+  byId.forEach(it => reordered.push(it)); // append leftovers
+
+  store.roadmaps[localProfileId].items = reordered;
+  saveState();
+}
+
+/**
  * Toggle completion of a roadmap item
  */
 export function toggleRoadmapItem(itemId) {

@@ -1463,6 +1463,52 @@ export function closeModal(modalEl) {
 }
 
 /**
+ * Enable pointer-based drag-to-reorder on a roadmap block via its handle.
+ * Works for both touch and mouse (Pointer Events + pointer capture).
+ */
+function _setupRoadmapDrag(handle, row, list) {
+  let dragging = false;
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    const y = e.clientY;
+    const siblings = [...list.querySelectorAll('.roadmap-item-row:not(.roadmap-dragging)')];
+    let inserted = false;
+    for (const sib of siblings) {
+      const rect = sib.getBoundingClientRect();
+      if (y < rect.top + rect.height / 2) {
+        list.insertBefore(row, sib);
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) list.appendChild(row);
+  };
+
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    row.classList.remove('roadmap-dragging');
+    try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+    handle.removeEventListener('pointermove', onMove);
+    handle.removeEventListener('pointerup', endDrag);
+    handle.removeEventListener('pointercancel', endDrag);
+    const orderedIds = [...list.querySelectorAll('.roadmap-item-row')].map(r => r.dataset.itemId);
+    state.reorderRoadmapItems(orderedIds);
+  };
+
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    dragging = true;
+    row.classList.add('roadmap-dragging');
+    try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
+  });
+}
+
+/**
  * Render the current profile's daily roadmap (Lego planner style)
  */
 export function renderRoadmap() {
@@ -1564,6 +1610,7 @@ export function renderRoadmap() {
     }
 
     el.className = `roadmap-item-row`;
+    el.dataset.itemId = item.id;
     el.style.padding = '10px 12px';
     el.style.background = 'rgba(15, 23, 42, 0.02)';
     el.style.border = '1px solid var(--card-border)';
@@ -1577,12 +1624,18 @@ export function renderRoadmap() {
       el.style.opacity = '0.6';
     }
 
+    // Drag handle (only when the plan is unlocked) — lets you reorder blocks
+    const dragHandleHtml = locked
+      ? ''
+      : `<button class="roadmap-drag-handle" aria-label="Mover bloque" title="Arrastra para mover"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="6" r="1.6"></circle><circle cx="15" cy="6" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="18" r="1.6"></circle><circle cx="15" cy="18" r="1.6"></circle></svg></button>`;
+
     const deleteBtnHtml = locked
       ? ''
       : `<button class="btn-del-roadmap" style="display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: pointer; border: none; background: none; color: var(--danger); padding: 4px; transition: var(--transition);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>`;
 
     el.innerHTML = `
       <div style="display: flex; align-items: center; gap: 10px; overflow: hidden; flex: 1;">
+        ${dragHandleHtml}
         <button class="btn-check-roadmap" style="display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0; background: ${item.completed ? 'var(--success)' : 'none'}; border: 1.5px solid ${item.completed ? 'var(--success)' : 'var(--text-muted)'}; color: ${item.completed ? 'white' : 'var(--text-muted)'}; cursor: pointer; transition: var(--transition);">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display: ${item.completed ? 'block' : 'none'}"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </button>
@@ -1612,6 +1665,12 @@ export function renderRoadmap() {
         state.deleteRoadmapItem(item.id);
         showToast("Bloque quitado del plan");
       };
+    }
+
+    // Bind drag-to-reorder on the handle
+    const handle = el.querySelector('.roadmap-drag-handle');
+    if (handle) {
+      _setupRoadmapDrag(handle, el, list);
     }
 
     list.appendChild(el);
