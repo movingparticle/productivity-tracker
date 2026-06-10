@@ -514,7 +514,7 @@ function renderTracker() {
     const nam = logUser ? logUser.name : '???';
     
     let badgeHtml = `<span class="badge">+${x.pts}</span>`;
-    if (x.name.includes("💎 Ahorro")) {
+    if (x.name.includes("Ahorro")) {
       badgeHtml = `<span class="badge badge-redeem">+${x.pts} (Ahorro)</span>`;
     }
 
@@ -545,9 +545,9 @@ function renderTracker() {
 
 // Visual config per priority level.
 const PRIORITY_META = {
-  alta:  { color: '#ef4444', label: 'Alta',  dot: '🔴' },
-  media: { color: '#f59e0b', label: 'Media', dot: '🟡' },
-  baja:  { color: '#3b82f6', label: 'Baja',  dot: '🔵' }
+  alta:  { color: '#ef4444', label: 'Alta' },
+  media: { color: '#f59e0b', label: 'Media' },
+  baja:  { color: '#3b82f6', label: 'Baja' }
 };
 
 function buildPendingCard(t, i, onEdit) {
@@ -576,10 +576,10 @@ function buildPendingCard(t, i, onEdit) {
           ${hasExtra ? `<button class="btn-expand-card" title="Ver detalles"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>` : ''}
         </div>
         <div class="pending-card-meta">
-          <span class="prio-pill" style="color:${prio.color}; background:${prio.color}18; border:1px solid ${prio.color}33;">${prio.dot} ${prio.label}</span>
+          <span class="prio-pill" style="color:${prio.color}; background:${prio.color}18; border:1px solid ${prio.color}33;"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:${prio.color}; margin-right:2px;"></span>${prio.label}</span>
           <span class="badge" style="padding:1px 6px; font-size:0.65rem;">${t.pts} pts</span>
           <span class="task-age">${ageLabel}</span>
-          ${isUrgent ? `<span class="urgency-flag">🔥 Urgente</span>` : ''}
+          ${isUrgent ? `<span class="urgency-flag" style="display:inline-flex; align-items:center; gap:3px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>Urgente</span>` : ''}
         </div>
       </div>
       <div class="pending-card-actions">
@@ -594,7 +594,7 @@ function buildPendingCard(t, i, onEdit) {
 
   card.querySelector('.btn-check-card').onclick = () => {
     state.completePendingTask(i, () => {
-      showToast("🔥 ¡RACHA 3! +1 PUNTO 🔥", "warning");
+      showToast("¡RACHA 3! +1 PUNTO", "warning");
     });
     showToast("¡Tarea completada!");
   };
@@ -640,7 +640,7 @@ function renderPendingInto(container, withEditFocus) {
   const allTasks = state.store.pendingList.map((t, i) => ({ t, i }));
 
   if (allTasks.length === 0) {
-    container.innerHTML = `<div style="padding: 30px 20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">No tienes tareas pendientes. ¡Buen trabajo! 🎉</div>`;
+    container.innerHTML = `<div style="padding: 30px 20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">No tienes tareas pendientes. ¡Buen trabajo!</div>`;
     return;
   }
 
@@ -663,9 +663,9 @@ function renderPendingInto(container, withEditFocus) {
 
   // Group by priority
   const groups = [
-    { key: 'alta', label: '🔴 Alta Prioridad' },
-    { key: 'media', label: '🟡 Media Prioridad' },
-    { key: 'baja', label: '🔵 Baja Prioridad' }
+    { key: 'alta', label: 'Alta Prioridad' },
+    { key: 'media', label: 'Media Prioridad' },
+    { key: 'baja', label: 'Baja Prioridad' }
   ];
 
   groups.forEach(({ key, label }) => {
@@ -679,7 +679,7 @@ function renderPendingInto(container, withEditFocus) {
     const header = document.createElement('div');
     header.className = 'pending-section-header';
     header.style.borderLeftColor = prio.color;
-    header.innerHTML = `<span>${label}</span><span class="pending-section-count">${groupTasks.length}</span>`;
+    header.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${prio.color};"></span>${label}</span><span class="pending-section-count">${groupTasks.length}</span>`;
     container.appendChild(header);
 
     groupTasks.forEach(({ t, i }) => {
@@ -1104,7 +1104,7 @@ function renderShoppingItemsInto(list) {
   const isTile = shopCols === 2;
 
   if (items.length === 0) {
-    list.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No hay compras pendientes. ¡Todo al día! 🎉</div>`;
+    list.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No hay compras pendientes. ¡Todo al día!</div>`;
     return;
   }
 
@@ -1121,7 +1121,7 @@ function renderShoppingItemsInto(list) {
       targetBadge = `<span class="shop-badge-user" style="background:${color}15;color:${color};border-color:${color}30;">${name}</span>`;
     }
 
-    const displayName = item.name && item.name.trim() ? item.name : '📷 Artículo en foto';
+    const displayName = item.name && item.name.trim() ? item.name : 'Artículo en foto';
     const hasImage = !!item.image;
 
     const card = document.createElement('div');
@@ -1174,7 +1174,7 @@ function renderShoppingItemsInto(list) {
     }
 
     // ── Actions ──
-    const doBuy = () => { state.buyShoppingItem(index); showToast(`✅ ${displayName} comprado`); };
+    const doBuy = () => { state.buyShoppingItem(index); showToast(`${displayName} comprado`); };
     const doDelete = () => {
       showConfirm(`¿Eliminar "${displayName}"?`, () => {
         state.deleteShoppingItem(index);
@@ -1695,7 +1695,11 @@ export function renderRoadmap() {
       unlockBtn.style.padding = '8px 16px';
       unlockBtn.style.width = 'auto';
       unlockBtn.style.margin = '0';
-      unlockBtn.innerHTML = '⚙️ Modificar Plan';
+      unlockBtn.style.display = 'inline-flex';
+      unlockBtn.style.alignItems = 'center';
+      unlockBtn.style.justifyContent = 'center';
+      unlockBtn.style.gap = '6px';
+      unlockBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Modificar Plan';
       unlockBtn.onclick = () => {
         state.unlockRoadmap();
         showToast("Plan desbloqueado para modificación");
@@ -1713,7 +1717,11 @@ export function renderRoadmap() {
       lockBtn.style.width = '100%';
       lockBtn.style.margin = '0';
       lockBtn.style.boxShadow = '0 2px 8px rgba(15, 23, 42, 0.1)';
-      lockBtn.innerHTML = '🎯 Listo, Fijar Plan de Hoy';
+      lockBtn.style.display = 'inline-flex';
+      lockBtn.style.alignItems = 'center';
+      lockBtn.style.justifyContent = 'center';
+      lockBtn.style.gap = '8px';
+      lockBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>Listo, Fijar Plan de Hoy';
       lockBtn.onclick = () => {
         state.lockRoadmap();
         showToast("¡Plan de hoy fijado! A enfocarse.");
@@ -1994,13 +2002,16 @@ export function renderFocusTree() {
   // Set Status Hint Text
   const statusHint = elements.treeStatusHint;
   if (statusHint) {
+    const leafIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6"></path></svg>`;
+    const flowerIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="12" cy="12" r="3"></circle><path d="M12 9.5V4M12 14.5V20M9.5 12H4M14.5 12H20M10.2 10.2 6.5 6.5M13.8 10.2 17.5 6.5M10.2 13.8 6.5 17.5M13.8 13.8 17.5 17.5"></path></svg>`;
+    const dropIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>`;
     if (isWithered) {
-      statusHint.innerHTML = `<span style="color: var(--danger); font-weight:700;">🍂 Tu árbol se está marchitando por falta de constancia.</span> ¡Completa tareas del roadmap o registra actividades hoy para revivirlo!`;
+      statusHint.innerHTML = `<span style="color: var(--danger); font-weight:700;">${leafIcon} Tu árbol se está marchitando por falta de constancia.</span> ¡Completa tareas del roadmap o registra actividades hoy para revivirlo!`;
     } else if (isBloomed) {
-      statusHint.innerHTML = `<span style="color: #db2777; font-weight:700;">🌸 ¡Espectacular! Tu árbol ha florecido.</span> Has mantenido un ritmo de enfoque excelente esta semana.`;
+      statusHint.innerHTML = `<span style="color: #db2777; font-weight:700;">${flowerIcon} ¡Espectacular! Tu árbol ha florecido.</span> Has mantenido un ritmo de enfoque excelente esta semana.`;
     } else {
       const daysNeeded = Math.max(0, 5 - fullBranchesCount);
-      statusHint.innerHTML = `💧 Regado y creciendo con tu constancia. Completa ${fullBranchThreshold}+ actividades por día para hacerlo florecer (Faltan ${daysNeeded} días de enfoque).`;
+      statusHint.innerHTML = `${dropIcon} Regado y creciendo con tu constancia. Completa ${fullBranchThreshold}+ actividades por día para hacerlo florecer (Faltan ${daysNeeded} días de enfoque).`;
     }
   }
 

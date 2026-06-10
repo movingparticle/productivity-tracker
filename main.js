@@ -229,7 +229,7 @@ async function handleRedeemCode() {
   try {
     await redeemAccessCode(code, user);
     if (input) input.value = '';
-    ui.showToast("🎉 ¡Código activado! Ya puedes crear salas y usar el asistente.");
+    ui.showToast("¡Código activado! Ya puedes crear salas y usar el asistente.");
     await refreshRoomsList();
   } catch (e) {
     if (e.code === 'code/invalid') {
@@ -724,7 +724,7 @@ function bindEvents() {
       const btn = ui.elements.btnFixListAI;
       const original = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = '✨ Ordenando...';
+      btn.innerHTML = 'Ordenando...';
       try {
         const items = await fixShoppingListWithAI(raw);
         if (!items.length) {
@@ -733,7 +733,7 @@ function bindEvents() {
         }
         const count = state.saveShoppingItemsBulk(items, target);
         if (ui.elements.shopBulkInput) ui.elements.shopBulkInput.value = '';
-        ui.showToast(`✨ ${count} artículo${count === 1 ? '' : 's'} ordenado${count === 1 ? '' : 's'} y añadido${count === 1 ? '' : 's'}`);
+        ui.showToast(`${count} artículo${count === 1 ? '' : 's'} ordenado${count === 1 ? '' : 's'} y añadido${count === 1 ? '' : 's'}`);
         ui.toggleShoppingTab('list');
       } catch (e) {
         let msg = "No se pudo usar la IA. Revisa la configuración del agente.";
@@ -1034,7 +1034,7 @@ function bindEvents() {
 
   if (ui.elements.btnWeeklyReset) {
     ui.elements.btnWeeklyReset.onclick = () => {
-      ui.showConfirm("🔄 ¿RESETEO SEMANAL?\nSe borrará el acumulado de esta semana y el log de hoy. Se conservan perfiles, ahorros y rutinas.", () => {
+      ui.showConfirm("¿RESETEO SEMANAL?\nSe borrará el acumulado de esta semana y el log de hoy. Se conservan perfiles, ahorros y rutinas.", () => {
         state.weeklyResetState();
         ui.closeModal(ui.elements.configModal);
         ui.showToast("Progreso semanal reiniciado");
@@ -1044,7 +1044,7 @@ function bindEvents() {
 
   if (ui.elements.btnHardReset) {
     ui.elements.btnHardReset.onclick = () => {
-      ui.showConfirm("⚠️ ¿RESET TOTAL?\nEsto borrará todos los registros, perfiles, rutinas y datos de ESTA sala.", () => {
+      ui.showConfirm("¿RESET TOTAL?\nEsto borrará todos los registros, perfiles, rutinas y datos de ESTA sala.", () => {
         state.hardResetState();
         ui.closeModal(ui.elements.configModal);
         ui.showToast("Los datos de la sala han sido borrados.");
@@ -1071,7 +1071,7 @@ function bindEvents() {
   // Delete room (owner)
   if (ui.elements.btnDeleteRoom) {
     ui.elements.btnDeleteRoom.onclick = () => {
-      ui.showConfirm("⚠️ ¿Eliminar la sala para SIEMPRE?\nSe borran todos los datos y se expulsa a todos los miembros.", async () => {
+      ui.showConfirm("¿Eliminar la sala para SIEMPRE?\nSe borran todos los datos y se expulsa a todos los miembros.", async () => {
         try {
           await deleteRoom(state.currentRoomId);
           backToRooms();

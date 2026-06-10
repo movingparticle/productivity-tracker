@@ -379,7 +379,7 @@ export function redeemPointsFromBank(amount, onRedemptionSuccess, onRedemptionEr
   }
   
   u.bank = balance - val;
-  addLogEntry("💎 Ahorro Usado", val);
+  addLogEntry("Ahorro Usado", val);
   saveState();
   
   if (onRedemptionSuccess) onRedemptionSuccess(val);
