@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Tracker">
   <link rel="manifest" href="/productivity-tracker/manifest.json">
   <link rel="apple-touch-icon" href="/productivity-tracker/icon-192.svg">
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-BXodON7l.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-cbkx0c4t.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-BnrHWHuq.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-CbeI6tjJ.css">
 <script id="vite-plugin-pwa:register-sw" src="/productivity-tracker/registerSW.js"></script></head>
 <body>
 
@@ -214,9 +214,18 @@
 
         <!-- Sub-tabs: Pendientes / Rutinas / Personal -->
         <div class="builder-subtabs">
-          <button class="builder-subtab active" id="btnBuilderSubPending" data-sub="pending">📌 Pendientes</button>
-          <button class="builder-subtab" id="btnBuilderSubRoutine" data-sub="routine">🔄 Rutinas</button>
-          <button class="builder-subtab" id="btnBuilderSubPersonal" data-sub="personal">👤 Personal</button>
+          <button class="builder-subtab active" id="btnBuilderSubPending" data-sub="pending">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            <span>Pendientes</span>
+          </button>
+          <button class="builder-subtab" id="btnBuilderSubRoutine" data-sub="routine">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+            <span>Rutinas</span>
+          </button>
+          <button class="builder-subtab" id="btnBuilderSubPersonal" data-sub="personal">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span>Personal</span>
+          </button>
         </div>
 
         <!-- Panel: Pendientes -->
@@ -236,7 +245,7 @@
         <!-- Panel: Personal -->
         <div class="builder-panel hidden" id="builderPanelPersonal">
           <div class="builder-personal-card">
-            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">👤 Actividad Libre / Personal</label>
+            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Actividad Libre / Personal</label>
             <div style="display: flex; gap: 8px;">
               <input type="text" id="inputRoadmapCustom" placeholder="Ej: Cita médica, almuerzo, descanso..." style="flex: 1; margin: 0; padding: 10px 12px; border: 1px solid rgba(15, 23, 42, 0.15); border-radius: var(--radius-md); font-size: 0.9rem;">
               <button class="btn-save" id="btnAddCustomToRoadmap" style="width: auto; margin: 0; background: var(--active-color); font-size: 0.85rem; padding: 8px 16px;">Añadir</button>
