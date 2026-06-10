@@ -482,7 +482,7 @@ export function addRoadmapItem(text, type, pts = 0) {
     store.roadmaps[localProfileId].items = [];
   }
   store.roadmaps[localProfileId].items.push({
-    id: 'r_' + Date.now(),
+    id: 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
     text,
     type,
     pts: Number(pts),

@@ -67,14 +67,14 @@ export function initDomElements() {
     roadmapProfileSwitcher: document.getElementById('roadmapProfileSwitcher'),
     roadmapUserTitle: document.getElementById('roadmapUserTitle'),
     roadmapItemsList: document.getElementById('roadmapItemsList'),
-    selectRoadmapPending: document.getElementById('selectRoadmapPending'),
-    selectRoadmapRoutine: document.getElementById('selectRoadmapRoutine'),
     inputRoadmapCustom: document.getElementById('inputRoadmapCustom'),
-    btnAddPendingToRoadmap: document.getElementById('btnAddPendingToRoadmap'),
-    btnAddRoutineToRoadmap: document.getElementById('btnAddRoutineToRoadmap'),
     btnAddCustomToRoadmap: document.getElementById('btnAddCustomToRoadmap'),
     btnTabRoadmapView: document.getElementById('btnTabRoadmapView'),
     btnTabRoadmapBuilder: document.getElementById('btnTabRoadmapBuilder'),
+    btnBuilderSubPending: document.getElementById('btnBuilderSubPending'),
+    btnBuilderSubRoutine: document.getElementById('btnBuilderSubRoutine'),
+    btnBuilderSubPersonal: document.getElementById('btnBuilderSubPersonal'),
+    btnBuilderGoToPlan: document.getElementById('btnBuilderGoToPlan'),
     btnShowProgressTree: document.getElementById('btnShowProgressTree'),
     modalProgressTree: document.getElementById('modalProgressTree'),
     btnCloseTreeModal: document.getElementById('btnCloseTreeModal'),
@@ -1499,38 +1499,8 @@ export function renderRoadmap() {
     elements.roadmapUserTitle.style.color = activeUser.color;
   }
 
-  // 3. Populate Pending drop-down (only show tasks from pending list)
-  const pendingSelect = elements.selectRoadmapPending;
-  if (pendingSelect) {
-    const currentVal = pendingSelect.value;
-    pendingSelect.innerHTML = '<option value="">-- Seleccionar Tarea --</option>';
-    state.store.pendingList.forEach((t, index) => {
-      const opt = document.createElement('option');
-      opt.value = index;
-      opt.innerText = `📌 ${t.name} (${t.pts} pts)`;
-      pendingSelect.appendChild(opt);
-    });
-    // Restore value if still exists
-    if (state.store.pendingList[currentVal]) {
-      pendingSelect.value = currentVal;
-    }
-  }
-
-  // 4. Populate Routine drop-down
-  const routineSelect = elements.selectRoadmapRoutine;
-  if (routineSelect) {
-    const currentVal = routineSelect.value;
-    routineSelect.innerHTML = '<option value="">-- Seleccionar Rutina --</option>';
-    state.store.templates.forEach((t, index) => {
-      const opt = document.createElement('option');
-      opt.value = index;
-      opt.innerText = `🔄 ${t.name} (+${t.pts} pts)`;
-      routineSelect.appendChild(opt);
-    });
-    if (state.store.templates[currentVal]) {
-      routineSelect.value = currentVal;
-    }
-  }
+  // 3+4. Populate the interactive block builder (Pendientes + Rutinas grids)
+  renderRoadmapBuilder();
 
   // 5. Render Plan Items list
   const list = elements.roadmapItemsList;
@@ -1719,7 +1689,100 @@ export function toggleRoadmapTab(tabName) {
     if (builderTab) builderTab.classList.remove('hidden');
     if (viewBtn) viewBtn.classList.remove('active');
     if (builderBtn) builderBtn.classList.add('active');
+    // Refresh the available blocks every time the builder opens
+    renderRoadmapBuilder();
   }
+}
+
+/**
+ * Switch between the builder's inner sub-tabs (pending / routine / personal)
+ */
+export function toggleBuilderSubtab(sub) {
+  const panels = {
+    pending: 'builderPanelPending',
+    routine: 'builderPanelRoutine',
+    personal: 'builderPanelPersonal'
+  };
+  Object.entries(panels).forEach(([key, panelId]) => {
+    const panel = document.getElementById(panelId);
+    if (panel) panel.classList.toggle('hidden', key !== sub);
+  });
+  document.querySelectorAll('.builder-subtab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.sub === sub);
+  });
+}
+
+/**
+ * Build a single tappable block tile. Each tap adds a copy to the plan.
+ */
+function _buildBlock(name, pts, type) {
+  const btn = document.createElement('button');
+  btn.className = `builder-block ${type === 'routine' ? 'routine' : ''}`;
+  btn.type = 'button';
+
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'builder-block-name';
+  nameSpan.textContent = name;
+
+  const foot = document.createElement('div');
+  foot.className = 'builder-block-foot';
+  const ptsLabel = type === 'routine' ? `+${pts} pts` : `${pts} pts`;
+  foot.innerHTML = `<span class="builder-block-pts">${ptsLabel}</span><span class="builder-block-add">+</span>`;
+
+  btn.appendChild(nameSpan);
+  btn.appendChild(foot);
+
+  btn.onclick = () => {
+    state.addRoadmapItem(name, type, pts);
+    // Restart the "added" pulse animation
+    btn.classList.remove('just-added');
+    void btn.offsetWidth;
+    btn.classList.add('just-added');
+    updateBuilderCount();
+    showToast(`"${name}" añadido al plan`);
+  };
+
+  return btn;
+}
+
+/**
+ * Populate the Pendientes + Rutinas grids with available blocks
+ */
+export function renderRoadmapBuilder() {
+  const pendingGrid = document.getElementById('builderGridPending');
+  if (pendingGrid) {
+    pendingGrid.innerHTML = '';
+    const pend = state.store.pendingList || [];
+    if (pend.length === 0) {
+      pendingGrid.innerHTML = `<div class="builder-empty">No tienes tareas pendientes.<br>Créalas en la pestaña Pendientes.</div>`;
+    } else {
+      pend.forEach(t => pendingGrid.appendChild(_buildBlock(t.name, t.pts, 'pending')));
+    }
+  }
+
+  const routineGrid = document.getElementById('builderGridRoutine');
+  if (routineGrid) {
+    routineGrid.innerHTML = '';
+    const tpls = state.store.templates || [];
+    if (tpls.length === 0) {
+      routineGrid.innerHTML = `<div class="builder-empty">No tienes rutinas guardadas.<br>Guárdalas desde el menú de plantillas.</div>`;
+    } else {
+      tpls.forEach(t => routineGrid.appendChild(_buildBlock(t.name, t.pts, 'routine')));
+    }
+  }
+
+  updateBuilderCount();
+}
+
+/**
+ * Update the live "Tu plan: N bloques" footer counter
+ */
+export function updateBuilderCount() {
+  const countEl = document.getElementById('builderPlanCount');
+  if (!countEl) return;
+  const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
+  const n = plan && Array.isArray(plan.items) ? plan.items.length : 0;
+  countEl.textContent = `Tu plan: ${n} ${n === 1 ? 'bloque' : 'bloques'}`;
 }
 
 /**

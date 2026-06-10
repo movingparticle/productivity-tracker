@@ -1572,6 +1572,193 @@ input:focus, select:focus {
   text-transform: uppercase;
 }
 
+/* --- INTERACTIVE BLOCK BUILDER (roadmap) --- */
+.builder-subtabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.builder-subtab {
+  flex: 1;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  padding: 9px 6px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.builder-subtab.active {
+  background: var(--active-color);
+  border-color: var(--active-color);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.builder-subtab:hover:not(.active) {
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--text-main);
+}
+
+.builder-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.builder-block {
+  position: relative;
+  text-align: left;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-left: 3px solid var(--active-color);
+  border-radius: var(--radius-md);
+  padding: 12px 12px 12px 14px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.15s ease, border-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--font-body);
+  min-height: 78px;
+  justify-content: space-between;
+}
+
+.builder-block:hover {
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.builder-block:active {
+  transform: scale(0.97);
+}
+
+.builder-block-name {
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--text-main);
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.builder-block-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.builder-block-pts {
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  background: rgba(15, 23, 42, 0.05);
+  padding: 2px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.builder-block-add {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--active-color);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.builder-block.routine {
+  border-left-color: var(--success);
+}
+
+.builder-block.routine .builder-block-add {
+  background: var(--success);
+}
+
+@keyframes builderAdded {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.06); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3); }
+  100% { transform: scale(1); }
+}
+
+.builder-block.just-added {
+  animation: builderAdded 0.4s ease;
+  border-color: var(--success);
+}
+
+.builder-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 28px 14px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  background: rgba(15, 23, 42, 0.02);
+  border: 1px dashed var(--card-border);
+  border-radius: var(--radius-md);
+}
+
+.builder-personal-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
+}
+
+.builder-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 14px 0 90px;
+  padding: 12px 16px;
+  background: var(--app-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+.builder-footer-count {
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+.builder-footer-btn {
+  background: var(--active-color);
+  color: #fff;
+  border: none;
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.builder-footer-btn:hover {
+  filter: brightness(1.1);
+}
+
 /* --- GENERAL UTILITIES --- */
 .hidden {
   display: none !important;

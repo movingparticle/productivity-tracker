@@ -1120,45 +1120,25 @@ function bindEvents() {
     ui.elements.btnCloseTreeInfoOk.onclick = () => ui.closeModal(ui.elements.modalTreeInfo);
   }
 
-  // Roadmap Lego Builder actions (Add Pending, Add Routine, Add Custom)
-  if (ui.elements.btnAddPendingToRoadmap) {
-    ui.elements.btnAddPendingToRoadmap.onclick = () => {
-      const select = ui.elements.selectRoadmapPending;
-      const val = select.value;
-      if (val === "") {
-        ui.showToast("Selecciona una tarea pendiente.", "warning");
-        return;
-      }
-      const task = state.store.pendingList[parseInt(val)];
-      if (task) {
-        state.addRoadmapItem(task.name, 'pending', task.pts);
-        ui.showToast("Tarea añadida al plan");
-        select.value = "";
-        ui.toggleRoadmapTab('view'); // Redirect to plan view
-      }
-    };
+  // Builder inner sub-tabs (Pendientes / Rutinas / Personal)
+  if (ui.elements.btnBuilderSubPending) {
+    ui.elements.btnBuilderSubPending.onclick = () => ui.toggleBuilderSubtab('pending');
+  }
+  if (ui.elements.btnBuilderSubRoutine) {
+    ui.elements.btnBuilderSubRoutine.onclick = () => ui.toggleBuilderSubtab('routine');
+  }
+  if (ui.elements.btnBuilderSubPersonal) {
+    ui.elements.btnBuilderSubPersonal.onclick = () => ui.toggleBuilderSubtab('personal');
   }
 
-  if (ui.elements.btnAddRoutineToRoadmap) {
-    ui.elements.btnAddRoutineToRoadmap.onclick = () => {
-      const select = ui.elements.selectRoadmapRoutine;
-      const val = select.value;
-      if (val === "") {
-        ui.showToast("Selecciona una rutina.", "warning");
-        return;
-      }
-      const routine = state.store.templates[parseInt(val)];
-      if (routine) {
-        state.addRoadmapItem(routine.name, 'routine', routine.pts);
-        ui.showToast("Rutina añadida al plan");
-        select.value = "";
-        ui.toggleRoadmapTab('view'); // Redirect to plan view
-      }
-    };
+  // "Ver plan →" jumps to the plan view once you've added blocks
+  if (ui.elements.btnBuilderGoToPlan) {
+    ui.elements.btnBuilderGoToPlan.onclick = () => ui.toggleRoadmapTab('view');
   }
 
+  // Personal free activity: add and STAY in the builder (allows adding several)
   if (ui.elements.btnAddCustomToRoadmap) {
-    ui.elements.btnAddCustomToRoadmap.onclick = () => {
+    const addCustom = () => {
       const input = ui.elements.inputRoadmapCustom;
       const val = input.value.trim();
       if (!val) {
@@ -1166,10 +1146,17 @@ function bindEvents() {
         return;
       }
       state.addRoadmapItem(val, 'personal', 0);
-      ui.showToast("Actividad personal añadida");
+      ui.showToast(`"${val}" añadida al plan`);
       input.value = "";
-      ui.toggleRoadmapTab('view'); // Redirect to plan view
+      input.focus();
+      ui.updateBuilderCount();
     };
+    ui.elements.btnAddCustomToRoadmap.onclick = addCustom;
+    if (ui.elements.inputRoadmapCustom) {
+      ui.elements.inputRoadmapCustom.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); addCustom(); }
+      });
+    }
   }
 }
 
