@@ -495,16 +495,24 @@ function renderTracker() {
   if (state.store.history) {
     state.store.history.forEach(h => {
       if (h.points && h.points[state.localProfileId] !== undefined) {
-        // Cap daily points at meta to calculate weekly progress fairly, matching original logic
         weeklyPts += Math.min(h.points[state.localProfileId], userMeta);
       }
     });
   }
   weeklyPts += Math.min(activePts, userMeta);
 
-  const weeklyGoal = userMeta * (state.store.config.days || 6);
+  const configDays = state.store.config.days || 6;
+  const weeklyGoal = userMeta * configDays;
+
+  // How many active workdays have actually elapsed this week (Mon–today, capped at configDays).
+  // JS getDay(): 0=Sun,1=Mon,...,6=Sat. We treat the week as Mon→configDays.
+  const dowToday = new Date().getDay();
+  const daysSinceMon = dowToday === 0 ? 6 : dowToday - 1; // 0=Mon, 5=Sat, 6=Sun
+  const workdaysCovered = Math.min(daysSinceMon + 1, configDays); // days elapsed incl. today
+  const maxEarnableNow  = workdaysCovered * userMeta;            // ceiling of what's possible so far
+  const weekDone = weeklyPts >= maxEarnableNow;                  // earned everything possible
+
   const weeklyPercent = Math.min((weeklyPts / weeklyGoal) * 100, 100);
-  
   if (elements.weeklyBar) {
     elements.weeklyBar.style.width = weeklyPercent + "%";
     elements.weeklyBar.style.background = `linear-gradient(90deg, ${activeUser.color}, #a855f7)`;
@@ -515,11 +523,17 @@ function renderTracker() {
 
   const wDiff = weeklyGoal - weeklyPts;
   if (elements.weeklyRem) {
-    if (wDiff > 0) {
+    if (weekDone) {
+      // All earnable points for elapsed days are done — week is complete regardless of calendar
+      elements.weeklyRem.innerText = weeklyPts >= weeklyGoal
+        ? '¡Semana perfecta! Eres libre.'
+        : '¡Semana lista! Hiciste todo lo posible.';
+      elements.weeklyRem.style.color = 'var(--success)';
+    } else if (wDiff > 0) {
       elements.weeklyRem.innerText = `Faltan para cierre: ${wDiff} pts`;
       elements.weeklyRem.style.color = 'var(--text-muted)';
     } else {
-      elements.weeklyRem.innerText = `¡Meta semanal cumplida!`;
+      elements.weeklyRem.innerText = '¡Meta semanal cumplida!';
       elements.weeklyRem.style.color = 'var(--success)';
     }
   }
@@ -1976,7 +1990,29 @@ export function renderFocusTree(animate = true) {
 
   // 2. Calculate Gamification Metrics
   const fullBranchesCount = daysList.filter(day => getDailyLeafItems(day.dateStr).length >= fullBranchThreshold).length;
-  const isBloomed = fullBranchesCount >= 5;
+
+  // "Week done" check: have the user earned everything possible for the days elapsed?
+  const configDays = state.store.config.days || 6;
+  const dowTree = now.getDay();
+  const daysSinceMonTree = dowTree === 0 ? 6 : dowTree - 1;
+  const workdaysCoveredTree = Math.min(daysSinceMonTree + 1, configDays);
+  let weeklyPtsTree = 0;
+  const treeUserMeta = Number(activeUser.meta) || 15;
+  if (state.store.history) {
+    state.store.history.forEach(h => {
+      if (h.points && h.points[state.localProfileId] !== undefined) {
+        weeklyPtsTree += Math.min(h.points[state.localProfileId], treeUserMeta);
+      }
+    });
+  }
+  const todayLogsTree = state.store.todayLog.filter(x => x.who === state.localProfileId);
+  let todayPtsTree = 0;
+  todayLogsTree.forEach(x => todayPtsTree += x.pts);
+  weeklyPtsTree += Math.min(todayPtsTree, treeUserMeta);
+  const weekDoneTree = weeklyPtsTree >= workdaysCoveredTree * treeUserMeta;
+
+  // Bloom if 5+ full days OR all possible work this week is done
+  const isBloomed = fullBranchesCount >= 5 || weekDoneTree;
 
   // Watered: at least 1 activity in "Hoy" tab today
   const userDailyLogs = state.store.todayLog.filter(x => x.who === state.localProfileId);
