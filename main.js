@@ -831,6 +831,16 @@ function bindEvents() {
     };
   }
 
+  // Danger zone collapsible
+  const btnToggleDanger = document.getElementById('btnToggleDangerZone');
+  const dangerPanel = document.getElementById('dangerZonePanel');
+  if (btnToggleDanger && dangerPanel) {
+    btnToggleDanger.onclick = () => {
+      const open = dangerPanel.classList.toggle('open');
+      btnToggleDanger.classList.toggle('open', open);
+    };
+  }
+
   // Game Rules modal
   if (ui.elements.btnOpenGameRules) {
     ui.elements.btnOpenGameRules.onclick = () => {

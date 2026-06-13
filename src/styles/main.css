@@ -1981,6 +1981,46 @@ input:focus, select:focus {
   gap: 8px;
 }
 
+.config-danger-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  padding: 9px 13px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--danger);
+  cursor: pointer;
+  transition: var(--transition);
+  letter-spacing: 0.01em;
+}
+.config-danger-toggle:hover {
+  background: rgba(239, 68, 68, 0.06);
+}
+.danger-chevron {
+  margin-left: auto;
+  transition: transform 0.25s ease;
+}
+.config-danger-toggle.open .danger-chevron {
+  transform: rotate(180deg);
+}
+
+.config-danger-panel {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.25s ease;
+  opacity: 0;
+  margin-top: 0;
+}
+.config-danger-panel.open {
+  max-height: 300px;
+  opacity: 1;
+  margin-top: 10px;
+}
+
 /* ── iOS-style toggle switch ─────────────────────────────── */
 .config-toggle-row {
   display: flex;
