@@ -1991,28 +1991,9 @@ export function renderFocusTree(animate = true) {
   // 2. Calculate Gamification Metrics
   const fullBranchesCount = daysList.filter(day => getDailyLeafItems(day.dateStr).length >= fullBranchThreshold).length;
 
-  // "Week done" check: have the user earned everything possible for the days elapsed?
-  const configDays = state.store.config.days || 6;
-  const dowTree = now.getDay();
-  const daysSinceMonTree = dowTree === 0 ? 6 : dowTree - 1;
-  const workdaysCoveredTree = Math.min(daysSinceMonTree + 1, configDays);
-  let weeklyPtsTree = 0;
-  const treeUserMeta = Number(activeUser.meta) || 15;
-  if (state.store.history) {
-    state.store.history.forEach(h => {
-      if (h.points && h.points[state.localProfileId] !== undefined) {
-        weeklyPtsTree += Math.min(h.points[state.localProfileId], treeUserMeta);
-      }
-    });
-  }
-  const todayLogsTree = state.store.todayLog.filter(x => x.who === state.localProfileId);
-  let todayPtsTree = 0;
-  todayLogsTree.forEach(x => todayPtsTree += x.pts);
-  weeklyPtsTree += Math.min(todayPtsTree, treeUserMeta);
-  const weekDoneTree = weeklyPtsTree >= workdaysCoveredTree * treeUserMeta;
-
-  // Bloom if 5+ full days OR all possible work this week is done
-  const isBloomed = fullBranchesCount >= 5 || weekDoneTree;
+  // Bloom requires 5+ days of real consistent care per the difficulty rules.
+  // Weekly point totals alone do not bloom the tree — constancy does.
+  const isBloomed = fullBranchesCount >= 5;
 
   // Watered: at least 1 activity in "Hoy" tab today
   const userDailyLogs = state.store.todayLog.filter(x => x.who === state.localProfileId);
