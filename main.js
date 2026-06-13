@@ -601,6 +601,22 @@ function bindEvents() {
   if (ui.elements.btnTabShoppingAdd) {
     ui.elements.btnTabShoppingAdd.onclick = () => ui.toggleShoppingTab('add');
   }
+  if (ui.elements.btnTabShoppingSaved) {
+    ui.elements.btnTabShoppingSaved.onclick = () => ui.toggleShoppingTab('saved');
+  }
+  if (ui.elements.btnCreateSavedList) {
+    ui.elements.btnCreateSavedList.onclick = () => {
+      const name = prompt('Nombre para la nueva lista (ej: Despensa, Farmacia…):');
+      if (!name || !name.trim()) return;
+      const result = state.createSavedShoppingList(name.trim());
+      if (!result) {
+        ui.showToast('Límite de 3 listas alcanzado.', 'warning');
+        return;
+      }
+      ui.showToast(`Lista "${result.name}" creada`);
+      ui.renderSavedLists();
+    };
+  }
   
   if (ui.elements.btnUploadImageTrigger) {
     ui.elements.btnUploadImageTrigger.onclick = (e) => {
@@ -818,6 +834,17 @@ function bindEvents() {
   }
   if (ui.elements.btnDownloadPDF) {
     ui.elements.btnDownloadPDF.onclick = () => ui.triggerDownloadPDF();
+  }
+
+  // Weekly report
+  if (ui.elements.btnOpenWeeklyReport) {
+    ui.elements.btnOpenWeeklyReport.onclick = () => ui.showWeeklyReport();
+  }
+  if (ui.elements.btnCloseWeeklyReport) {
+    ui.elements.btnCloseWeeklyReport.onclick = () => ui.closeWeeklyReport();
+  }
+  if (ui.elements.btnDownloadWeeklyPDF) {
+    ui.elements.btnDownloadWeeklyPDF.onclick = () => ui.triggerDownloadWeeklyPDF();
   }
 
   if (ui.elements.btnOpenConfig) {

@@ -1,6 +1,7 @@
 import Chart from 'chart.js/auto';
 
 let chartInstance = null;
+let weekBarChartInstance = null;
 
 /**
  * Render or update the "Time vs Points" line chart
@@ -137,5 +138,87 @@ export function updateTimeChart(canvasElement, todayLog, users) {
     });
   } catch (err) {
     console.error("Error drawing Time vs Points chart:", err);
+  }
+}
+
+/**
+ * Render or update the weekly bar chart (pts per day, one dataset per user).
+ * @param {HTMLCanvasElement} canvas
+ * @param {Array} users  Array of room users
+ * @param {Function} getDailyTotals  (userId) => [{label, pts}]
+ */
+export function updateWeekBarChart(canvas, users, getDailyTotals) {
+  if (!canvas) return;
+  try {
+    if (weekBarChartInstance) {
+      weekBarChartInstance.destroy();
+      weekBarChartInstance = null;
+    }
+
+    // Gather all day labels across all users
+    const labelSet = new Set();
+    users.forEach(u => getDailyTotals(u.id).forEach(d => labelSet.add(d.label)));
+    const labels = [...labelSet];
+    if (labels.length === 0) labels.push('Sin datos');
+
+    const datasets = users.map(u => {
+      const daily = getDailyTotals(u.id);
+      const byLabel = new Map(daily.map(d => [d.label, d.pts]));
+      return {
+        label: u.name,
+        data: labels.map(l => byLabel.get(l) || 0),
+        backgroundColor: u.color + 'cc',
+        borderColor: u.color,
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false
+      };
+    });
+
+    const textColor = '#64748b';
+    const gridColor = 'rgba(15, 23, 42, 0.05)';
+
+    weekBarChartInstance = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            grid: { color: gridColor },
+            ticks: { color: textColor, font: { family: "'Inter', sans-serif", size: 10 } }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: gridColor },
+            ticks: { color: textColor, font: { family: "'Inter', sans-serif", size: 10 }, precision: 0 }
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#1e293b',
+              font: { family: "'Outfit', sans-serif", weight: 'bold', size: 11 },
+              padding: 12,
+              usePointStyle: true,
+              boxWidth: 8
+            }
+          },
+          tooltip: {
+            backgroundColor: '#1e293b',
+            titleColor: '#3b82f6',
+            bodyColor: '#f8fafc',
+            borderColor: 'rgba(255,255,255,0.08)',
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 8
+          }
+        }
+      }
+    });
+  } catch (err) {
+    console.error("Error drawing weekly bar chart:", err);
   }
 }

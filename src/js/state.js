@@ -26,10 +26,12 @@ function makeEmptyStore() {
     bonusCounters: {},
     todayLog: [],
     history: [],
+    weekLog: [],
     pendingList: [],
     templates: [],
     roadmaps: {},
     shoppingList: [],
+    savedShoppingLists: [],
     roadmapHistory: []
   };
 }
@@ -72,7 +74,7 @@ export function setRoomState(roomId, newState) {
     store = { ...makeEmptyStore(), ...newState };
     
     // Ensure all critical arrays exist
-    ['todayLog', 'history', 'pendingList', 'templates', 'roadmapHistory', 'shoppingList'].forEach(k => {
+    ['todayLog', 'history', 'weekLog', 'pendingList', 'templates', 'roadmapHistory', 'shoppingList', 'savedShoppingLists'].forEach(k => {
       if (!Array.isArray(store[k])) store[k] = [];
     });
     
@@ -150,9 +152,10 @@ export function checkDateAutoClose() {
   const now = new Date();
   const todayStr = now.toDateString();
   
-  // Weekly reset check on Mondays: clear weekly history
+  // Weekly reset check on Mondays: clear weekly history + weekLog
   if (now.getDay() === 1 && store.history && store.history.length > 0) {
     store.history = [];
+    store.weekLog = [];
     saveState();
   }
 
@@ -160,7 +163,7 @@ export function checkDateAutoClose() {
   if (store.lastActiveDate && store.lastActiveDate !== todayStr) {
     const pointsMap = {};
     store.config.users.forEach(u => pointsMap[u.id] = 0);
-    
+
     // Accumulate today's points
     store.todayLog.forEach(x => {
       if (pointsMap[x.who] !== undefined) pointsMap[x.who] += x.pts;
@@ -181,14 +184,28 @@ export function checkDateAutoClose() {
     // Save history
     const dObj = new Date(store.lastActiveDate);
     const niceDate = `${dObj.getDate().toString().padStart(2, '0')}/${(dObj.getMonth() + 1).toString().padStart(2, '0')}/${dObj.getFullYear()}`;
-    
+
     if (store.todayLog.length > 0) {
       store.history.push({ date: niceDate, points: pointsMap });
+
+      // Archive each individual task entry into weekLog (drives weekly report)
+      if (!store.weekLog) store.weekLog = [];
+      store.todayLog.forEach(x => {
+        store.weekLog.push({
+          date: store.lastActiveDate,
+          who: x.who,
+          name: x.name,
+          pts: Number(x.pts) || 0
+        });
+      });
+      // Cap at 1000 entries to avoid bloat
+      if (store.weekLog.length > 1000) store.weekLog = store.weekLog.slice(-1000);
     }
 
     // Weekly reset check double check
     if (now.getDay() === 1) {
       store.history = [];
+      store.weekLog = [];
     }
 
     // Archive daily roadmaps to history before clearing
@@ -213,7 +230,7 @@ export function checkDateAutoClose() {
     store.roadmaps = {};
     store.lastActiveDate = todayStr;
     store.bonusCounters = {};
-    
+
     saveState();
   } else if (!store.lastActiveDate) {
     store.lastActiveDate = todayStr;
@@ -417,9 +434,10 @@ export function hardResetState() {
     config: { users: [{ id: 'u1', name: 'User 1', color: '#3b82f6', meta: 15, bank: 0 }], days: 6 },
     lastActiveDate: new Date().toDateString(),
     bonusCounters: {},
-    todayLog: [], 
-    history: [], 
-    pendingList: [], 
+    todayLog: [],
+    history: [],
+    weekLog: [],
+    pendingList: [],
     templates: [],
     roadmaps: {},
     roadmapHistory: []
@@ -434,6 +452,7 @@ export function hardResetState() {
  */
 export function weeklyResetState() {
   store.history = [];
+  store.weekLog = [];
   store.todayLog = [];
   store.roadmaps = {};
   store.roadmapHistory = [];
@@ -638,5 +657,175 @@ export function buyShoppingItem(index) {
   if (!store.shoppingList || !store.shoppingList[index]) return;
   store.shoppingList.splice(index, 1);
   saveState();
+}
+
+/* ------------------------------------------------------------------ */
+/* WEEKLY AGGREGATION HELPERS                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * All task entries for a user this week: weekLog (past days) + todayLog (today).
+ * userId = null → all users combined.
+ */
+export function getWeekEntries(userId) {
+  const past = (store.weekLog || []).filter(x => !userId || x.who === userId);
+  const today = (store.todayLog || [])
+    .filter(x => !userId || x.who === userId)
+    .map(x => ({ date: store.lastActiveDate, who: x.who, name: x.name, pts: Number(x.pts) || 0 }));
+  return [...past, ...today];
+}
+
+/**
+ * Per-task aggregates for the week.
+ * Returns array of { name, count, totalPts, maxSingle } sorted by totalPts desc.
+ */
+export function getWeekTaskAggregates(userId) {
+  const entries = getWeekEntries(userId);
+  const map = new Map();
+  entries.forEach(x => {
+    const key = x.name.toLowerCase().trim();
+    if (!map.has(key)) map.set(key, { name: x.name, count: 0, totalPts: 0, maxSingle: 0 });
+    const r = map.get(key);
+    r.count++;
+    r.totalPts += x.pts;
+    if (x.pts > r.maxSingle) r.maxSingle = x.pts;
+  });
+  return [...map.values()].sort((a, b) => b.totalPts - a.totalPts);
+}
+
+/**
+ * Points per calendar day this week (Mon–Sun).
+ * Returns array of { dateStr, label, pts } for each day that has data,
+ * plus today's partial if it has data.
+ */
+export function getWeekDailyTotals(userId) {
+  const entries = getWeekEntries(userId);
+  const map = new Map();
+  entries.forEach(x => {
+    const d = x.date || '';
+    if (!map.has(d)) map.set(d, 0);
+    map.set(d, map.get(d) + x.pts);
+  });
+
+  const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  return [...map.entries()]
+    .map(([dateStr, pts]) => {
+      const d = new Date(dateStr);
+      const label = isNaN(d.getTime()) ? dateStr : DAY_LABELS[d.getDay()];
+      return { dateStr, label, pts };
+    })
+    .sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
+}
+
+/**
+ * High-level summary for a user (or the whole sala if userId is null).
+ * Returns { totalPts, avgPtsPerDay, daysActive, daysGoalMet, streak }.
+ */
+export function getWeekSummary(userId) {
+  const dailyTotals = getWeekDailyTotals(userId);
+
+  // For goal-met checks we need per-user meta; for sala-wide we average metas
+  const users = store.config.users || [];
+  const getGoal = (uid) => {
+    if (uid) {
+      const u = users.find(u => u.id === uid);
+      return u ? (Number(u.meta) || 15) : 15;
+    }
+    // sala-wide: average of all user metas
+    if (!users.length) return 15;
+    return users.reduce((s, u) => s + (Number(u.meta) || 15), 0) / users.length;
+  };
+  const goal = getGoal(userId);
+
+  const daysActive = dailyTotals.length;
+  const totalPts = dailyTotals.reduce((s, d) => s + d.pts, 0);
+  const avgPtsPerDay = daysActive ? Math.round(totalPts / daysActive) : 0;
+  const daysGoalMet = dailyTotals.filter(d => d.pts >= goal).length;
+
+  // Streak: consecutive days ending today where goal was met
+  let streak = 0;
+  const sorted = [...dailyTotals].sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
+  for (const d of sorted) {
+    if (d.pts >= goal) streak++;
+    else break;
+  }
+
+  return { totalPts, avgPtsPerDay, daysActive, daysGoalMet, streak };
+}
+
+/* ------------------------------------------------------------------ */
+/* SAVED SHOPPING LISTS (REGULARS)                                    */
+/* ------------------------------------------------------------------ */
+
+const MAX_SAVED_LISTS = 3;
+
+export function getSavedShoppingLists() {
+  if (!Array.isArray(store.savedShoppingLists)) store.savedShoppingLists = [];
+  return store.savedShoppingLists;
+}
+
+export function createSavedShoppingList(name) {
+  if (!Array.isArray(store.savedShoppingLists)) store.savedShoppingLists = [];
+  if (store.savedShoppingLists.length >= MAX_SAVED_LISTS) return null;
+  const list = {
+    id: 'sl_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    name: (name || 'Mi lista').trim().slice(0, 40),
+    items: []
+  };
+  store.savedShoppingLists.push(list);
+  saveState();
+  return list;
+}
+
+export function renameSavedShoppingList(listId, newName) {
+  const list = (store.savedShoppingLists || []).find(l => l.id === listId);
+  if (!list) return;
+  list.name = (newName || '').trim().slice(0, 40) || list.name;
+  saveState();
+}
+
+export function deleteSavedShoppingList(listId) {
+  if (!Array.isArray(store.savedShoppingLists)) return;
+  store.savedShoppingLists = store.savedShoppingLists.filter(l => l.id !== listId);
+  saveState();
+}
+
+export function addItemToSavedList(listId, name, qty) {
+  const list = (store.savedShoppingLists || []).find(l => l.id === listId);
+  if (!list) return;
+  if (!Array.isArray(list.items)) list.items = [];
+  list.items.push({
+    id: 'sli_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    name: (name || '').trim().slice(0, 80),
+    qty: (qty || '').trim()
+  });
+  saveState();
+}
+
+export function removeItemFromSavedList(listId, itemId) {
+  const list = (store.savedShoppingLists || []).find(l => l.id === listId);
+  if (!list || !Array.isArray(list.items)) return;
+  list.items = list.items.filter(i => i.id !== itemId);
+  saveState();
+}
+
+/**
+ * Add items from a saved list to the active shopping list.
+ * selectedIds = null → add all; array of ids → add only those.
+ */
+export function addSavedListToShopping(listId, selectedIds, assignedTo) {
+  const list = (store.savedShoppingLists || []).find(l => l.id === listId);
+  if (!list || !Array.isArray(list.items)) return 0;
+  const items = selectedIds
+    ? list.items.filter(i => selectedIds.includes(i.id))
+    : list.items;
+  return saveShoppingItemsBulk(items.map(i => ({ name: i.name, qty: i.qty })), assignedTo || 'casa');
+}
+
+export function buildShareText(listId) {
+  const list = (store.savedShoppingLists || []).find(l => l.id === listId);
+  if (!list) return '';
+  const lines = (list.items || []).map(i => i.qty ? `- ${i.name} (${i.qty})` : `- ${i.name}`);
+  return `${list.name}\n${lines.join('\n')}`;
 }
 

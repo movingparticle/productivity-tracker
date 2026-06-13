@@ -1135,7 +1135,8 @@ input:focus, select:focus {
 }
 
 /* --- REPORTE ESTILO "PRO" --- */
-#reportOverlay {
+#reportOverlay,
+#weeklyReportOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -1148,7 +1149,8 @@ input:focus, select:focus {
   padding: 30px 20px;
 }
 
-#reportOverlay.open {
+#reportOverlay.open,
+#weeklyReportOverlay.open {
   display: block;
 }
 

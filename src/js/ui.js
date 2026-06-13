@@ -1,4 +1,4 @@
-import { updateTimeChart } from "./chart";
+import { updateTimeChart, updateWeekBarChart } from "./chart";
 import { downloadReportPDF } from "./pdf";
 import * as state from "./state";
 
@@ -260,7 +260,24 @@ export function initDomElements() {
     ruleStreakThreshold: document.getElementById('ruleStreakThreshold'),
     ruleStreakBonus: document.getElementById('ruleStreakBonus'),
     ruleUrgencyDays: document.getElementById('ruleUrgencyDays'),
-    streakOptions: document.getElementById('streakOptions')
+    streakOptions: document.getElementById('streakOptions'),
+
+    // Weekly metrics
+    weekSummaryCards: document.getElementById('weekSummaryCards'),
+    weekBarChart: document.getElementById('weekBarChart'),
+    weekTopTasksList: document.getElementById('weekTopTasksList'),
+    btnOpenWeeklyReport: document.getElementById('btnOpenWeeklyReport'),
+
+    // Weekly report overlay
+    weeklyReportOverlay: document.getElementById('weeklyReportOverlay'),
+    weeklyReportContent: document.getElementById('weeklyReportContent'),
+    btnCloseWeeklyReport: document.getElementById('btnCloseWeeklyReport'),
+    btnDownloadWeeklyPDF: document.getElementById('btnDownloadWeeklyPDF'),
+
+    // Saved shopping lists tab
+    btnTabShoppingSaved: document.getElementById('btnTabShoppingSaved'),
+    shoppingSavedTab: document.getElementById('shoppingSavedTab'),
+    btnCreateSavedList: document.getElementById('btnCreateSavedList')
   };
 
   createToastContainer();
@@ -727,11 +744,13 @@ function renderPendingInto(container, withEditFocus) {
 export function renderMetrics() {
   if (!elements.appContainer) return;
   if (!state.store.config || !Array.isArray(state.store.config.users)) return;
-  
+
+  const users = state.store.config.users;
+
   let mt = 0;
   const pointsToday = {};
-  state.store.config.users.forEach(u => pointsToday[u.id] = 0);
-  
+  users.forEach(u => pointsToday[u.id] = 0);
+
   // Sum today's log
   state.store.todayLog.forEach(x => {
     mt += x.pts;
@@ -749,15 +768,14 @@ export function renderMetrics() {
     elements.monthTotal.innerText = mt;
   }
 
-  // Percentage Boxes Grid
+  // Percentage Boxes Grid (today)
   const pList = elements.userPercentDisplay;
   if (pList) {
     pList.innerHTML = '';
-    state.store.config.users.forEach(u => {
+    users.forEach(u => {
       const earned = pointsToday[u.id] || 0;
       const meta = u.meta || 15;
       const percent = Math.floor((earned / meta) * 100);
-      
       pList.innerHTML += `
         <div class="percent-box" style="border-top-color: ${esc(u.color)}">
           <div class="percent-name" style="color:${esc(u.color)}">${esc(u.name)}</div>
@@ -768,12 +786,68 @@ export function renderMetrics() {
     });
   }
 
-  // Cumulative Chart Trigger with try-catch
+  // Today cumulative chart
   if (elements.timeChartCanvas) {
     try {
-      updateTimeChart(elements.timeChartCanvas, state.store.todayLog, state.store.config.users);
+      updateTimeChart(elements.timeChartCanvas, state.store.todayLog, users);
     } catch (err) {
       console.warn("Chart.js failed to initialize:", err);
+    }
+  }
+
+  // --- WEEKLY SECTION ---
+
+  // Summary cards per user
+  if (elements.weekSummaryCards) {
+    elements.weekSummaryCards.innerHTML = '';
+    users.forEach(u => {
+      const s = state.getWeekSummary(u.id);
+      const meta = Number(u.meta) || 15;
+      const metaWeekTarget = meta * (state.store.config.days || 6);
+      const pct = metaWeekTarget > 0 ? Math.min(100, Math.round((s.totalPts / metaWeekTarget) * 100)) : 0;
+      elements.weekSummaryCards.innerHTML += `
+        <div class="percent-box" style="border-top-color:${esc(u.color)}">
+          <div class="percent-name" style="color:${esc(u.color)}">${esc(u.name)}</div>
+          <div class="percent-value" style="color:${esc(u.color)}">${s.totalPts}<span style="font-size:0.6rem; font-weight:700; margin-left:2px;">pts</span></div>
+          <div style="font-size:0.6rem; color:var(--text-muted); font-weight:700;">${s.daysGoalMet} días meta · ${pct}%</div>
+          ${s.streak > 0 ? `<div style="font-size:0.6rem; color:#f59e0b; font-weight:800; margin-top:2px;">🔥 ${s.streak} racha</div>` : ''}
+        </div>
+      `;
+    });
+  }
+
+  // Weekly bar chart
+  if (elements.weekBarChart) {
+    try {
+      updateWeekBarChart(elements.weekBarChart, users, (uid) => state.getWeekDailyTotals(uid));
+    } catch (err) {
+      console.warn("Weekly bar chart failed:", err);
+    }
+  }
+
+  // Top tasks this week (top 5 by total pts)
+  if (elements.weekTopTasksList) {
+    const aggs = state.getWeekTaskAggregates(null); // sala-wide
+    elements.weekTopTasksList.innerHTML = '';
+    if (aggs.length === 0) {
+      elements.weekTopTasksList.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:8px 0;">Aún no hay datos de esta semana</div>`;
+    } else {
+      const top = aggs.slice(0, 5);
+      const maxPts = top[0].totalPts || 1;
+      top.forEach(t => {
+        const barPct = Math.round((t.totalPts / maxPts) * 100);
+        elements.weekTopTasksList.innerHTML += `
+          <div style="margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px;">
+              <span style="font-size:0.82rem; font-weight:700; color:var(--text-primary); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px;">${esc(t.name)}</span>
+              <span style="font-size:0.72rem; color:var(--text-muted); white-space:nowrap;">${t.totalPts} pts · ×${t.count}</span>
+            </div>
+            <div style="height:5px; background:var(--card-border); border-radius:3px; overflow:hidden;">
+              <div style="height:100%; width:${barPct}%; background:#3b82f6; border-radius:3px; transition:width 0.4s;"></div>
+            </div>
+          </div>
+        `;
+      });
     }
   }
 }
@@ -1023,6 +1097,169 @@ export function triggerDownloadPDF() {
   }
 }
 
+/* --- WEEKLY REPORT --- */
+
+export function showWeeklyReport() {
+  if (!elements.weeklyReportOverlay || !elements.weeklyReportContent) return;
+
+  const users = state.store.config.users || [];
+  const roomName = state.currentRoomName || 'la Sala';
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
+
+  // Compute Monday of the current week
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  const weekRange = `${monday.getDate().toString().padStart(2,'0')}/${(monday.getMonth()+1).toString().padStart(2,'0')} — ${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
+
+  // Sala-wide aggregates
+  const salaAggs = state.getWeekTaskAggregates(null);
+  const salaSummary = state.getWeekSummary(null);
+  const salaDaily = state.getWeekDailyTotals(null);
+
+  // Build report HTML
+  let html = `
+    <div class="report-header">
+      <h1 class="report-title">REPORTE SEMANAL</h1>
+      <div class="report-date">${esc(dateStr)}</div>
+      <div style="font-size:0.75rem; color:#64748b; margin-top:4px; font-weight:700; letter-spacing:0.05em;">${esc(roomName.toUpperCase())} · ${esc(weekRange)}</div>
+    </div>
+
+    <!-- RESUMEN DE SALA -->
+    <div class="report-subtitle">RESUMEN DE LA SALA</div>
+    <div class="summary-grid">
+      <div class="summary-card" style="border-left-color:#3b82f6">
+        <span class="summary-label">PUNTOS TOTALES</span>
+        <span class="summary-value" style="color:#3b82f6">${salaSummary.totalPts}</span>
+      </div>
+      <div class="summary-card" style="border-left-color:#10b981">
+        <span class="summary-label">DÍAS ACTIVOS</span>
+        <span class="summary-value" style="color:#10b981">${salaSummary.daysActive}</span>
+      </div>
+      <div class="summary-card" style="border-left-color:#f59e0b">
+        <span class="summary-label">PROMEDIO / DÍA</span>
+        <span class="summary-value" style="color:#f59e0b">${salaSummary.avgPtsPerDay}</span>
+      </div>
+    </div>
+
+    <!-- TENDENCIA DÍA A DÍA -->
+    ${salaDaily.length > 0 ? `
+    <div class="report-subtitle" style="margin-top:18px;">TENDENCIA DE LA SEMANA</div>
+    <table class="doc-table">
+      <thead><tr><th>DÍA</th><th style="text-align:right;">PTS SALA</th></tr></thead>
+      <tbody>
+        ${salaDaily.map(d => `<tr><td style="font-weight:700;">${esc(d.label)}</td><td style="text-align:right; font-weight:700; color:#3b82f6;">+${d.pts}</td></tr>`).join('')}
+      </tbody>
+    </table>` : ''}
+
+    <!-- POR PERFIL -->
+    <div class="report-subtitle" style="margin-top:18px;">POR PERFIL</div>
+    <div class="summary-grid" style="margin-bottom:16px;">
+      ${users.map(u => {
+        const s = state.getWeekSummary(u.id);
+        const meta = Number(u.meta) || 15;
+        const metaWeek = meta * (state.store.config.days || 6);
+        const pct = metaWeek > 0 ? Math.min(100, Math.round((s.totalPts / metaWeek) * 100)) : 0;
+        return `
+          <div class="summary-card" style="border-left-color:${esc(u.color)}">
+            <span class="summary-label" style="color:${esc(u.color)}">${esc(u.name.toUpperCase())}</span>
+            <span class="summary-value" style="color:${esc(u.color)}">${s.totalPts} pts</span>
+            <span class="summary-label">${s.daysGoalMet} días meta · ${pct}% semana${s.streak > 1 ? ` · 🔥${s.streak}` : ''}</span>
+          </div>
+        `;
+      }).join('')}
+    </div>
+
+    <!-- BLOQUE A: Ranking por puntos acumulados -->
+    ${salaAggs.length > 0 ? `
+    <div class="report-subtitle">TAREAS MÁS PESADAS (ACUMULADO)</div>
+    <table class="doc-table">
+      <thead><tr><th>#</th><th>ACTIVIDAD</th><th style="text-align:right;">TOTAL PTS</th><th style="text-align:right;">VECES</th></tr></thead>
+      <tbody>
+        ${salaAggs.slice(0,8).map((t,i) => `
+          <tr>
+            <td style="color:#64748b; font-size:0.75rem;">${i+1}</td>
+            <td style="font-weight:700;">${esc(t.name)}</td>
+            <td style="text-align:right; font-weight:700; color:#3b82f6;">+${t.totalPts}</td>
+            <td style="text-align:right; color:#64748b;">×${t.count}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+
+    <!-- BLOQUE B: Top eventos sueltos más caros -->
+    <div class="report-subtitle" style="margin-top:18px;">TAREAS MÁS PESADAS (EVENTO SINGULAR)</div>
+    <table class="doc-table">
+      <thead><tr><th>#</th><th>ACTIVIDAD</th><th style="text-align:right;">MAX PTS</th></tr></thead>
+      <tbody>
+        ${[...salaAggs].sort((a,b) => b.maxSingle - a.maxSingle).slice(0,8).map((t,i) => `
+          <tr>
+            <td style="color:#64748b; font-size:0.75rem;">${i+1}</td>
+            <td style="font-weight:700;">${esc(t.name)}</td>
+            <td style="text-align:right; font-weight:700; color:#f59e0b;">+${t.maxSingle}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+
+    <!-- BLOQUE: Más repetidas -->
+    <div class="report-subtitle" style="margin-top:18px;">ACTIVIDADES MÁS REPETIDAS</div>
+    <table class="doc-table">
+      <thead><tr><th>#</th><th>ACTIVIDAD</th><th style="text-align:right;">VECES</th><th style="text-align:right;">TOTAL PTS</th></tr></thead>
+      <tbody>
+        ${[...salaAggs].sort((a,b) => b.count - a.count).slice(0,8).map((t,i) => `
+          <tr>
+            <td style="color:#64748b; font-size:0.75rem;">${i+1}</td>
+            <td style="font-weight:700;">${esc(t.name)}</td>
+            <td style="text-align:right; font-weight:700; color:#10b981;">×${t.count}</td>
+            <td style="text-align:right; color:#64748b;">+${t.totalPts}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+
+    <!-- BLOQUE: Dónde se va la fuerza (% del total) -->
+    <div class="report-subtitle" style="margin-top:18px;">DÓNDE SE VA LA FUERZA</div>
+    <div style="margin-bottom:8px;">
+      ${(() => {
+        const totalPts = salaAggs.reduce((s,t) => s + t.totalPts, 0) || 1;
+        return salaAggs.slice(0,10).map(t => {
+          const pct = Math.round((t.totalPts / totalPts) * 100);
+          return `
+            <div style="margin-bottom:8px;">
+              <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:700; margin-bottom:3px;">
+                <span style="color:#1e293b; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px;">${esc(t.name)}</span>
+                <span style="color:#3b82f6;">${pct}% · +${t.totalPts} pts</span>
+              </div>
+              <div style="height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+                <div style="height:100%; width:${pct}%; background:#3b82f6; border-radius:3px;"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      })()}
+    </div>
+    ` : `<div style="text-align:center; padding:20px; color:#64748b; font-size:0.85rem;">Aún no hay datos de esta semana. Los datos se acumulan a partir de mañana.</div>`}
+  `;
+
+  elements.weeklyReportContent.innerHTML = html;
+  elements.weeklyReportOverlay.classList.add('open');
+}
+
+export function closeWeeklyReport() {
+  if (elements.weeklyReportOverlay) {
+    elements.weeklyReportOverlay.classList.remove('open');
+  }
+}
+
+export function triggerDownloadWeeklyPDF() {
+  if (elements.weeklyReportContent) {
+    const roomName = state.currentRoomName || 'Sala';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    downloadReportPDF(elements.weeklyReportContent, `${roomName}_Semana_${dateStr}`);
+  }
+}
+
 export function populateShoppingUsers() {
   const select = elements.shopItemUser;
   if (select) {
@@ -1050,21 +1287,22 @@ export function populateShoppingUsers() {
 export function toggleShoppingTab(tabId) {
   const viewTab = document.getElementById('shoppingListViewTab');
   const addTab = document.getElementById('shoppingAddTab');
+  const savedTab = document.getElementById('shoppingSavedTab');
   const viewBtn = elements.btnTabShoppingList;
   const addBtn = elements.btnTabShoppingAdd;
+  const savedBtn = elements.btnTabShoppingSaved;
+
+  // Hide all, deactivate all buttons
+  [viewTab, addTab, savedTab].forEach(t => t && t.classList.add('hidden'));
+  [viewBtn, addBtn, savedBtn].forEach(b => b && b.classList.remove('active'));
 
   if (tabId === 'list') {
     if (viewTab) viewTab.classList.remove('hidden');
-    if (addTab) addTab.classList.add('hidden');
     if (viewBtn) viewBtn.classList.add('active');
-    if (addBtn) addBtn.classList.remove('active');
     renderShoppingList();
   } else if (tabId === 'add') {
-    if (viewTab) viewTab.classList.add('hidden');
     if (addTab) addTab.classList.remove('hidden');
-    if (viewBtn) viewBtn.classList.remove('active');
     if (addBtn) addBtn.classList.add('active');
-    
     // Clear inputs in add form
     if (elements.shopItemName) elements.shopItemName.value = '';
     if (elements.shopItemQty) elements.shopItemQty.value = '';
@@ -1073,7 +1311,153 @@ export function toggleShoppingTab(tabId) {
     if (elements.btnRemoveShopImage) elements.btnRemoveShopImage.style.display = 'none';
     if (elements.shopImagePreviewContainer) elements.shopImagePreviewContainer.style.display = 'none';
     if (elements.shopImagePreview) elements.shopImagePreview.src = '';
+  } else if (tabId === 'saved') {
+    if (savedTab) savedTab.classList.remove('hidden');
+    if (savedBtn) savedBtn.classList.add('active');
+    renderSavedLists();
   }
+}
+
+export function renderSavedLists() {
+  const container = document.getElementById('savedListsContainer');
+  const emptyEl = document.getElementById('savedListsEmpty');
+  const limitHint = document.getElementById('savedListsLimitHint');
+  const createBtn = document.getElementById('btnCreateSavedList');
+  if (!container) return;
+
+  const lists = state.getSavedShoppingLists();
+
+  if (emptyEl) emptyEl.style.display = lists.length === 0 ? 'block' : 'none';
+  if (limitHint) limitHint.style.display = lists.length >= 3 ? 'block' : 'none';
+  if (createBtn) createBtn.style.display = lists.length >= 3 ? 'none' : 'flex';
+
+  container.innerHTML = '';
+  lists.forEach(list => {
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--card-bg); border:1px solid var(--card-border); border-radius:var(--radius-md); padding:14px 16px; margin-bottom:14px; box-shadow:0 4px 12px rgba(15,23,42,0.02);';
+
+    const totalItems = (list.items || []).length;
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="font-weight:800; font-size:0.95rem; color:var(--text-primary); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="listName_${esc(list.id)}">${esc(list.name)}</div>
+        <div style="display:flex; gap:6px; flex-shrink:0; margin-left:8px;">
+          <button class="btn-icon-sm" data-action="rename" data-id="${esc(list.id)}" title="Renombrar" style="border:none; background:rgba(15,23,42,0.06); border-radius:6px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </button>
+          <button class="btn-icon-sm" data-action="delete" data-id="${esc(list.id)}" title="Eliminar lista" style="border:none; background:rgba(220,38,38,0.08); border-radius:6px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--danger);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>
+          </button>
+        </div>
+      </div>
+      <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:10px;">${totalItems} artículo${totalItems !== 1 ? 's' : ''}</div>
+      <div class="saved-list-items" id="savedItems_${esc(list.id)}" style="margin-bottom:12px;">
+        ${(list.items || []).map(item => `
+          <div class="saved-item-row" data-item-id="${esc(item.id)}" data-list-id="${esc(list.id)}" style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--card-border);">
+            <input type="checkbox" class="saved-item-check" data-item-id="${esc(item.id)}" style="width:16px; height:16px; flex-shrink:0; cursor:pointer; accent-color:#3b82f6;">
+            <span style="flex:1; font-size:0.85rem; color:var(--text-primary);">${esc(item.name)}${item.qty ? ` <span style="color:var(--text-muted); font-size:0.78rem;">(${esc(item.qty)})</span>` : ''}</span>
+            <button data-action="remove-item" data-list-id="${esc(list.id)}" data-item-id="${esc(item.id)}" style="border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; font-size:1rem; line-height:1;">×</button>
+          </div>
+        `).join('')}
+        ${totalItems === 0 ? `<div style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:8px 0;">Lista vacía — añade artículos abajo</div>` : ''}
+      </div>
+      <!-- Inline add item -->
+      <div style="display:flex; gap:6px; margin-bottom:10px;">
+        <input type="text" placeholder="Nuevo artículo..." class="saved-list-new-name" data-list-id="${esc(list.id)}" style="flex:2; margin:0; font-size:0.85rem; padding:8px 10px;">
+        <input type="text" placeholder="Cant." class="saved-list-new-qty" data-list-id="${esc(list.id)}" style="flex:1; margin:0; font-size:0.85rem; padding:8px 10px;">
+        <button class="btn-save saved-list-add-btn" data-list-id="${esc(list.id)}" style="margin:0; padding:8px 12px; font-size:0.8rem; flex-shrink:0;">+</button>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button class="btn-save saved-list-use-selected" data-list-id="${esc(list.id)}" style="flex:1; margin:0; padding:9px 10px; font-size:0.8rem; background:#475569; box-shadow:none;">Añadir seleccionados</button>
+        <button class="btn-save saved-list-use-all" data-list-id="${esc(list.id)}" style="flex:1; margin:0; padding:9px 10px; font-size:0.8rem; background:var(--active-color); box-shadow:none;">Pedir todo</button>
+        <button class="btn-save saved-list-share" data-list-id="${esc(list.id)}" style="flex:1; margin:0; padding:9px 10px; font-size:0.8rem; background:#7c3aed; box-shadow:none; display:flex; align-items:center; justify-content:center; gap:5px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          Compartir
+        </button>
+      </div>
+    `;
+
+    // Event delegation inside the card
+    card.addEventListener('click', e => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const listId = btn.dataset.id || btn.dataset.listId;
+      const itemId = btn.dataset.itemId;
+
+      if (action === 'delete') {
+        showConfirm(`¿Eliminar la lista "${esc(list.name)}"?`, () => {
+          state.deleteSavedShoppingList(listId);
+          renderSavedLists();
+          showToast('Lista eliminada');
+        });
+      } else if (action === 'rename') {
+        const newName = prompt('Nuevo nombre para la lista:', list.name);
+        if (newName && newName.trim()) {
+          state.renameSavedShoppingList(listId, newName.trim());
+          renderSavedLists();
+        }
+      } else if (action === 'remove-item') {
+        state.removeItemFromSavedList(listId, itemId);
+        renderSavedLists();
+      }
+    });
+
+    // Add item inline
+    card.querySelectorAll('.saved-list-add-btn').forEach(btn => {
+      const addItem = () => {
+        const listId = btn.dataset.listId;
+        const nameInput = card.querySelector(`.saved-list-new-name[data-list-id="${listId}"]`);
+        const qtyInput = card.querySelector(`.saved-list-new-qty[data-list-id="${listId}"]`);
+        const name = nameInput ? nameInput.value.trim() : '';
+        if (!name) { showToast('Escribe el nombre del artículo.', 'warning'); return; }
+        state.addItemToSavedList(listId, name, qtyInput ? qtyInput.value.trim() : '');
+        if (nameInput) nameInput.value = '';
+        if (qtyInput) qtyInput.value = '';
+        renderSavedLists();
+      };
+      btn.onclick = addItem;
+      const nameInput = card.querySelector(`.saved-list-new-name[data-list-id="${btn.dataset.listId}"]`);
+      if (nameInput) nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } });
+    });
+
+    // Use selected
+    card.querySelectorAll('.saved-list-use-selected').forEach(btn => {
+      btn.onclick = () => {
+        const listId = btn.dataset.listId;
+        const checks = card.querySelectorAll('.saved-item-check:checked');
+        if (!checks.length) { showToast('Marca los artículos que querés añadir.', 'warning'); return; }
+        const selectedIds = [...checks].map(c => c.dataset.itemId);
+        const count = state.addSavedListToShopping(listId, selectedIds, 'casa');
+        showToast(`${count} artículo${count !== 1 ? 's' : ''} añadido${count !== 1 ? 's' : ''} a la lista`);
+        toggleShoppingTab('list');
+      };
+    });
+
+    // Use all
+    card.querySelectorAll('.saved-list-use-all').forEach(btn => {
+      btn.onclick = () => {
+        const count = state.addSavedListToShopping(btn.dataset.listId, null, 'casa');
+        showToast(`${count} artículo${count !== 1 ? 's' : ''} añadido${count !== 1 ? 's' : ''} a la lista`);
+        toggleShoppingTab('list');
+      };
+    });
+
+    // Share (text)
+    card.querySelectorAll('.saved-list-share').forEach(btn => {
+      btn.onclick = () => {
+        const text = state.buildShareText(btn.dataset.listId);
+        if (!text) { showToast('La lista está vacía.', 'warning'); return; }
+        if (navigator.share) {
+          navigator.share({ title: list.name, text }).catch(() => {});
+        } else {
+          navigator.clipboard.writeText(text).then(() => showToast('Lista copiada al portapapeles')).catch(() => showToast('No se pudo copiar.', 'error'));
+        }
+      };
+    });
+
+    container.appendChild(card);
+  });
 }
 
 // Current column count for shopping (1 or 2). Persisted in localStorage.
