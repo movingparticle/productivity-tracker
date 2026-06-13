@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Tracker">
   <link rel="manifest" href="/productivity-tracker/manifest.json">
   <link rel="apple-touch-icon" href="/productivity-tracker/icon-192.svg">
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-ba9dHUGt.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-BM8nJSK6.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-B3DyiYX5.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-BMw6h3KP.css">
 <script id="vite-plugin-pwa:register-sw" src="/productivity-tracker/registerSW.js"></script></head>
 <body>
 
@@ -598,29 +598,39 @@
         </div>
       </div>
 
-      <!-- ZONA DE PELIGRO -->
-      <div class="config-section">
-        <div class="config-section-label danger">Zona de peligro</div>
-        <button class="btn-save config-danger-btn" style="background:#f97316;" id="btnWeeklyReset">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-          Reseteo semanal
-        </button>
-        <button class="btn-save config-danger-btn" style="background:var(--danger); margin-top:8px;" id="btnHardReset">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          Reset total de la sala
-        </button>
-        <button class="btn-save config-danger-btn" style="background:#b45309; margin-top:8px; display:none;" id="btnLeaveRoom">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Salir de esta sala
-        </button>
-        <button class="btn-save config-danger-btn" style="background:var(--danger); margin-top:8px; display:none;" id="btnDeleteRoom">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          Eliminar sala (definitivo)
-        </button>
-        <button class="btn-save config-danger-btn" style="background:#475569; margin-top:8px; display:flex;" id="btnSignOut">
+      <!-- CERRAR SESIÓN (siempre visible) -->
+      <div class="config-section" style="margin-bottom:8px;">
+        <button class="btn-save config-danger-btn" style="background:#475569; display:flex;" id="btnSignOut">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           Cerrar sesión
         </button>
+      </div>
+
+      <!-- ZONA DE PELIGRO (colapsada por defecto) -->
+      <div class="config-section" style="margin-bottom:4px;">
+        <button class="config-danger-toggle" id="btnToggleDangerZone">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Zona de peligro
+          <svg class="danger-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="config-danger-panel" id="dangerZonePanel">
+          <button class="btn-save config-danger-btn" style="background:#f97316;" id="btnWeeklyReset">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Reseteo semanal
+          </button>
+          <button class="btn-save config-danger-btn" style="background:var(--danger); margin-top:8px;" id="btnHardReset">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Reset total de la sala
+          </button>
+          <button class="btn-save config-danger-btn" style="background:#b45309; margin-top:8px; display:none;" id="btnLeaveRoom">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Salir de esta sala
+          </button>
+          <button class="btn-save config-danger-btn" style="background:var(--danger); margin-top:8px; display:none;" id="btnDeleteRoom">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Eliminar sala (definitivo)
+          </button>
+        </div>
       </div>
 
       </div><!-- /config-scroll -->
