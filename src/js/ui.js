@@ -2005,7 +2005,7 @@ export function renderFocusTree(animate = true) {
   const userMeta = Number(activeUser.meta) || 15;
   const isFertilized = todayPts >= userMeta;
 
-  // Withered: 0 completed tasks/activities across the last W days
+  // Withered: no activity in the last N days per difficulty setting.
   let isWithered = true;
   for (let offset = 0; offset < witheredDaysThreshold; offset++) {
     const d = new Date(now);
@@ -2014,6 +2014,29 @@ export function renderFocusTree(animate = true) {
       isWithered = false;
       break;
     }
+  }
+
+  // Earned-rest override: if the week is already complete (all earnable points
+  // for elapsed workdays are done), the tree holds — it does not wither during
+  // weekends or the first day of the new week. Rest is earned, not abandonment.
+  if (isWithered) {
+    const cfgDays = state.store.config.days || 6;
+    const dow = now.getDay();
+    const daysSinceMon = dow === 0 ? 6 : dow - 1;
+    const coveredDays = Math.min(daysSinceMon + 1, cfgDays);
+    const treeUserMeta = Number(activeUser.meta) || 15;
+    let wkPts = 0;
+    (state.store.history || []).forEach(h => {
+      if (h.points?.[state.localProfileId] !== undefined)
+        wkPts += Math.min(h.points[state.localProfileId], treeUserMeta);
+    });
+    wkPts += Math.min(todayPts, treeUserMeta);
+    const weekDone = wkPts >= coveredDays * treeUserMeta;
+
+    // Also protect Monday morning (day 1 of new week, nothing logged yet)
+    const isMondayStart = dow === 1 && wkPts === 0;
+
+    if (weekDone || isMondayStart) isWithered = false;
   }
 
   // Update Badge Visibilities
