@@ -6,6 +6,24 @@ import * as state from "./state";
 let elements = {};
 
 /**
+ * Escapa texto del usuario antes de insertarlo con innerHTML.
+ *
+ * SEGURIDAD (anti-XSS almacenado): las salas son compartidas, así que el nombre
+ * de una tarea, compra, perfil o miembro puede haberlo escrito otra persona. Sin
+ * escapar, un valor como `<img src=x onerror="...">` ejecutaría código en el
+ * navegador de los demás miembros y podría robarles la sesión. Usa esc() en CADA
+ * dato del usuario que se interpole dentro de plantillas HTML (texto y atributos).
+ */
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Caches all DOM elements used by the UI
  */
 export function initDomElements() {
@@ -272,7 +290,7 @@ export function showToast(message, type = 'success') {
   toast.innerHTML = `
     <div style="display:flex; align-items:center; gap:8px;">
       <span class="icon-span">${icon}</span>
-      <span>${message}</span>
+      <span>${esc(message)}</span>
     </div>
     <button class="toast-close" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
   `;
@@ -523,8 +541,8 @@ function renderTracker() {
     item.innerHTML = `
       <div>
         <span class="log-time">${x.time}</span>
-        <span style="color:${col}; font-weight:700; margin-right:6px;">${nam.substring(0, 5)}:</span>
-        <span>${x.name}</span>
+        <span style="color:${esc(col)}; font-weight:700; margin-right:6px;">${esc(nam.substring(0, 5))}:</span>
+        <span>${esc(x.name)}</span>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
         ${badgeHtml}
@@ -572,7 +590,7 @@ function buildPendingCard(t, i, onEdit) {
       <button class="btn-check-card" title="Completar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
       <div class="pending-card-body">
         <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
-          <span class="pending-card-name">${t.name}</span>
+          <span class="pending-card-name">${esc(t.name)}</span>
           ${hasExtra ? `<button class="btn-expand-card" title="Ver detalles"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>` : ''}
         </div>
         <div class="pending-card-meta">
@@ -588,7 +606,7 @@ function buildPendingCard(t, i, onEdit) {
       </div>
     </div>
     ${hasExtra ? `<div class="pending-card-detail" style="display:none;">
-      ${hasImage ? `<img class="pending-card-img" src="${t.image}" alt="${t.name}">` : ''}
+      ${hasImage ? `<img class="pending-card-img" src="${esc(t.image)}" alt="${esc(t.name)}">` : ''}
     </div>` : ''}
   `;
 
@@ -723,9 +741,9 @@ export function renderMetrics() {
       const percent = Math.floor((earned / meta) * 100);
       
       pList.innerHTML += `
-        <div class="percent-box" style="border-top-color: ${u.color}">
-          <div class="percent-name" style="color:${u.color}">${u.name}</div>
-          <div class="percent-value" style="color:${u.color}">${percent}%</div>
+        <div class="percent-box" style="border-top-color: ${esc(u.color)}">
+          <div class="percent-name" style="color:${esc(u.color)}">${esc(u.name)}</div>
+          <div class="percent-value" style="color:${esc(u.color)}">${percent}%</div>
           <div style="font-size:0.6rem; color:var(--text-muted); font-weight:700;">${earned}/${meta} PTS</div>
         </div>
       `;
@@ -755,7 +773,7 @@ export function renderTemplates() {
       item.className = 'tpl-item';
       item.innerHTML = `
         <div style="flex:1; display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-weight:700; font-size:0.95rem;">${t.name}</span>
+          <span style="font-weight:700; font-size:0.95rem;">${esc(t.name)}</span>
           <span class="badge" style="margin-right:10px;">+${t.pts} pts</span>
         </div>
         <button class="btn-edit-tpl" style="display:flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
@@ -802,8 +820,8 @@ function renderUserConfigList() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:center; gap:10px;">
-          <input type="color" class="user-color-picker" value="${u.color}" style="width:28px; height:28px; border:none; padding:0; background:none; border-radius:50%; cursor:pointer;">
-          <span style="font-weight:700; font-size:1rem; color:var(--text-main);">${u.name}</span>
+          <input type="color" class="user-color-picker" value="${esc(u.color)}" style="width:28px; height:28px; border:none; padding:0; background:none; border-radius:50%; cursor:pointer;">
+          <span style="font-weight:700; font-size:1rem; color:var(--text-main);">${esc(u.name)}</span>
         </div>
         <button class="btn-delete-user" style="background:rgba(239, 68, 68, 0.1); color:var(--danger); border:none; border-radius:8px; padding:6px 12px; font-weight:700; font-size:0.75rem; cursor:pointer;">Eliminar</button>
       </div>
@@ -811,7 +829,7 @@ function renderUserConfigList() {
       <div style="display:flex; gap:10px;">
         <div style="flex:2;">
           <label style="font-size:0.65rem; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">NOMBRE</label>
-          <input type="text" class="user-name-input" value="${u.name}" style="margin:0; padding:10px; background:rgba(15,23,42,0.25);">
+          <input type="text" class="user-name-input" value="${esc(u.name)}" style="margin:0; padding:10px; background:rgba(15,23,42,0.25);">
         </div>
         <div style="flex:1;">
           <label style="font-size:0.65rem; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">META DIARIA</label>
@@ -947,9 +965,9 @@ export function showReport() {
       });
       
       summaryGrid.innerHTML += `
-        <div class="summary-card" style="border-left-color: ${u.color}">
-          <span class="summary-label">PTS DE ${u.name.toUpperCase()}</span>
-          <span class="summary-value" style="color:${u.color}">${pts}</span>
+        <div class="summary-card" style="border-left-color: ${esc(u.color)}">
+          <span class="summary-label">PTS DE ${esc(u.name.toUpperCase())}</span>
+          <span class="summary-value" style="color:${esc(u.color)}">${pts}</span>
         </div>
       `;
     });
@@ -964,8 +982,8 @@ export function showReport() {
       tableBody.innerHTML += `
         <tr>
           <td style="font-family:monospace; color:var(--text-muted);">${x.time}</td>
-          <td style="color:${u?.color}; font-weight:700;">${u?.name || '???'}</td>
-          <td>${x.name}</td>
+          <td style="color:${esc(u?.color)}; font-weight:700;">${esc(u?.name || '???')}</td>
+          <td>${esc(x.name)}</td>
           <td style="text-align:right; font-weight:700; color:var(--success);">+${x.pts}</td>
         </tr>
       `;
@@ -1113,12 +1131,12 @@ function renderShoppingItemsInto(list) {
   items.forEach((item, index) => {
     let targetBadge = '';
     if (!item.assignedTo || item.assignedTo === 'casa') {
-      targetBadge = `<span class="shop-badge-room">${roomName}</span>`;
+      targetBadge = `<span class="shop-badge-room">${esc(roomName)}</span>`;
     } else {
       const assignedUser = state.store.config.users.find(u => u.id === item.assignedTo);
       const color = assignedUser ? assignedUser.color : 'var(--text-muted)';
       const name = assignedUser ? assignedUser.name : '???';
-      targetBadge = `<span class="shop-badge-user" style="background:${color}15;color:${color};border-color:${color}30;">${name}</span>`;
+      targetBadge = `<span class="shop-badge-user" style="background:${esc(color)}15;color:${esc(color)};border-color:${esc(color)}30;">${esc(name)}</span>`;
     }
 
     const displayName = item.name && item.name.trim() ? item.name : 'Artículo en foto';
@@ -1132,14 +1150,14 @@ function renderShoppingItemsInto(list) {
       card.innerHTML = `
         <div class="shop-tile-img-wrap">
           ${hasImage
-            ? `<img class="shop-tile-img" src="${item.image}" alt="${displayName}">`
+            ? `<img class="shop-tile-img" src="${esc(item.image)}" alt="${esc(displayName)}">`
             : `<div class="shop-tile-placeholder"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".25"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`
           }
         </div>
         <div class="shop-tile-info">
-          <span class="shop-tile-name">${displayName}</span>
+          <span class="shop-tile-name">${esc(displayName)}</span>
           <div class="shop-tile-meta">
-            ${item.qty ? `<span class="shop-qty">${item.qty}</span>` : ''}
+            ${item.qty ? `<span class="shop-qty">${esc(item.qty)}</span>` : ''}
             ${targetBadge}
           </div>
           <div class="shop-tile-btns">
@@ -1152,11 +1170,11 @@ function renderShoppingItemsInto(list) {
       // ─── ROW LAYOUT (1-col): image on left, info + actions on right ───
       card.innerHTML = `
         <div class="shop-card-inner">
-          ${hasImage ? `<img class="shop-card-img" src="${item.image}" alt="${displayName}">` : ''}
+          ${hasImage ? `<img class="shop-card-img" src="${esc(item.image)}" alt="${esc(displayName)}">` : ''}
           <div class="shop-card-info">
-            <span class="shop-card-name">${displayName}</span>
+            <span class="shop-card-name">${esc(displayName)}</span>
             <div class="shop-card-meta">
-              ${item.qty ? `<span class="shop-qty">${item.qty}</span>` : ''}
+              ${item.qty ? `<span class="shop-qty">${esc(item.qty)}</span>` : ''}
               ${targetBadge}
             </div>
           </div>
@@ -1166,8 +1184,8 @@ function renderShoppingItemsInto(list) {
           </div>
         </div>
         <div class="shop-card-detail" style="display:none;">
-          ${hasImage ? `<img class="shop-card-detail-img" src="${item.image}" alt="${displayName}">` : ''}
-          ${item.qty ? `<div class="shop-card-detail-row"><span class="shop-detail-label">Cantidad:</span> ${item.qty}</div>` : ''}
+          ${hasImage ? `<img class="shop-card-detail-img" src="${esc(item.image)}" alt="${esc(displayName)}">` : ''}
+          ${item.qty ? `<div class="shop-card-detail-row"><span class="shop-detail-label">Cantidad:</span> ${esc(item.qty)}</div>` : ''}
           <div class="shop-card-detail-row"><span class="shop-detail-label">Para:</span> ${targetBadge}</div>
         </div>
       `;
@@ -1261,8 +1279,8 @@ function renderTodayLogInto(container) {
     item.innerHTML = `
       <div>
         <span class="log-time">${x.time}</span>
-        <span style="color:${col}; font-weight:700; margin-right:6px;">${nam.substring(0,5)}:</span>
-        <span>${x.name}</span>
+        <span style="color:${esc(col)}; font-weight:700; margin-right:6px;">${esc(nam.substring(0,5))}:</span>
+        <span>${esc(x.name)}</span>
       </div>
       <span class="badge">+${x.pts}</span>
     `;
@@ -1376,7 +1394,7 @@ export function renderRoomsList(rooms, onOpen) {
     const badgeClass = r.role === 'owner' ? 'badge-owner' : 'badge-member';
     card.innerHTML = `
       <div style="overflow:hidden;">
-        <div class="room-card-name">${r.name}</div>
+        <div class="room-card-name">${esc(r.name)}</div>
         <div class="room-card-meta">${r.memberCount} miembro${r.memberCount === 1 ? '' : 's'}</div>
       </div>
       <span class="room-card-badge ${badgeClass}">${roleLabel}</span>
@@ -1409,7 +1427,7 @@ export function renderMembers(members, currentUid, isOwner, onRemove) {
 
     row.innerHTML = `
       <div style="overflow:hidden;">
-        <div class="member-email">${m.email || m.name || 'Usuario'}</div>
+        <div class="member-email">${esc(m.email || m.name || 'Usuario')}</div>
         <div class="member-role">${roleLabel}${isSelf ? ' · tú' : ''}</div>
       </div>
       ${canRemove ? '<button class="btn-remove-member">Quitar</button>' : ''}
@@ -1640,7 +1658,7 @@ export function renderRoadmap() {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display: ${item.completed ? 'block' : 'none'}"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </button>
         <div style="display: flex; flex-direction: column; overflow: hidden;">
-          <span style="font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); ${item.completed ? 'text-decoration: line-through;' : ''}">${item.text}</span>
+          <span style="font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); ${item.completed ? 'text-decoration: line-through;' : ''}">${esc(item.text)}</span>
           <div style="display: flex; align-items: center; gap: 4px; margin-top: 2px;">
             <span class="roadmap-badge" style="${badgeStyle} padding: 1px 6px; font-size: 0.6rem; font-weight: 800;">${badgeText}</span>
             ${pointsHtml}
@@ -1732,8 +1750,9 @@ export function renderRoadmap() {
   }
 
   // Re-render tree if the modal is open to keep it in sync in real time
+  // (without replaying the growth animation, which would be jarring)
   if (elements.modalProgressTree && elements.modalProgressTree.classList.contains('visible')) {
-    renderFocusTree();
+    renderFocusTree(false);
   }
 }
 
@@ -1855,7 +1874,7 @@ export function updateBuilderCount() {
 /**
  * Render the Weekly Focus Tree (Árbol de Enfoque) dynamic SVG inside the modal
  */
-export function renderFocusTree() {
+export function renderFocusTree(animate = true) {
   const activeUser = state.store.config.users.find(u => u.id === state.localProfileId) || state.store.config.users[0];
   if (!activeUser) return;
 
@@ -2015,17 +2034,47 @@ export function renderFocusTree() {
     }
   }
 
-  // 3. Build SVG Tree
-  let svgContent = `<svg width="100%" height="440" viewBox="0 0 400 450" xmlns="http://www.w3.org/2000/svg">`;
+  // 3. Build SVG Tree (organic shapes + growth, sway and bloom animations)
+  const rnd = treeRnd;
+  const skyTint = isWithered ? '#e2e8f0' : (isBloomed ? '#fdf2f8' : '#ecfdf5');
+  const woodDark = isWithered ? '#64748b' : '#4a2c10';
+  const woodLight = isWithered ? '#94a3b8' : '#8a5a2b';
+  const branchWood = isWithered ? '#94a3b8' : '#6b4423';
 
-  // Draw Ground
-  svgContent += `<path d="M 50 420 Q 200 400 350 420 L 350 440 L 50 440 Z" fill="${isWithered ? '#94a3b8' : '#3f6212'}" opacity="0.15" />`;
+  let svgContent = `<svg width="100%" height="440" viewBox="0 0 400 450" xmlns="http://www.w3.org/2000/svg" class="focus-tree-svg${animate ? '' : ' no-anim'}">`;
 
-  // Draw Trunk
-  const trunkColor = isWithered ? '#64748b' : '#78350f';
-  svgContent += `<path d="M 192 420 Q 200 220 197 40 L 203 40 Q 200 220 208 420 Z" fill="${trunkColor}" opacity="0.95" />`;
+  svgContent += `<defs>
+    <radialGradient id="ft-sky" cx="50%" cy="28%" r="78%">
+      <stop offset="0%" stop-color="${skyTint}" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="${skyTint}" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ft-trunk" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="${woodDark}"/>
+      <stop offset="100%" stop-color="${woodLight}"/>
+    </linearGradient>
+    <linearGradient id="ft-ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${isWithered ? '#94a3b8' : '#4d7c0f'}" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="${isWithered ? '#cbd5e1' : '#84cc16'}" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>`;
 
-  // Draw 7 Branches
+  // Atmosphere + ground mound + grass blades
+  svgContent += `<rect x="0" y="0" width="400" height="450" fill="url(#ft-sky)"/>`;
+  svgContent += `<ellipse cx="200" cy="426" rx="170" ry="20" fill="url(#ft-ground)"/>`;
+  for (let g = 0; g < 12; g++) {
+    const gx = 58 + g * 25 + rnd(g) * 14;
+    const gh = 6 + rnd(g + 50) * 9;
+    const lean = (rnd(g + 90) - 0.5) * 9;
+    svgContent += `<path d="M ${gx.toFixed(1)} 425 Q ${(gx + lean).toFixed(1)} ${(425 - gh).toFixed(1)} ${(gx + lean * 1.7).toFixed(1)} ${(423 - gh).toFixed(1)}" stroke="${isWithered ? '#94a3b8' : '#65a30d'}" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/>`;
+  }
+
+  // Trunk: tapered with a soft S-curve, sprouts from the ground on open
+  svgContent += `<g class="trunk-grow" style="transform-origin:200px 426px;">
+    <path d="M 187 426 C 194 360 190 300 196 235 C 199 178 196 118 198 62 L 203 62 C 205 118 203 178 206 235 C 211 300 208 360 215 426 Q 201 420 187 426 Z" fill="url(#ft-trunk)"/>
+    <path d="M 174 426 Q 187 417 200 420 Q 215 417 228 426 L 215 425 Q 200 422 186 425 Z" fill="${woodDark}" opacity="0.55"/>
+  </g>`;
+
+  // Draw 7 Branches (bottom = oldest day; they sprout in order, then sway)
   const yCoordinates = [360, 315, 270, 225, 180, 135, 90];
 
   daysList.forEach((day, i) => {
@@ -2033,107 +2082,123 @@ export function renderFocusTree() {
     const growsLeft = i % 2 === 0;
     const isToday = i === 6;
 
-    // Define Curve Coordinates
+    // Define Curve Coordinates (withered branches droop towards the ground)
     const p0 = { x: 200, y: y };
-    const p1 = growsLeft ? { x: 150, y: y + 10 } : { x: 250, y: y + 10 };
-    const p2 = growsLeft ? { x: 110, y: y - 25 } : { x: 290, y: y - 25 };
+    const p1 = growsLeft ? { x: 150, y: y + (isWithered ? 26 : 10) } : { x: 250, y: y + (isWithered ? 26 : 10) };
+    const p2 = growsLeft ? { x: 112, y: y + (isWithered ? 34 : -25) } : { x: 288, y: y + (isWithered ? 34 : -25) };
 
-    // Branch Color
-    let branchColor = trunkColor;
-    let branchStrokeWidth = 3.5;
-    let extraClass = '';
+    const branchColor = isWithered ? '#94a3b8' : (isToday ? activeUser.color : branchWood);
+    const branchDelay = 0.3 + i * 0.13;
+    const swayDur = (5.5 + i * 0.5 + rnd(i) * 1.5).toFixed(2);
+    const swayDelay = (rnd(i + 20) * 2.5).toFixed(2);
 
-    if (!isWithered) {
-      if (isToday) {
-        branchColor = activeUser.color;
-        branchStrokeWidth = 5;
-        if (isWatered) extraClass = 'watered-branch';
-      } else {
-        branchColor = '#854d0e'; // healthy brown
-      }
-    } else {
-      branchColor = '#94a3b8'; // dry slate
-    }
+    svgContent += `<g class="branch-sway" style="transform-origin:200px ${y}px; animation-duration:${swayDur}s; animation-delay:${swayDelay}s;">`;
+    svgContent += `<g class="branch-grow" style="transform-origin:200px ${y}px; animation-delay:${branchDelay.toFixed(2)}s;">`;
 
-    // Render Main Branch Path
-    svgContent += `<path d="M ${p0.x} ${p0.y} Q ${p1.x} ${p1.y} ${p2.x} ${p2.y}" stroke="${branchColor}" stroke-width="${branchStrokeWidth}" fill="none" class="${extraClass}" stroke-linecap="round" />`;
+    // Tapered main branch
+    const glowClass = isToday && isWatered && !isWithered ? ' class="watered-branch"' : '';
+    svgContent += `<path d="${taperedQuadPath(p0, p1, p2, isToday ? 7.5 : 6, 1.6)}" fill="${branchColor}"${glowClass} style="--active-color:${activeUser.color}"/>`;
 
     // Render Day Label
-    const textX = growsLeft ? 95 : 305;
+    const textX = growsLeft ? 96 : 304;
     const textAnchor = growsLeft ? 'end' : 'start';
     const textFill = isToday && !isWithered ? activeUser.color : 'var(--text-muted)';
-    const textWeight = isToday ? '800' : '600';
-    const textLabel = isToday ? 'Hoy' : day.niceName;
-
-    svgContent += `<text x="${textX}" y="${y - 28}" text-anchor="${textAnchor}" font-family="var(--font-title)" font-size="10.5px" font-weight="${textWeight}" fill="${textFill}">${textLabel}</text>`;
+    svgContent += `<text x="${textX}" y="${y - 28}" text-anchor="${textAnchor}" font-family="var(--font-title)" font-size="10.5px" font-weight="${isToday ? '800' : '600'}" fill="${textFill}">${isToday ? 'Hoy' : day.niceName}</text>`;
 
     // Get Completed tasks and activities for this day
     const leafItems = getDailyLeafItems(day.dateStr);
-    const M = leafItems.length;
+    const MAX_LEAVES = 9;
+    const visible = leafItems.slice(0, MAX_LEAVES);
+    const M = visible.length;
+    const leafColor = isWithered ? '#b45309' : (isToday ? activeUser.color : '#22c55e');
 
-    // Determine Leaf Colors
-    let leafColor = '#22c55e'; // default healthy green
-    if (isWithered) {
-      leafColor = '#b45309'; // dry amber
-    } else if (isToday) {
-      leafColor = activeUser.color;
-    }
-
-    // Draw Leaves
-    leafItems.forEach((task, j) => {
-      const t = 0.25 + (j / Math.max(1, M - 1)) * 0.55;
+    // Draw Leaves (organic shape, each pops in with its own delay)
+    visible.forEach((task, j) => {
+      const t = 0.28 + (j / Math.max(1, M - 1)) * 0.58;
       const P = getBezierPoint(t, p0, p1, p2);
+      const twigLen = 8 + rnd(i * 7 + j * 3) * 5;
+      const tx = P.x + (growsLeft ? -twigLen * 0.45 : twigLen * 0.45);
+      const ty = P.y - twigLen;
+      const ang = (growsLeft ? -1 : 1) * (16 + rnd(i * 31 + j * 13) * 26) + (j % 2 ? 12 : -12);
+      const size = 11 + rnd(i * 13 + j * 17) * 4.5;
+      const leafDelay = (branchDelay + 0.4 + j * 0.09).toFixed(2);
 
-      // Branching Twig
-      const twigX = growsLeft ? P.x - 8 : P.x + 8;
-      const twigY = P.y - 12;
-
-      svgContent += `<line x1="${P.x}" y1="${P.y}" x2="${twigX}" y2="${twigY}" stroke="${isWithered ? '#94a3b8' : '#78350f'}" stroke-width="2" stroke-linecap="round" />`;
-
-      // Draw Leaf Circle
-      svgContent += `<circle cx="${twigX}" cy="${twigY}" r="6.5" fill="${leafColor}" class="tree-leaf" data-name="${task.text}" data-time="${task.time || ''}" data-type="${task.type}" data-pts="${task.pts || 0}" />`;
+      svgContent += `<path d="M ${P.x.toFixed(1)} ${P.y.toFixed(1)} Q ${((P.x + tx) / 2).toFixed(1)} ${(P.y - twigLen * 0.7).toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)}" stroke="${isWithered ? '#94a3b8' : branchWood}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+      svgContent += `<g class="leaf-pop" style="transform-origin:${tx.toFixed(1)}px ${ty.toFixed(1)}px; animation-delay:${leafDelay}s;">`
+        + `<g transform="translate(${tx.toFixed(1)} ${ty.toFixed(1)}) rotate(${ang.toFixed(0)})">`
+        + `<path d="${leafPath(size)}" fill="${leafColor}" class="tree-leaf" data-name="${esc(task.text)}" data-time="${esc(task.time || '')}" data-type="${esc(task.type)}" data-pts="${task.pts || 0}"/>`
+        + `<path d="M 0 -1.5 L 0 ${(-(size - 2.5)).toFixed(1)}" stroke="rgba(255,255,255,0.4)" stroke-width="1" stroke-linecap="round" pointer-events="none"/>`
+        + `</g></g>`;
 
       // Fertilized extra leaf on today's tasks
       if (isToday && isFertilized && !isWithered) {
-        const Q2 = growsLeft ? { x: P.x - 2, y: P.y - 16 } : { x: P.x + 2, y: P.y - 16 };
-        svgContent += `<line x1="${P.x}" y1="${P.y}" x2="${Q2.x}" y2="${Q2.y}" stroke="#78350f" stroke-width="1.8" />`;
-        svgContent += `<circle cx="${Q2.x}" cy="${Q2.y}" r="8.5" fill="#15803d" class="tree-leaf" data-name="${task.text} (Meta Diaria)" data-time="${task.time || ''}" data-type="${task.type}" data-pts="${task.pts || 0}" />`;
+        const fx = P.x + (growsLeft ? 3 : -3);
+        const fy = P.y - twigLen - 7;
+        svgContent += `<g class="leaf-pop" style="transform-origin:${fx.toFixed(1)}px ${fy.toFixed(1)}px; animation-delay:${(branchDelay + 0.6 + j * 0.09).toFixed(2)}s;">`
+          + `<g transform="translate(${fx.toFixed(1)} ${fy.toFixed(1)}) rotate(${(-ang * 0.6).toFixed(0)})">`
+          + `<path d="${leafPath(size + 3)}" fill="#15803d" class="tree-leaf" data-name="${esc(task.text)} (Meta Diaria)" data-time="${esc(task.time || '')}" data-type="${esc(task.type)}" data-pts="${task.pts || 0}"/>`
+          + `</g></g>`;
       }
     });
 
+    // If a day has more activities than fit on the branch, show a "+N" hint
+    if (leafItems.length > MAX_LEAVES) {
+      const tipP = getBezierPoint(0.95, p0, p1, p2);
+      svgContent += `<text x="${tipP.x.toFixed(1)}" y="${(tipP.y - 14).toFixed(1)}" text-anchor="middle" font-size="9px" font-weight="700" fill="${leafColor}">+${leafItems.length - MAX_LEAVES}</text>`;
+    }
+
     // Draw Blooming Flowers/Leaves
     if (isBloomed && !isWithered) {
-      const tipX = p2.x;
-      const tipY = p2.y;
-      
-      svgContent += `
-        <!-- Petals -->
-        <circle cx="${tipX - 4}" cy="${tipY}" r="4.5" fill="#f472b6" opacity="0.85" class="tree-flower" data-name="Flor de Enfoque" data-desc="¡Rama de Enfoque Llena!" />
-        <circle cx="${tipX + 4}" cy="${tipY}" r="4.5" fill="#f472b6" opacity="0.85" class="tree-flower" data-name="Flor de Enfoque" data-desc="¡Rama de Enfoque Llena!" />
-        <circle cx="${tipX}" cy="${tipY - 4}" r="4.5" fill="#f472b6" opacity="0.85" class="tree-flower" data-name="Flor de Enfoque" data-desc="¡Rama de Enfoque Llena!" />
-        <circle cx="${tipX}" cy="${tipY + 4}" r="4.5" fill="#f472b6" opacity="0.85" class="tree-flower" data-name="Flor de Enfoque" data-desc="¡Rama de Enfoque Llena!" />
-        <!-- Flower Center -->
-        <circle cx="${tipX}" cy="${tipY}" r="3" fill="#fef08a" />
-      `;
+      // 5-petal flower at the branch tip
+      svgContent += `<g class="leaf-pop" style="transform-origin:${p2.x}px ${p2.y}px; animation-delay:${(branchDelay + 0.85).toFixed(2)}s;"><g class="flower-pulse">`
+        + `<g transform="translate(${p2.x} ${p2.y})">`;
+      for (let k = 0; k < 5; k++) {
+        svgContent += `<ellipse cx="0" cy="-4.8" rx="3.1" ry="4.8" fill="#f9a8d4" stroke="#f472b6" stroke-width="0.6" transform="rotate(${k * 72})"/>`;
+      }
+      svgContent += `</g><circle cx="${p2.x}" cy="${p2.y}" r="2.6" fill="#fbbf24"/><circle cx="${p2.x}" cy="${p2.y}" r="1.1" fill="#fde68a"/>`
+        + `<circle cx="${p2.x}" cy="${p2.y}" r="9" fill="transparent" class="tree-flower" data-name="Flor de Enfoque" data-desc="¡Rama de Enfoque Llena!"/>`
+        + `</g></g>`;
 
-      // Extra decorative leaves sprouted along the branch
-      const tDecors = [0.15, 0.45, 0.75];
-      tDecors.forEach(td => {
+      // Lush foliage sprouted along the branch
+      [0.2, 0.5, 0.78].forEach((td, k) => {
         const P = getBezierPoint(td, p0, p1, p2);
-        const leafOffsetX = growsLeft ? -6 : 6;
-        const leafOffsetY = -4;
-        svgContent += `<path d="M ${P.x} ${P.y} Q ${P.x + leafOffsetX/2} ${P.y - 8} ${P.x + leafOffsetX} ${P.y + leafOffsetY} Z" fill="#10b981" opacity="0.9" class="tree-decor-leaf" data-name="Follaje Florecido" data-desc="El árbol rebosa vida" />`;
+        const angD = (growsLeft ? 1 : -1) * (140 + k * 28);
+        svgContent += `<g transform="translate(${P.x.toFixed(1)} ${(P.y + 2).toFixed(1)}) rotate(${angD})"><path d="${leafPath(9)}" fill="#10b981" opacity="0.85" class="tree-decor-leaf" data-name="Follaje Florecido" data-desc="El árbol rebosa vida"/></g>`;
       });
     }
+
+    svgContent += `</g></g>`;
   });
 
-  // Extra decorative blossoms on the trunk if bloomed
+  // Blossoms on the trunk + falling petals if bloomed
   if (isBloomed && !isWithered) {
-    svgContent += `
-      <circle cx="194" cy="180" r="4.5" fill="#f472b6" opacity="0.9" />
-      <circle cx="204" cy="240" r="5" fill="#f472b6" opacity="0.9" />
-      <circle cx="196" cy="300" r="4" fill="#f472b6" opacity="0.9" />
-    `;
+    [{ x: 194, y: 182 }, { x: 205, y: 243 }, { x: 197, y: 303 }].forEach((f, k) => {
+      svgContent += `<g class="leaf-pop" style="transform-origin:${f.x}px ${f.y}px; animation-delay:${(1.3 + k * 0.15).toFixed(2)}s;"><g transform="translate(${f.x} ${f.y})">`;
+      for (let p = 0; p < 5; p++) {
+        svgContent += `<ellipse cx="0" cy="-3.2" rx="2" ry="3.2" fill="#f9a8d4" transform="rotate(${p * 72})"/>`;
+      }
+      svgContent += `<circle r="1.7" fill="#fbbf24"/></g></g>`;
+    });
+    for (let k = 0; k < 7; k++) {
+      const px = (110 + rnd(k * 3 + 1) * 180).toFixed(0);
+      const py = (70 + rnd(k * 5 + 2) * 140).toFixed(0);
+      const dur = (6.5 + rnd(k * 7 + 3) * 4).toFixed(1);
+      const del = (rnd(k * 11 + 4) * 6).toFixed(1);
+      const drift = ((rnd(k * 13 + 5) - 0.5) * 70).toFixed(0);
+      svgContent += `<g class="petal-fall" style="animation-duration:${dur}s; animation-delay:${del}s; --fall-x:${drift}px;"><ellipse cx="${px}" cy="${py}" rx="3.1" ry="2" fill="#f9a8d4" opacity="0.85"/></g>`;
+    }
+  }
+
+  // Dry leaves drifting down if withered
+  if (isWithered) {
+    for (let k = 0; k < 4; k++) {
+      const px = (130 + rnd(k * 3 + 9) * 140).toFixed(0);
+      const py = (100 + rnd(k * 5 + 9) * 120).toFixed(0);
+      const dur = (5 + rnd(k * 7 + 9) * 3).toFixed(1);
+      const del = (rnd(k * 11 + 9) * 4).toFixed(1);
+      const drift = ((rnd(k * 13 + 9) - 0.5) * 50).toFixed(0);
+      svgContent += `<g class="petal-fall" style="animation-duration:${dur}s; animation-delay:${del}s; --fall-x:${drift}px;"><path d="${leafPath(9)}" transform="translate(${px} ${py})" fill="#b45309" opacity="0.7"/></g>`;
+    }
   }
 
   svgContent += `</svg>`;
@@ -2167,10 +2232,10 @@ function bindTreeTooltips() {
       const pts = leaf.getAttribute('data-pts');
       const desc = leaf.getAttribute('data-desc');
 
-      let text = `<strong>${name}</strong>`;
-      
+      let text = `<strong>${esc(name)}</strong>`;
+
       if (desc) {
-        text += `<br/><span style="color: #cbd5e1;">${desc}</span>`;
+        text += `<br/><span style="color: #cbd5e1;">${esc(desc)}</span>`;
       } else {
         let typeText = "Personal";
         if (type === 'pending') typeText = `Pendiente (${pts} pts)`;
@@ -2214,6 +2279,48 @@ function getBezierPoint(t, p0, p1, p2) {
   return { x, y };
 }
 
+/**
+ * Deterministic pseudo-random in [0,1): the tree keeps the same organic shape
+ * between re-renders instead of "dancing" on every state change.
+ */
+function treeRnd(seed) {
+  const s = Math.sin((seed + 1) * 127.1) * 43758.5453;
+  return s - Math.floor(s);
+}
+
+/**
+ * Closed path for a branch that follows a quadratic bezier, tapering from
+ * width w0 at the base to w1 at the tip.
+ */
+function taperedQuadPath(p0, p1, p2, w0, w1) {
+  const steps = 8;
+  const left = [];
+  const right = [];
+  for (let s = 0; s <= steps; s++) {
+    const t = s / steps;
+    const P = getBezierPoint(t, p0, p1, p2);
+    const dx = 2 * (1 - t) * (p1.x - p0.x) + 2 * t * (p2.x - p1.x);
+    const dy = 2 * (1 - t) * (p1.y - p0.y) + 2 * t * (p2.y - p1.y);
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const w = (w0 + (w1 - w0) * t) / 2;
+    left.push(`${(P.x + nx * w).toFixed(1)} ${(P.y + ny * w).toFixed(1)}`);
+    right.push(`${(P.x - nx * w).toFixed(1)} ${(P.y - ny * w).toFixed(1)}`);
+  }
+  return `M ${left.join(' L ')} L ${right.reverse().join(' L ')} Z`;
+}
+
+/**
+ * Path for an organic leaf of the given height, anchored at its stem (0,0)
+ * and pointing up. Place it with a translate+rotate wrapper group.
+ */
+function leafPath(size) {
+  const h = size;
+  const w = size * 0.62;
+  return `M 0 0 C ${(-w).toFixed(1)} ${(-h * 0.35).toFixed(1)} ${(-w * 0.7).toFixed(1)} ${(-h * 0.85).toFixed(1)} 0 ${(-h).toFixed(1)} C ${(w * 0.7).toFixed(1)} ${(-h * 0.85).toFixed(1)} ${w.toFixed(1)} ${(-h * 0.35).toFixed(1)} 0 0 Z`;
+}
+
 /* --- ROOM SWITCHER --- */
 
 /**
@@ -2240,7 +2347,7 @@ export function renderRoomSwitcher(rooms, currentRoomId, onSwitch) {
     const badgeClass = r.role === 'owner' ? 'badge-owner' : 'badge-member';
     card.innerHTML = `
       <div style="overflow:hidden;">
-        <div class="room-card-name">${r.name}${isCurrent ? ' <span style="color:var(--success); font-size:0.7rem;">• actual</span>' : ''}</div>
+        <div class="room-card-name">${esc(r.name)}${isCurrent ? ' <span style="color:var(--success); font-size:0.7rem;">• actual</span>' : ''}</div>
         <div class="room-card-meta">${r.memberCount} miembro${r.memberCount === 1 ? '' : 's'}</div>
       </div>
       <span class="room-card-badge ${badgeClass}">${roleLabel}</span>

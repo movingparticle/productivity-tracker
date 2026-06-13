@@ -1892,13 +1892,14 @@ input:focus, select:focus {
 /* Tree SVG Interactions */
 .tree-leaf, .tree-flower, .tree-decor-leaf {
   cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s ease;
 }
 
 .tree-leaf:hover, .tree-flower:hover, .tree-decor-leaf:hover {
-  transform: scale(1.5);
-  transform-origin: center;
-  filter: brightness(1.2) drop-shadow(0 2px 4px rgba(15, 23, 42, 0.15));
+  transform: scale(1.4);
+  filter: brightness(1.15) drop-shadow(0 2px 4px rgba(15, 23, 42, 0.15));
 }
 
 #btnTreeInfo:hover {
@@ -1909,13 +1910,99 @@ input:focus, select:focus {
 
 /* Glow animations for watered tree branches */
 @keyframes branch-glow {
-  0% { stroke-opacity: 0.75; }
-  50% { stroke-opacity: 1; filter: drop-shadow(0 0 1px var(--active-color)); }
-  100% { stroke-opacity: 0.75; }
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; filter: drop-shadow(0 0 4px var(--active-color, #22c55e)); }
 }
 
 .watered-branch {
   animation: branch-glow 3s infinite ease-in-out;
+}
+
+/* --- Focus Tree: growth, sway and bloom animations --- */
+/* transform-origin is set inline (viewBox px coords) on each group */
+.trunk-grow,
+.branch-grow,
+.branch-sway,
+.leaf-pop,
+.petal-fall {
+  transform-box: view-box;
+}
+
+.trunk-grow {
+  animation: tree-trunk-grow 0.9s cubic-bezier(0.34, 1.2, 0.45, 1) backwards;
+}
+
+.branch-grow {
+  animation: tree-branch-grow 0.85s cubic-bezier(0.34, 1.3, 0.5, 1) backwards;
+}
+
+.branch-sway {
+  animation-name: tree-branch-sway;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.leaf-pop {
+  animation: tree-leaf-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+.flower-pulse {
+  animation: tree-flower-pulse 3.5s ease-in-out infinite;
+}
+
+.petal-fall {
+  animation-name: tree-petal-fall;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+  animation-fill-mode: backwards;
+}
+
+/* Live re-renders skip the entrance animations (sway/petals keep going) */
+.focus-tree-svg.no-anim .trunk-grow,
+.focus-tree-svg.no-anim .branch-grow,
+.focus-tree-svg.no-anim .leaf-pop {
+  animation: none;
+}
+
+@keyframes tree-trunk-grow {
+  0% { transform: scaleY(0.1) scaleX(0.6); opacity: 0; }
+  60% { opacity: 1; }
+  100% { transform: scaleY(1) scaleX(1); opacity: 1; }
+}
+
+@keyframes tree-branch-grow {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes tree-branch-sway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(1.3deg); }
+}
+
+@keyframes tree-leaf-pop {
+  0% { transform: scale(0); opacity: 0; }
+  75% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes tree-flower-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes tree-petal-fall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  8% { opacity: 0.9; }
+  60% { transform: translate(calc(var(--fall-x, 20px) * 0.6), 190px) rotate(190deg); opacity: 0.8; }
+  100% { transform: translate(var(--fall-x, 20px), 330px) rotate(330deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trunk-grow, .branch-grow, .branch-sway, .leaf-pop, .petal-fall, .flower-pulse, .watered-branch {
+    animation: none !important;
+  }
 }
 
 /* --- SHOPPING MODULE STYLES --- */
