@@ -236,6 +236,8 @@ async function handleRedeemCode() {
       ui.showRoomsError("Código inválido. Revisa que esté bien escrito.");
     } else if (e.code === 'code/used') {
       ui.showRoomsError("Ese código ya fue usado por otra persona.");
+    } else if (e.code === 'code/expired') {
+      ui.showRoomsError("Este código ya venció. Pídeme uno nuevo 🙏");
     } else {
       console.error(e);
       ui.showRoomsError("No se pudo activar el código. Intenta de nuevo.");

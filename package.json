@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "codes": "node --env-file=.env scripts/codes-status.js"
   },
   "dependencies": {
     "chart.js": "^4.4.1",

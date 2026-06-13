@@ -25,3 +25,8 @@ pnpm-debug.log*
 *.sw?
 .DS_Store
 node_modules
+
+.vercel
+
+# Códigos beta reales (no subir a git — son para repartir, no para el repo)
+access-codes/codigos-beta-30.txt

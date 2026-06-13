@@ -11,7 +11,9 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true
+    // No publicar el código fuente original en producción (dificulta el
+    // reversing y reduce el peso). Ponlo en true solo para depurar.
+    sourcemap: false
   },
   plugins: [
     VitePWA({

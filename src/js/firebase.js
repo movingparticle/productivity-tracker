@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, update, onValue, get, push, child, runTransaction } from "firebase/database";
-import { isValidAccessCode, normalizeCode } from "./accessCodes";
+import { getDatabase, ref, set, update, onValue, get, push, child } from "firebase/database";
+import { normalizeCode } from "./accessCodes";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -202,8 +202,11 @@ export async function getRoomAllowance(user) {
 }
 
 /**
- * Redeem a trial access code: marks it as used (single-use) and upgrades the
- * user to Pro. The code must be one of the codes configured in /access-codes.
+ * Redeem a trial access code -> upgrade to Pro.
+ *
+ * SECURITY: validation, single-use claiming and the tier upgrade all happen
+ * SERVER-SIDE in /api/redeem (using the Admin SDK). The browser can no longer
+ * set its own tier, and the list of valid codes never ships in the bundle.
  *
  * Throws:
  *   err.code === 'code/invalid' -> not a real code
@@ -212,45 +215,31 @@ export async function getRoomAllowance(user) {
 export async function redeemAccessCode(rawCode, user) {
   if (!user) throw new Error('No autenticado');
   const code = normalizeCode(rawCode);
-
-  if (!isValidAccessCode(code)) {
+  if (!code) {
     const err = new Error('invalid-code');
     err.code = 'code/invalid';
     throw err;
   }
 
-  // Claim the code atomically: the first person to redeem it wins.
-  const codeRef = ref(db, `accessCodes/${code}`);
-  let result;
-  try {
-    result = await runTransaction(codeRef, (curr) => {
-      if (curr && curr.redeemedBy && curr.redeemedBy !== user.uid) {
-        return; // abort: already used by someone else
-      }
-      return {
-        redeemedBy: user.uid,
-        email: user.email || '',
-        redeemedAt: Date.now()
-      };
-    });
-  } catch (e) {
-    const err = new Error('claim-failed');
-    err.code = 'code/used';
-    throw err;
-  }
-
-  if (!result.committed) {
-    const err = new Error('already-used');
-    err.code = 'code/used';
-    throw err;
-  }
-
-  // Upgrade the user to Pro.
-  await update(ref(db, `users/${user.uid}`), {
-    tier: 'pro',
-    proSince: Date.now(),
-    proVia: 'code'
+  const token = await user.getIdToken();
+  const res = await fetch('/api/redeem', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ code })
   });
+
+  let data = {};
+  try { data = await res.json(); } catch { /* ignore */ }
+
+  if (!res.ok) {
+    // The server returns 'code/invalid' or 'code/used' so the UI can react.
+    const err = new Error(data.error || 'redeem-failed');
+    err.code = data.error || 'code/invalid';
+    throw err;
+  }
 
   return true;
 }
