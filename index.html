@@ -517,81 +517,112 @@
 
   <!-- CONFIGURATION MODAL -->
   <div class="modal-overlay" id="configModal">
-    <div class="modal-content">
-      <h3 style="text-align:center; margin-top:0; margin-bottom:20px; font-family: var(--font-title); font-weight:800;">Ajustes de Sala</h3>
-      
-      <button class="btn-save" style="background:#3b82f6; font-size:1rem; padding:15px; margin-bottom:10px; box-shadow: 0 4px 6px rgba(59,130,246,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;" id="btnOpenUsers">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-          Gestionar Perfiles y Metas
-      </button>
-      <button class="btn-save" style="background:linear-gradient(135deg,#7c3aed,#4f46e5); font-size:1rem; padding:15px; margin-bottom:20px; box-shadow: 0 4px 6px rgba(124,58,237,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;" id="btnOpenGameRules">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          Set Rules (Reglas del juego)
-      </button>
+    <div class="modal-content config-modal-content">
 
-      <!-- MEMBERS & INVITE -->
-      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px; letter-spacing:0.02em;">Miembros con acceso (<span id="memberCount">0</span>/5)</label>
-      <div id="membersList" style="margin-bottom:12px;"></div>
-
-      <button class="btn-save" style="background:var(--success); box-shadow:none; margin-bottom:6px; display: flex; align-items: center; justify-content: center; gap: 8px;" id="btnInvite">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-        Invitar a alguien
-      </button>
-      <div id="inviteBox" style="display:none; margin-bottom:20px;">
-        <div class="rooms-hint">Comparte este enlace (o el código) con quien quieras invitar:</div>
-        <input type="text" id="inviteLink" class="login-input" readonly style="margin-top:6px; font-size:0.8rem;">
-        <button class="btn-save" style="background:#3b82f6; box-shadow:none; margin-top:6px; display: flex; align-items: center; justify-content: center; gap: 8px;" id="btnCopyInvite">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-          Copiar enlace
+      <!-- Header -->
+      <div class="config-modal-header">
+        <h3 class="config-modal-title">Ajustes</h3>
+        <button class="config-close-btn" id="btnCloseConfig" title="Cerrar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
 
-      <div style="border-top: 1px dashed var(--card-border); margin: 18px 0;"></div>
+      <!-- Scrollable body -->
+      <div class="config-scroll">
 
-      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px; letter-spacing:0.02em;">Cambiar Nombre de Sala</label>
-      <div style="display:flex; gap:8px; margin-bottom:20px;">
-          <input type="text" id="newRoomNameInput" placeholder="Ej: EMMA" style="margin:0;">
-          <button class="btn-save" style="background:#f59e0b; width:auto; box-shadow:none;" id="btnRenameRoom">Renombrar</button>
+      <!-- SALA -->
+      <div class="config-section">
+        <div class="config-section-label">Sala</div>
+        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:5px;">Nombre</label>
+        <div style="display:flex; gap:8px; margin-bottom:14px;">
+          <input type="text" id="newRoomNameInput" placeholder="Ej: EMMA" style="margin:0; flex:1;">
+          <button class="btn-save" style="background:#f59e0b; width:auto; box-shadow:none; padding: 0 14px;" id="btnRenameRoom">Renombrar</button>
+        </div>
+        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:5px;">Días activos por semana</label>
+        <select id="inputWorkDays" style="margin-bottom:14px;">
+          <option value="4">4 días</option>
+          <option value="5">5 días</option>
+          <option value="6">6 días</option>
+          <option value="7">7 días</option>
+        </select>
+        <button class="btn-save" id="btnSaveConfig" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Guardar cambios
+        </button>
       </div>
 
-      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px; letter-spacing:0.02em;">Días por Semana (Global)</label>
-      <select id="inputWorkDays" style="margin-bottom: 25px;">
-            <option value="4">4 días</option>
-            <option value="5">5 días</option>
-            <option value="6">6 días</option>
-            <option value="7">7 días</option>
-      </select>
-    
-      <button class="btn-save" id="btnSaveConfig">Guardar Cambios</button>
-      
-      <div style="border-top: 1px dashed var(--card-border); margin: 20px 0;"></div>
+      <!-- EQUIPO -->
+      <div class="config-section">
+        <div class="config-section-label">Equipo (<span id="memberCount">0</span>/5)</div>
+        <div id="membersList" style="margin-bottom:10px;"></div>
+        <button class="btn-save" style="background:var(--success); box-shadow:none; display:flex; align-items:center; justify-content:center; gap:8px;" id="btnInvite">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Invitar a alguien
+        </button>
+        <div id="inviteBox" style="display:none; margin-top:10px;">
+          <div class="rooms-hint">Comparte este enlace (o el código) con quien quieras invitar:</div>
+          <input type="text" id="inviteLink" class="login-input" readonly style="margin-top:6px; font-size:0.8rem;">
+          <button class="btn-save" style="background:#3b82f6; box-shadow:none; margin-top:6px; display:flex; align-items:center; justify-content:center; gap:8px;" id="btnCopyInvite">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copiar enlace
+          </button>
+        </div>
+      </div>
 
-      <button class="btn-save" style="background:#f97316; box-shadow:none; margin-top:5px; display: flex; align-items: center; justify-content: center; gap: 8px;" id="btnWeeklyReset">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
-        RESETEO SEMANAL
-      </button>
-      <button class="btn-save" style="background:var(--danger); box-shadow:none; margin-top:10px; display: flex; align-items: center; justify-content: center; gap: 8px;" id="btnHardReset">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-        RESET TOTAL
-      </button>
+      <!-- PERFILES & REGLAS -->
+      <div class="config-section">
+        <div class="config-section-label">Perfiles & Reglas</div>
+        <button class="btn-save" style="background:#3b82f6; margin-bottom:8px; box-shadow:0 4px 6px rgba(59,130,246,0.2); display:flex; align-items:center; justify-content:center; gap:8px;" id="btnOpenUsers">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Gestionar Perfiles y Metas
+        </button>
+        <button class="btn-save" style="background:linear-gradient(135deg,#7c3aed,#4f46e5); box-shadow:0 4px 6px rgba(124,58,237,0.2); display:flex; align-items:center; justify-content:center; gap:8px;" id="btnOpenGameRules">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Reglas del juego
+        </button>
+      </div>
 
-      <div style="border-top: 1px dashed var(--card-border); margin: 20px 0;"></div>
+      <!-- ASISTENTE IA -->
+      <div class="config-section">
+        <div class="config-section-label">Asistente IA</div>
+        <div class="config-toggle-row">
+          <div>
+            <div class="config-toggle-label">Mensajes de motivación</div>
+            <div class="config-toggle-sub">Frases estoicas y de autoconocimiento según tu árbol</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggleAiMotivation" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
 
-      <button class="btn-save" style="background:#b45309; box-shadow:none; display:none; align-items: center; justify-content: center; gap: 8px;" id="btnLeaveRoom">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-        Salir de esta sala
-      </button>
-      <button class="btn-save" style="background:var(--danger); box-shadow:none; margin-top:10px; display:none; align-items: center; justify-content: center; gap: 8px;" id="btnDeleteRoom">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-        Eliminar sala (definitivo)
-      </button>
+      <!-- ZONA DE PELIGRO -->
+      <div class="config-section">
+        <div class="config-section-label danger">Zona de peligro</div>
+        <button class="btn-save config-danger-btn" style="background:#f97316;" id="btnWeeklyReset">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Reseteo semanal
+        </button>
+        <button class="btn-save config-danger-btn" style="background:var(--danger); margin-top:8px;" id="btnHardReset">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Reset total de la sala
+        </button>
+        <button class="btn-save config-danger-btn" style="background:#b45309; margin-top:8px; display:none;" id="btnLeaveRoom">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Salir de esta sala
+        </button>
+        <button class="btn-save config-danger-btn" style="background:var(--danger); margin-top:8px; display:none;" id="btnDeleteRoom">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Eliminar sala (definitivo)
+        </button>
+        <button class="btn-save config-danger-btn" style="background:#475569; margin-top:8px; display:flex;" id="btnSignOut">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Cerrar sesión
+        </button>
+      </div>
 
-      <button class="btn-save" style="background:#475569; box-shadow:none; margin-top:10px; display: flex; align-items: center; justify-content: center; gap: 8px;" id="btnSignOut">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-        Cerrar Sesión (Cuenta)
-      </button>
-
-      <button class="btn-close-txt" id="btnCloseConfig">Cerrar Ajustes</button>
+      </div><!-- /config-scroll -->
     </div>
   </div>
 

@@ -150,6 +150,7 @@ export function initDomElements() {
     btnDownloadPDF: document.getElementById('btnDownloadPDF'),
     btnOpenConfig: document.getElementById('btnOpenConfig'),
     btnCloseConfig: document.getElementById('btnCloseConfig'),
+    toggleAiMotivation: document.getElementById('toggleAiMotivation'),
     btnCloseTplModal: document.getElementById('btnCloseTplModal'),
     btnSaveTpl: document.getElementById('btnSaveTpl'),
     btnOpenUsers: document.getElementById('btnOpenUsers'),
@@ -410,6 +411,9 @@ export function updateUI() {
 
   if (elements.inputWorkDays) {
     elements.inputWorkDays.value = state.store.config.days || 6;
+  }
+  if (elements.toggleAiMotivation) {
+    elements.toggleAiMotivation.checked = state.store.config.aiMotivation !== false;
   }
 }
 

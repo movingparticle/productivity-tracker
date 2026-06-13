@@ -992,6 +992,9 @@ function bindEvents() {
     ui.elements.btnSaveConfig.onclick = () => {
       const workDays = parseInt(ui.elements.inputWorkDays.value) || 6;
       state.store.config.days = workDays;
+      if (ui.elements.toggleAiMotivation) {
+        state.store.config.aiMotivation = ui.elements.toggleAiMotivation.checked;
+      }
       state.saveState();
       ui.closeModal(ui.elements.configModal);
       ui.showToast("Ajustes guardados correctamente");
