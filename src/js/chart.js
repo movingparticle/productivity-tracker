@@ -2,6 +2,7 @@ import Chart from 'chart.js/auto';
 
 let chartInstance = null;
 let weekBarChartInstance = null;
+let historialChartInstance = null;
 
 /**
  * Render or update the "Time vs Points" line chart
@@ -220,5 +221,104 @@ export function updateWeekBarChart(canvas, users, getDailyTotals) {
     });
   } catch (err) {
     console.error("Error drawing weekly bar chart:", err);
+  }
+}
+
+/**
+ * Line chart showing historical daily points per user.
+ * Same visual style as the "Hoy" chart.
+ * @param {HTMLCanvasElement} canvas
+ * @param {Array} users
+ * @param {Array} history  [{date, points:{uid:pts}}]  — store.history
+ * @param {Object} todayPoints  {uid: pts}  — today's totals
+ * @param {string} todayLabel  — label for today
+ */
+export function updateHistorialChart(canvas, users, history, todayPoints, todayLabel) {
+  if (!canvas) return;
+  try {
+    if (historialChartInstance) {
+      historialChartInstance.destroy();
+      historialChartInstance = null;
+    }
+
+    // Build ordered list of {label, points:{uid:pts}}
+    const days = [...history.map(h => ({ label: h.date, points: h.points || {} }))];
+    // Append today if it has data
+    const todayTotal = Object.values(todayPoints).reduce((s, v) => s + v, 0);
+    if (todayTotal > 0) days.push({ label: todayLabel, points: todayPoints });
+
+    if (days.length === 0) {
+      // Nothing to show — just clear
+      return;
+    }
+
+    const labels = days.map(d => d.label);
+
+    const datasets = users.map(u => {
+      const data = days.map(d => Number((d.points || {})[u.id]) || 0);
+      return {
+        label: u.name,
+        data,
+        borderColor: u.color,
+        backgroundColor: u.color + '12',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: u.color,
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        borderWidth: 3
+      };
+    });
+
+    const textColor = '#64748b';
+    const gridColor = 'rgba(15, 23, 42, 0.05)';
+
+    historialChartInstance = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            grid: { color: gridColor },
+            ticks: { color: textColor, font: { family: "'Inter', sans-serif", size: 10 }, maxRotation: 45 }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: gridColor },
+            ticks: { color: textColor, font: { family: "'Inter', sans-serif", size: 10 }, precision: 0 }
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#1e293b',
+              font: { family: "'Outfit', sans-serif", weight: 'bold', size: 11 },
+              padding: 15,
+              usePointStyle: true,
+              boxWidth: 8
+            }
+          },
+          tooltip: {
+            backgroundColor: '#1e293b',
+            titleColor: '#3b82f6',
+            titleFont: { family: "'Outfit', sans-serif", weight: 'bold' },
+            bodyColor: '#f8fafc',
+            bodyFont: { family: "'Inter', sans-serif" },
+            borderColor: 'rgba(255,255,255,0.08)',
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 8,
+            displayColors: true
+          }
+        }
+      }
+    });
+  } catch (err) {
+    console.error("Error drawing historial chart:", err);
   }
 }

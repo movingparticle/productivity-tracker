@@ -319,23 +319,14 @@
         <div style="font-size:2.5rem; font-weight:900; font-family: var(--font-title); margin-top:4px;" id="monthTotal">0</div>
       </div>
       
-      <h4 class="section-title">Tiempo vs Puntos (Hoy)</h4>
-      <div style="display:block; height:240px; margin-bottom:20px; background: var(--card-bg); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--card-border); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
-        <canvas id="timeChart"></canvas>
+      <!-- Chart with Hoy / Historial toggle -->
+      <div class="roadmap-tabs" style="margin-bottom:0; border-bottom-left-radius:0; border-bottom-right-radius:0;">
+        <button class="roadmap-tab-btn active" id="btnChartTabHoy">Hoy</button>
+        <button class="roadmap-tab-btn" id="btnChartTabHistorial">Historial</button>
       </div>
-      
-      <!-- WEEKLY METRICS SECTION -->
-      <h4 class="section-title">Esta Semana</h4>
-      <div id="weekSummaryCards" class="percent-container" style="margin-bottom:16px;"></div>
-
-      <div style="display:block; height:180px; margin-bottom:20px; background: var(--card-bg); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--card-border); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
-        <canvas id="weekBarChart"></canvas>
-      </div>
-
-      <!-- Top tasks this week -->
-      <div id="weekTopTasks" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom:20px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
-        <div style="font-size:0.7rem; font-weight:700; color:var(--text-muted); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:10px;">TOP ACTIVIDADES DE LA SEMANA</div>
-        <div id="weekTopTasksList"></div>
+      <div style="display:block; height:240px; margin-bottom:20px; background: var(--card-bg); padding: 12px; border-radius: 0 0 var(--radius-md) var(--radius-md); border: 1px solid var(--card-border); border-top:none; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
+        <canvas id="timeChart" style="display:block;"></canvas>
+        <canvas id="historialChart" style="display:none;"></canvas>
       </div>
 
       <h4 class="section-title">Reportes</h4>
@@ -466,16 +457,14 @@
       </div>
 
       <!-- TAB 3: MIS LISTAS (REGULARS) -->
-      <div id="shoppingSavedTab" class="hidden">
+      <div id="shoppingSavedTab" class="hidden" style="padding-bottom:80px;">
         <div id="savedListsContainer"></div>
-
-        <!-- Empty state + create button -->
-        <div id="savedListsEmpty" style="text-align:center; padding:24px 0; display:none;">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 10px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">Guardá hasta 3 listas de compras regulares para reutilizarlas.</p>
+        <div id="savedListsEmpty" style="text-align:center; padding:32px 0; display:none;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block; margin:0 auto 12px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0;">Guardá hasta 3 listas para reutilizarlas.<br>Ej: Despensa, Farmacia, Limpieza.</p>
         </div>
         <div id="savedListsLimitHint" style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding:8px 0; display:none;">Límite de 3 listas alcanzado.</div>
-        <button id="btnCreateSavedList" class="btn-save" style="background:#475569; display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:80px;">
+        <button id="btnCreateSavedList" class="btn-save" style="background:#475569; display:flex; align-items:center; justify-content:center; gap:6px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Nueva lista guardada
         </button>

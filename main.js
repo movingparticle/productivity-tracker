@@ -836,6 +836,14 @@ function bindEvents() {
     ui.elements.btnDownloadPDF.onclick = () => ui.triggerDownloadPDF();
   }
 
+  // Chart tab toggle
+  if (ui.elements.btnChartTabHoy) {
+    ui.elements.btnChartTabHoy.onclick = () => ui.switchChartTab('hoy');
+  }
+  if (ui.elements.btnChartTabHistorial) {
+    ui.elements.btnChartTabHistorial.onclick = () => ui.switchChartTab('historial');
+  }
+
   // Weekly report
   if (ui.elements.btnOpenWeeklyReport) {
     ui.elements.btnOpenWeeklyReport.onclick = () => ui.showWeeklyReport();
