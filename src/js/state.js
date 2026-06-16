@@ -617,15 +617,27 @@ export function setTreeDifficulty(level) {
  */
 export function saveShoppingItem(name, qty, assignedTo, imageBase64, tags) {
   if (!store.shoppingList) store.shoppingList = [];
+  
+  let finalTags = Array.isArray(tags) ? [...tags] : [];
+  let cleanName = name || '';
+  const tagMatches = [...cleanName.matchAll(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g)];
+  if (tagMatches.length > 0) {
+    tagMatches.forEach(m => {
+      const t = m[1];
+      if (!finalTags.includes(t)) finalTags.push(t);
+    });
+    cleanName = cleanName.replace(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g, '').trim();
+  }
+
   store.shoppingList.push({
     id: 'shop_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-    name: (name || '').trim(),
-    qty: qty || "",
+    name: cleanName.trim().slice(0, 80),
+    qty: (qty || '').trim(),
     assignedTo: assignedTo || "casa",
     addedBy: localProfileId,
     image: imageBase64 || null,
     dateAdded: new Date().toISOString(),
-    tags: Array.isArray(tags) ? tags : []
+    tags: finalTags
   });
   saveState();
 }
@@ -638,17 +650,28 @@ export function saveShoppingItemsBulk(items, assignedTo) {
   if (!store.shoppingList) store.shoppingList = [];
   let count = 0;
   (items || []).forEach((it, i) => {
-    const name = (it.name || '').trim();
-    if (!name) return;
+    let cleanName = (it.name || '').trim();
+    if (!cleanName) return;
+
+    let finalTags = Array.isArray(it.tags) ? [...it.tags] : [];
+    const tagMatches = [...cleanName.matchAll(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g)];
+    if (tagMatches.length > 0) {
+      tagMatches.forEach(m => {
+        const t = m[1];
+        if (!finalTags.includes(t)) finalTags.push(t);
+      });
+      cleanName = cleanName.replace(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g, '').trim();
+    }
+
     store.shoppingList.push({
       id: 'shop_' + Date.now() + '_' + i + '_' + Math.floor(Math.random() * 1000),
-      name,
+      name: cleanName.trim().slice(0, 80),
       qty: (it.qty || '').trim(),
       assignedTo: assignedTo || 'casa',
       addedBy: localProfileId,
       image: null,
       dateAdded: new Date().toISOString(),
-      tags: Array.isArray(it.tags) ? it.tags : []
+      tags: finalTags
     });
     count++;
   });

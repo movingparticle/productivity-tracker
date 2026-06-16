@@ -468,17 +468,37 @@ function bindRoomsEvents() {
 }
 
 /**
- * Split a free-form block of text into shopping items.
- * Items are separated by new lines or commas. Each becomes { name, qty:'' }.
+ * Split a free-form block of text into shopping items, parsing tags and quantities.
  */
 function parseBulkLines(raw) {
-  return String(raw || '')
+  const lines = String(raw || '')
     .split(/[\n,]+/)
     .map(s => s.trim())
-    // Drop leading bullets/numbers like "1.", "- ", "• "
-    .map(s => s.replace(/^[-*•\d.\)\s]+/, '').trim())
-    .filter(Boolean)
-    .map(name => ({ name, qty: '' }));
+    .filter(Boolean);
+  
+  const parsedItems = [];
+  lines.forEach(line => {
+    // Clean bullet points
+    let cleanLine = line.replace(/^[-*•\d.\)\s]+/, '').trim();
+    
+    // Parse tags
+    const tags = [];
+    const tagMatches = [...cleanLine.matchAll(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g)];
+    if (tagMatches.length > 0) {
+      tagMatches.forEach(m => tags.push(m[1]));
+      cleanLine = cleanLine.replace(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g, '').trim();
+    }
+
+    // Parse quantity
+    const qtyMatch = cleanLine.match(/\s+(?:x|×)(\d+\S*)$/i) || cleanLine.match(/\s+\(([^)]+)\)$/);
+    const qty = qtyMatch ? qtyMatch[1] : '';
+    const name = qtyMatch ? cleanLine.slice(0, cleanLine.length - qtyMatch[0].length).trim() : cleanLine;
+    
+    if (name) {
+      parsedItems.push({ name, qty, tags });
+    }
+  });
+  return parsedItems;
 }
 
 /* ------------------------------------------------------------------ */
@@ -777,20 +797,25 @@ function bindEvents() {
   }
   
   // General shopping list sharing
+  const shareHandler = () => {
+    const text = state.buildGeneralShareText();
+    if (!text) {
+      ui.showToast(tr('toast.shop.empty.share') || 'La lista de compras está vacía', 'warning');
+      return;
+    }
+    if (navigator.share) {
+      navigator.share({ title: 'Lista de Compras', text }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text);
+      ui.showToast(tr('toast.copied.clipboard') || 'Copiado al portapapeles');
+    }
+  };
+
   if (ui.elements.btnShoppingShare) {
-    ui.elements.btnShoppingShare.onclick = () => {
-      const text = state.buildGeneralShareText();
-      if (!text) {
-        ui.showToast(tr('toast.shop.empty.share') || 'La lista de compras está vacía', 'warning');
-        return;
-      }
-      if (navigator.share) {
-        navigator.share({ title: 'Lista de Compras', text }).catch(() => {});
-      } else {
-        navigator.clipboard.writeText(text);
-        ui.showToast(tr('toast.copied.clipboard') || 'Copiado al portapapeles');
-      }
-    };
+    ui.elements.btnShoppingShare.onclick = shareHandler;
+  }
+  if (ui.elements.btnShoppingFullscreenShare) {
+    ui.elements.btnShoppingFullscreenShare.onclick = shareHandler;
   }
 
   // Shopping column toggles (1 or 2 cols)

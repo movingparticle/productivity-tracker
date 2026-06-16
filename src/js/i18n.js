@@ -140,6 +140,7 @@ const T = {
     'toast.plan.unlocked': 'Plan desbloqueado para modificación',
     'toast.plan.locked': '¡Plan de hoy fijado! A enfocarse.',
     'plan.lock.btn': 'Listo, Fijar Plan de Hoy',
+    'plan.builder.title': 'Actividades de {name}',
     'toast.added.to.plan': '"{name}" añadido al plan',
     'toast.personal.empty': 'Escribe una actividad personal.',
     // Stats
@@ -634,6 +635,7 @@ const T = {
     'toast.plan.unlocked': 'Plan unlocked for editing',
     'toast.plan.locked': 'Today\'s plan locked! Focus up.',
     'plan.lock.btn': 'Done, Lock Today\'s Plan',
+    'plan.builder.title': 'Activities for {name}',
     'toast.added.to.plan': '"{name}" added to plan',
     'toast.personal.empty': 'Write a personal activity.',
     // Stats

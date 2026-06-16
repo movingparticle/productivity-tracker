@@ -267,6 +267,8 @@ export function initDomElements() {
     savedListFormExistingContainer: document.getElementById('savedListFormExistingContainer'),
     savedListFormExistingSelect: document.getElementById('savedListFormExistingSelect'),
     btnShoppingShare: document.getElementById('btnShoppingShare'),
+    btnShoppingFullscreenShare: document.getElementById('btnShoppingFullscreenShare'),
+    builderUserTitle: document.getElementById('builderUserTitle'),
     btnEmailReport: document.getElementById('btnEmailReport'),
     btnEmailWeeklyReport: document.getElementById('btnEmailWeeklyReport'),
     
@@ -2754,6 +2756,11 @@ function _buildBlock(name, pts, type) {
  * Populate the Pendientes + Rutinas grids with available blocks
  */
 export function renderRoadmapBuilder() {
+  const activeUser = state.store.config.users.find(u => u.id === state.localProfileId) || state.store.config.users[0];
+  if (elements.builderUserTitle && activeUser) {
+    elements.builderUserTitle.innerText = tr('plan.builder.title', { name: activeUser.name });
+  }
+
   const pendingGrid = document.getElementById('builderGridPending');
   if (pendingGrid) {
     pendingGrid.innerHTML = '';

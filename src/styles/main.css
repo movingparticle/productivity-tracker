@@ -513,6 +513,7 @@ body {
   padding-bottom: 4px;
   max-width: 100%;
   scrollbar-width: none;
+  text-align: center;
 }
 
 .profile-switch-container::-webkit-scrollbar {
@@ -3246,4 +3247,14 @@ input:focus, select:focus {
 
 [data-theme="dark"] .btn-confirm-no:hover {
   background: rgba(255, 255, 255, 0.1) !important;
+}
+
+@media (max-width: 480px) {
+  .builder-subtab svg {
+    display: none;
+  }
+  .builder-subtab {
+    padding: 8px 4px;
+    font-size: 0.72rem;
+  }
 }
