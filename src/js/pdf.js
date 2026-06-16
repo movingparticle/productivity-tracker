@@ -1,4 +1,5 @@
 import html2pdf from 'html2pdf.js';
+import { getLang } from './i18n';
 
 /**
  * Downloads a DOM element as a PDF document
@@ -9,9 +10,12 @@ export function downloadReportPDF(element, roomName = "Sala") {
   if (!element) return;
 
   const dateStr = new Date().toISOString().slice(0, 10);
+  const isEn = getLang() === 'en';
+  const prefix = isEn ? 'Report' : 'Reporte';
+  
   const options = {
     margin: 0.5,
-    filename: `Reporte_${roomName}_${dateStr}.pdf`,
+    filename: `${prefix}_${roomName}_${dateStr}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { 
       scale: 2, 

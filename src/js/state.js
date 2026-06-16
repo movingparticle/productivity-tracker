@@ -227,7 +227,6 @@ export function checkDateAutoClose() {
 
     // Clear daily arrays and update date marker
     store.todayLog = [];
-    store.roadmaps = {};
     store.lastActiveDate = todayStr;
     store.bonusCounters = {};
 
@@ -273,7 +272,7 @@ export function deleteLogEntry(id) {
  * Tasks carry a priority ('alta' | 'media' | 'baja') and a createdAt timestamp
  * so the UI can rank them by urgency (priority + how long they've been waiting).
  */
-export function savePendingTask(name, pts, priority, editIndexStr, imageBase64 = null) {
+export function savePendingTask(name, pts, priority, editIndexStr, imageBase64 = null, desc = "", deadline = "", shopItems = []) {
   const ptsNum = Number(pts) || 5;
   const prio = PRIORITY_ORDER[priority] ? priority : 'media';
   if (editIndexStr !== "") {
@@ -285,7 +284,10 @@ export function savePendingTask(name, pts, priority, editIndexStr, imageBase64 =
         pts: ptsNum,
         priority: prio,
         createdAt: existing.createdAt || Date.now(),
-        image: imageBase64 !== null ? imageBase64 : (existing.image || null)
+        image: imageBase64 !== null ? imageBase64 : (existing.image || null),
+        desc: desc || "",
+        deadline: deadline || "",
+        shopItems: Array.isArray(shopItems) ? shopItems : []
       };
     }
   } else {
@@ -294,7 +296,10 @@ export function savePendingTask(name, pts, priority, editIndexStr, imageBase64 =
       pts: ptsNum,
       priority: prio,
       createdAt: Date.now(),
-      image: imageBase64 || null
+      image: imageBase64 || null,
+      desc: desc || "",
+      deadline: deadline || "",
+      shopItems: Array.isArray(shopItems) ? shopItems : []
     });
   }
   saveState();
@@ -548,8 +553,17 @@ export function toggleRoadmapItem(itemId) {
         minute: '2-digit',
         hour12: true
       });
+      addLogEntry(item.text, item.pts || 0);
     } else {
       delete item.completedAt;
+      if (store.todayLog) {
+        for (let i = store.todayLog.length - 1; i >= 0; i--) {
+          if (store.todayLog[i].who === localProfileId && store.todayLog[i].name === item.text) {
+            store.todayLog.splice(i, 1);
+            break;
+          }
+        }
+      }
     }
     saveState();
   }
@@ -601,7 +615,7 @@ export function setTreeDifficulty(level) {
  * Shopping items no longer use points. The name is optional when there is a
  * photo (e.g. the user just snaps a picture of what's needed).
  */
-export function saveShoppingItem(name, qty, assignedTo, imageBase64) {
+export function saveShoppingItem(name, qty, assignedTo, imageBase64, tags) {
   if (!store.shoppingList) store.shoppingList = [];
   store.shoppingList.push({
     id: 'shop_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
@@ -610,13 +624,14 @@ export function saveShoppingItem(name, qty, assignedTo, imageBase64) {
     assignedTo: assignedTo || "casa",
     addedBy: localProfileId,
     image: imageBase64 || null,
-    dateAdded: new Date().toISOString()
+    dateAdded: new Date().toISOString(),
+    tags: Array.isArray(tags) ? tags : []
   });
   saveState();
 }
 
 /**
- * Add many shopping items at once from a list of { name, qty } objects.
+ * Add many shopping items at once from a list of { name, qty, tags } objects.
  * Used by the bulk text box and the "fix list with AI" feature.
  */
 export function saveShoppingItemsBulk(items, assignedTo) {
@@ -632,7 +647,8 @@ export function saveShoppingItemsBulk(items, assignedTo) {
       assignedTo: assignedTo || 'casa',
       addedBy: localProfileId,
       image: null,
-      dateAdded: new Date().toISOString()
+      dateAdded: new Date().toISOString(),
+      tags: Array.isArray(it.tags) ? it.tags : []
     });
     count++;
   });
@@ -641,21 +657,21 @@ export function saveShoppingItemsBulk(items, assignedTo) {
 }
 
 /**
- * Deletes a shopping item
+ * Deletes a shopping item by its unique ID
  */
-export function deleteShoppingItem(index) {
+export function deleteShoppingItem(id) {
   if (!store.shoppingList) return;
-  store.shoppingList.splice(index, 1);
+  store.shoppingList = store.shoppingList.filter(x => x.id !== id);
   saveState();
 }
 
 /**
- * Marks a shopping item as bought (just removes it from the list — shopping
- * items no longer award points).
+ * Marks a shopping item as bought by its unique ID (just removes it from the list —
+ * shopping items no longer award points).
  */
-export function buyShoppingItem(index) {
-  if (!store.shoppingList || !store.shoppingList[index]) return;
-  store.shoppingList.splice(index, 1);
+export function buyShoppingItem(id) {
+  if (!store.shoppingList) return;
+  store.shoppingList = store.shoppingList.filter(x => x.id !== id);
   saveState();
 }
 
@@ -757,7 +773,7 @@ export function getWeekSummary(userId) {
 /* SAVED SHOPPING LISTS (REGULARS)                                    */
 /* ------------------------------------------------------------------ */
 
-const MAX_SAVED_LISTS = 3;
+const MAX_SAVED_LISTS = 10;
 
 export function getSavedShoppingLists() {
   if (!Array.isArray(store.savedShoppingLists)) store.savedShoppingLists = [];
@@ -790,14 +806,15 @@ export function deleteSavedShoppingList(listId) {
   saveState();
 }
 
-export function addItemToSavedList(listId, name, qty) {
+export function addItemToSavedList(listId, name, qty, tags) {
   const list = (store.savedShoppingLists || []).find(l => l.id === listId);
   if (!list) return;
   if (!Array.isArray(list.items)) list.items = [];
   list.items.push({
     id: 'sli_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
     name: (name || '').trim().slice(0, 80),
-    qty: (qty || '').trim()
+    qty: (qty || '').trim(),
+    tags: Array.isArray(tags) ? tags : []
   });
   saveState();
 }
@@ -806,6 +823,29 @@ export function removeItemFromSavedList(listId, itemId) {
   const list = (store.savedShoppingLists || []).find(l => l.id === listId);
   if (!list || !Array.isArray(list.items)) return;
   list.items = list.items.filter(i => i.id !== itemId);
+  saveState();
+}
+
+export function updateItemInSavedList(listId, itemId, name, qty, tags) {
+  const list = (store.savedShoppingLists || []).find(l => l.id === listId);
+  if (!list || !Array.isArray(list.items)) return;
+  const item = list.items.find(i => i.id === itemId);
+  if (!item) return;
+  item.name = (name || '').trim().slice(0, 80);
+  item.qty = (qty || '').trim();
+  item.tags = Array.isArray(tags) ? tags : [];
+  saveState();
+}
+
+export function replaceSavedListItems(listId, newItems) {
+  const list = (store.savedShoppingLists || []).find(l => l.id === listId);
+  if (!list) return;
+  list.items = (newItems || []).map((it, i) => ({
+    id: 'sli_' + Date.now() + '_' + i + '_' + Math.floor(Math.random() * 1000),
+    name: (it.name || '').trim().slice(0, 80),
+    qty: (it.qty || '').trim(),
+    tags: Array.isArray(it.tags) ? it.tags : []
+  }));
   saveState();
 }
 
@@ -819,7 +859,7 @@ export function addSavedListToShopping(listId, selectedIds, assignedTo) {
   const items = selectedIds
     ? list.items.filter(i => selectedIds.includes(i.id))
     : list.items;
-  return saveShoppingItemsBulk(items.map(i => ({ name: i.name, qty: i.qty })), assignedTo || 'casa');
+  return saveShoppingItemsBulk(items.map(i => ({ name: i.name, qty: i.qty, tags: i.tags })), assignedTo || 'casa');
 }
 
 export function buildShareText(listId) {
@@ -827,5 +867,20 @@ export function buildShareText(listId) {
   if (!list) return '';
   const lines = (list.items || []).map(i => i.qty ? `- ${i.name} (${i.qty})` : `- ${i.name}`);
   return `${list.name}\n${lines.join('\n')}`;
+}
+
+export function buildGeneralShareText() {
+  const list = store.shoppingList || [];
+  if (list.length === 0) return '';
+  const roomName = currentRoomName || 'la Sala';
+  const lines = list.map(i => {
+    let name = i.name && i.name.trim() ? i.name.trim() : 'Artículo en foto';
+    if (i.qty) name += ` (${i.qty.trim()})`;
+    if (i.tags && i.tags.length > 0) {
+      name += ` ${i.tags.map(t => `#${t}`).join(' ')}`;
+    }
+    return `- ${name}`;
+  });
+  return `Lista de Compras - ${roomName}\n${lines.join('\n')}`;
 }
 

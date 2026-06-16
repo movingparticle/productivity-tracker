@@ -1,6 +1,27 @@
 import { updateTimeChart, updateWeekBarChart, updateHistorialChart } from "./chart";
 import { downloadReportPDF } from "./pdf";
 import * as state from "./state";
+import { t as tr, plural, getLang } from "./i18n";
+
+export function getTagStyle(tagName) {
+  const colors = [
+    { bg: 'rgba(59, 130, 246, 0.1)', text: '#2563eb', border: 'rgba(59, 130, 246, 0.2)' }, // Blue
+    { bg: 'rgba(16, 185, 129, 0.1)', text: '#059669', border: 'rgba(16, 185, 129, 0.2)' }, // Green
+    { bg: 'rgba(139, 92, 246, 0.1)', text: '#7c3aed', border: 'rgba(139, 92, 246, 0.2)' }, // Purple
+    { bg: 'rgba(244, 63, 94, 0.1)',  text: '#e11d48', border: 'rgba(244, 63, 94, 0.2)' },  // Rose
+    { bg: 'rgba(245, 158, 11, 0.1)', text: '#d97706', border: 'rgba(245, 158, 11, 0.2)' },  // Amber
+    { bg: 'rgba(6, 182, 212, 0.1)',  text: '#0891b2', border: 'rgba(6, 182, 212, 0.2)' }   // Cyan
+  ];
+  let hash = 0;
+  for (let i = 0; i < tagName.length; i++) {
+    hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+}
+
+const activeSavedListFilters = {};
+export let activeGeneralListFilter = '';
 
 // DOM References Cache
 let elements = {};
@@ -232,6 +253,30 @@ export function initDomElements() {
     pendingImagePreviewContainer: document.getElementById('pendingImagePreviewContainer'),
     pendingImagePreview: document.getElementById('pendingImagePreview'),
     pendingTaskImage: document.getElementById('pendingTaskImage'),
+    btnTogglePendingForm: document.getElementById('btnTogglePendingForm'),
+    pendingFormCollapse: document.getElementById('pendingFormCollapse'),
+    pendingDesc: document.getElementById('pendingDesc'),
+    pendingDeadline: document.getElementById('pendingDeadline'),
+    btnToggleSavedListForm: document.getElementById('btnToggleSavedListForm'),
+    savedListFormCollapse: document.getElementById('savedListFormCollapse'),
+    savedListFormName: document.getElementById('savedListFormName'),
+    savedListFormItems: document.getElementById('savedListFormItems'),
+    btnSaveSavedListForm: document.getElementById('btnSaveSavedListForm'),
+    savedListFormDestination: document.getElementById('savedListFormDestination'),
+    savedListFormNewNameContainer: document.getElementById('savedListFormNewNameContainer'),
+    savedListFormExistingContainer: document.getElementById('savedListFormExistingContainer'),
+    savedListFormExistingSelect: document.getElementById('savedListFormExistingSelect'),
+    btnShoppingShare: document.getElementById('btnShoppingShare'),
+    btnEmailReport: document.getElementById('btnEmailReport'),
+    btnEmailWeeklyReport: document.getElementById('btnEmailWeeklyReport'),
+    
+    // Saved lists edit modal
+    editSavedListModal: document.getElementById('editSavedListModal'),
+    editSavedListModalName: document.getElementById('editSavedListModalName'),
+    editSavedListModalItems: document.getElementById('editSavedListModalItems'),
+    btnSaveEditSavedListModal: document.getElementById('btnSaveEditSavedListModal'),
+    btnCancelEditSavedListModal: document.getElementById('btnCancelEditSavedListModal'),
+    btnCloseEditSavedListModal: document.getElementById('btnCloseEditSavedListModal'),
 
     // Pending fullscreen
     btnPendingFullscreen: document.getElementById('btnPendingFullscreen'),
@@ -349,25 +394,32 @@ function createConfirmContainer() {
   document.body.appendChild(confirmOverlay);
 }
 
-export function showConfirm(message, onConfirm, onCancel = null) {
+export function showConfirm(message, onConfirm, onCancel = null, yesLabel = null, noLabel = null) {
   if (!confirmOverlay) createConfirmContainer();
   
   document.getElementById('confirmMessage').innerText = message;
+  
+  const yesBtn = document.getElementById('confirmYesBtn');
+  const noBtn = document.getElementById('confirmNoBtn');
+  
+  yesBtn.innerText = yesLabel || tr('confirm.yes') || 'Confirmar';
+  noBtn.innerText = noLabel || tr('confirm.no') || 'Cancelar';
+  
   confirmOverlay.classList.add('visible');
   
   const cleanUp = () => {
     confirmOverlay.classList.remove('visible');
     // Remove listeners to avoid accumulation
-    document.getElementById('confirmYesBtn').onclick = null;
-    document.getElementById('confirmNoBtn').onclick = null;
+    yesBtn.onclick = null;
+    noBtn.onclick = null;
   };
 
-  document.getElementById('confirmYesBtn').onclick = () => {
+  yesBtn.onclick = () => {
     cleanUp();
     if (onConfirm) onConfirm();
   };
 
-  document.getElementById('confirmNoBtn').onclick = () => {
+  noBtn.onclick = () => {
     cleanUp();
     if (onCancel) onCancel();
   };
@@ -385,6 +437,16 @@ export function showSyncIndicator() {
 
 /* --- SCREEN SWAPPING --- */
 export function navTo(screenId, navButton) {
+  // Reset FAB position on page switch
+  const fab = document.getElementById('mainFab');
+  if (fab) {
+    fab.style.left = '';
+    fab.style.right = '';
+    fab.style.bottom = '';
+    localStorage.removeItem('fabLeft');
+    localStorage.removeItem('fabBottom');
+  }
+
   // Hide all screens
   document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
   
@@ -485,7 +547,7 @@ function renderTracker() {
     elements.displayScore.style.color = activeUser.color;
   }
   if (elements.displayLabel) {
-    elements.displayLabel.innerText = `Puntos de ${activeUser.name}`;
+    elements.displayLabel.innerText = tr('tracker.pts.user', { name: activeUser.name });
   }
 
   const dailyPercent = Math.min((activePts / userMeta) * 100, 100);
@@ -500,10 +562,10 @@ function renderTracker() {
   const diff = userMeta - activePts;
   if (elements.dailyRem) {
     if (diff > 0) {
-      elements.dailyRem.innerText = `Faltan: ${diff} pts`;
+      elements.dailyRem.innerText = tr('tracker.rem.left', { n: diff });
       elements.dailyRem.style.color = 'var(--text-muted)';
     } else {
-      elements.dailyRem.innerText = `¡Meta superada! (+${Math.abs(diff)} para Ahorro)`;
+      elements.dailyRem.innerText = tr('tracker.rem.exceeded', { n: Math.abs(diff) });
       elements.dailyRem.style.color = 'var(--success)';
     }
   }
@@ -544,14 +606,14 @@ function renderTracker() {
     if (weekDone) {
       // All earnable points for elapsed days are done — week is complete regardless of calendar
       elements.weeklyRem.innerText = weeklyPts >= weeklyGoal
-        ? '¡Semana perfecta! Eres libre.'
-        : '¡Semana lista! Hiciste todo lo posible.';
+        ? tr('tracker.weekly.done')
+        : tr('tracker.weekly.done.alt');
       elements.weeklyRem.style.color = 'var(--success)';
     } else if (wDiff > 0) {
-      elements.weeklyRem.innerText = `Faltan para cierre: ${wDiff} pts`;
+      elements.weeklyRem.innerText = tr('tracker.weekly.left', { n: wDiff });
       elements.weeklyRem.style.color = 'var(--text-muted)';
     } else {
-      elements.weeklyRem.innerText = '¡Meta semanal cumplida!';
+      elements.weeklyRem.innerText = tr('tracker.weekly.met');
       elements.weeklyRem.style.color = 'var(--success)';
     }
   }
@@ -567,9 +629,16 @@ function renderTracker() {
     const col = logUser ? logUser.color : 'var(--text-muted)';
     const nam = logUser ? logUser.name : '???';
     
+    let displayName = x.name;
+    if (x.name === 'BONO Racha') {
+      displayName = tr('toast.streak');
+    } else if (x.name === 'Ahorro Usado') {
+      displayName = tr('tracker.savings.used');
+    }
+
     let badgeHtml = `<span class="badge">+${x.pts}</span>`;
     if (x.name.includes("Ahorro")) {
-      badgeHtml = `<span class="badge badge-redeem">+${x.pts} (Ahorro)</span>`;
+      badgeHtml = `<span class="badge badge-redeem">+${x.pts} (${tr('tracker.savings.badge')})</span>`;
     }
 
     const item = document.createElement('div');
@@ -578,7 +647,7 @@ function renderTracker() {
       <div>
         <span class="log-time">${x.time}</span>
         <span style="color:${esc(col)}; font-weight:700; margin-right:6px;">${esc(nam.substring(0, 5))}:</span>
-        <span>${esc(x.name)}</span>
+        <span>${esc(displayName)}</span>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
         ${badgeHtml}
@@ -587,9 +656,9 @@ function renderTracker() {
     `;
 
     item.querySelector('.del-btn').onclick = () => {
-      showConfirm(`¿Borrar actividad "${x.name}"?`, () => {
+      showConfirm(tr('confirm.delete.log', { name: x.name }), () => {
         state.deleteLogEntry(x.id);
-        showToast("Registro eliminado");
+        showToast(tr('toast.log.deleted'));
       });
     };
 
@@ -597,11 +666,12 @@ function renderTracker() {
   });
 }
 
+
 // Visual config per priority level.
 const PRIORITY_META = {
-  alta:  { color: '#ef4444', label: 'Alta' },
-  media: { color: '#f59e0b', label: 'Media' },
-  baja:  { color: '#3b82f6', label: 'Baja' }
+  alta:  { color: '#ef4444', get label() { return tr('priority.high'); } },
+  media: { color: '#f59e0b', get label() { return tr('priority.medium'); } },
+  baja:  { color: '#3b82f6', get label() { return tr('priority.low'); } }
 };
 
 function buildPendingCard(t, i, onEdit) {
@@ -610,71 +680,129 @@ function buildPendingCard(t, i, onEdit) {
   const isUrgent = t.priority === 'alta' || ageDays >= 3;
 
   let ageLabel;
-  if (ageDays <= 0) ageLabel = 'Hoy';
-  else if (ageDays === 1) ageLabel = 'Hace 1 día';
-  else ageLabel = `Hace ${ageDays} días`;
+  if (ageDays <= 0) ageLabel = tr('pending.age.today');
+  else if (ageDays === 1) ageLabel = tr('pending.age.one');
+  else ageLabel = tr('pending.age.many', { n: ageDays });
 
   const card = document.createElement('div');
   card.className = 'pending-card' + (isUrgent ? ' pending-urgent' : '');
   card.style.borderLeftColor = prio.color;
+  card.style.cursor = 'pointer';
 
   const hasImage = !!t.image;
-  const hasExtra = hasImage;
+
+  // Google Calendar URL construction
+  const getGoogleCalendarUrl = (task) => {
+    const base = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+    const text = encodeURIComponent(task.name);
+    const details = encodeURIComponent((task.desc || '') + '\n\nProductivity Tracker Task');
+    let datesStr = '';
+    if (task.deadline) {
+      const cleanDate = task.deadline.replace(/-/g, ''); // YYYYMMDD
+      // Calculate next day
+      const d = new Date(task.deadline + 'T12:00:00');
+      d.setDate(d.getDate() + 1);
+      const nextDate = d.toISOString().split('T')[0].replace(/-/g, '');
+      datesStr = `&dates=${cleanDate}/${nextDate}`;
+    }
+    return `${base}&text=${text}&details=${details}${datesStr}`;
+  };
 
   card.innerHTML = `
-    <div class="pending-card-main">
-      <button class="btn-check-card" title="Completar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
-      <div class="pending-card-body">
+    <div class="pending-card-main" style="width:100%; display:flex; align-items:center; justify-content:space-between;">
+      <button class="btn-check-card" title="Completar" style="flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+      <div class="pending-card-body" style="flex:1; margin-left:10px; overflow:hidden;">
         <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
-          <span class="pending-card-name">${esc(t.name)}</span>
-          ${hasExtra ? `<button class="btn-expand-card" title="Ver detalles"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>` : ''}
+          <span class="pending-card-name" style="font-weight:700; word-break:break-word; overflow-wrap:break-word;">${esc(t.name)}</span>
+          <button class="btn-expand-card" title="Ver detalles" style="background:none; border:none; color:var(--text-muted); display:flex; align-items:center; cursor:pointer; padding:2px; transition: transform 0.2s;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
         </div>
-        <div class="pending-card-meta">
-          <span class="prio-pill" style="color:${prio.color}; background:${prio.color}18; border:1px solid ${prio.color}33;"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:${prio.color}; margin-right:2px;"></span>${prio.label}</span>
-          <span class="badge" style="padding:1px 6px; font-size:0.65rem;">${t.pts} pts</span>
-          <span class="task-age">${ageLabel}</span>
-          ${isUrgent ? `<span class="urgency-flag" style="display:inline-flex; align-items:center; gap:3px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>Urgente</span>` : ''}
+        <div class="pending-card-meta" style="display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap;">
+          <span class="prio-pill" style="color:${prio.color}; background:${prio.color}18; border:1px solid ${prio.color}33; padding:1px 6px; border-radius:4px; font-size:0.65rem; display:inline-flex; align-items:center; gap:3px;"><span style="display:inline-block; width:5px; height:5px; border-radius:50%; background:${prio.color};"></span>${prio.label}</span>
+          <span class="badge" style="padding:1px 6px; font-size:0.65rem; border-radius:4px;">${t.pts} pts</span>
+          <span class="task-age" style="font-size:0.65rem; color:var(--text-muted);">${ageLabel}</span>
+          ${isUrgent ? `<span class="urgency-flag" style="display:inline-flex; align-items:center; gap:3px; font-size:0.65rem; color:var(--danger); font-weight:700;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>Urgente</span>` : ''}
         </div>
       </div>
-      <div class="pending-card-actions">
+      <div class="pending-card-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
         <button class="btn-edit-pen" title="Editar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
         <button class="btn-del-pen" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
     </div>
-    ${hasExtra ? `<div class="pending-card-detail" style="display:none;">
-      ${hasImage ? `<img class="pending-card-img" src="${esc(t.image)}" alt="${esc(t.name)}">` : ''}
-    </div>` : ''}
+    <div class="pending-card-detail" style="display:none; width:100%; border-top: 1px solid var(--card-border); margin-top:10px; padding-top:10px;">
+      <!-- Priority Detail Line -->
+      <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${prio.color};"></span>
+        <span><strong>${getLang() === 'en' ? 'Priority' : 'Prioridad'}:</strong> ${prio.label}</span>
+      </div>
+      <!-- Waiting Time Detail Line -->
+      <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span><strong>${getLang() === 'en' ? 'Waiting Time' : 'Tiempo de Espera'}:</strong> ${ageLabel}</span>
+      </div>
+      <!-- Urgency warning if applicable -->
+      ${ageDays >= 3 ? `<div style="font-size:0.8rem; color:var(--danger); margin-bottom:8px; display:flex; align-items:center; gap:6px; font-weight:600;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>${getLang() === 'en' ? 'Urgent: Waiting more than 3 days!' : '¡Urgente: Lleva más de 3 días esperando!'}</span>
+      </div>` : ''}
+
+      ${t.desc ? `<div style="font-size:0.85rem; color:var(--text-main); margin-bottom:8px; white-space:pre-wrap; line-height:1.4;">${esc(t.desc)}</div>` : ''}
+      ${t.deadline ? `<div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px; display:flex; align-items:center; gap:4px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span><strong>${tr('pending.deadline')}:</strong> ${esc(t.deadline)}</span>
+      </div>` : ''}
+      ${hasImage ? `<div style="margin-top:10px;"><img class="pending-card-img" src="${esc(t.image)}" alt="${esc(t.name)}" style="max-height:120px; border-radius:8px; cursor:zoom-in; object-fit:cover; border:1px solid var(--card-border);"></div>` : ''}
+      <div style="margin-top:10px; display:flex; justify-content:flex-end;">
+        <a href="${getGoogleCalendarUrl(t)}" target="_blank" class="btn-save" style="display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; padding:6px 12px; background:#4285f4; border-color:#4285f4; color:white; border-radius:6px; text-decoration:none; font-weight:700; width:auto; text-align:center; box-shadow:none;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          ${tr('pending.add.calendar')}
+        </a>
+      </div>
+    </div>
   `;
 
-  card.querySelector('.btn-check-card').onclick = () => {
+  // Prevent parent card clicks from firing on action buttons/inputs
+  card.querySelector('.btn-check-card').onclick = (e) => {
+    e.stopPropagation();
     state.completePendingTask(i, () => {
-      showToast("¡RACHA 3! +1 PUNTO", "warning");
+      showToast(tr('toast.streak'), "warning");
     });
-    showToast("¡Tarea completada!");
+    showToast(tr('toast.task.done'));
   };
 
-  card.querySelector('.btn-edit-pen').onclick = () => {
+  card.querySelector('.btn-edit-pen').onclick = (e) => {
+    e.stopPropagation();
     if (onEdit) onEdit(t, i);
   };
 
-  card.querySelector('.btn-del-pen').onclick = () => {
-    showConfirm(`¿Eliminar "${t.name}"?`, () => {
+  card.querySelector('.btn-del-pen').onclick = (e) => {
+    e.stopPropagation();
+    showConfirm(tr('confirm.delete.task', { name: t.name }), () => {
       state.deletePendingTask(i);
-      showToast("Tarea eliminada");
+      showToast(tr('toast.task.deleted'));
     });
   };
 
-  if (hasExtra) {
-    const expandBtn = card.querySelector('.btn-expand-card');
+  // Expand detail on card click
+  card.onclick = (e) => {
+    if (e.target.closest('.btn-check-card') || e.target.closest('.btn-edit-pen') || e.target.closest('.btn-del-pen') || e.target.closest('.pending-card-img') || e.target.closest('a')) {
+      return;
+    }
     const detail = card.querySelector('.pending-card-detail');
-    expandBtn.onclick = () => {
+    if (detail) {
       const open = detail.style.display !== 'none';
       detail.style.display = open ? 'none' : 'block';
-      expandBtn.style.transform = open ? '' : 'rotate(180deg)';
-    };
-    if (hasImage) {
-      card.querySelector('.pending-card-img').onclick = () => openLightbox(t.image, t.name);
+      const expandBtn = card.querySelector('.btn-expand-card');
+      if (expandBtn) {
+        expandBtn.style.transform = open ? '' : 'rotate(180deg)';
+      }
     }
+  };
+
+  if (hasImage) {
+    card.querySelector('.pending-card-img').onclick = (e) => {
+      e.stopPropagation();
+      openLightbox(t.image, t.name);
+    };
   }
 
   return card;
@@ -694,7 +822,7 @@ function renderPendingInto(container, withEditFocus) {
   const allTasks = state.store.pendingList.map((t, i) => ({ t, i }));
 
   if (allTasks.length === 0) {
-    container.innerHTML = `<div style="padding: 30px 20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">No tienes tareas pendientes. ¡Buen trabajo!</div>`;
+    container.innerHTML = `<div style="padding: 30px 20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">${tr('pending.empty')}</div>`;
     return;
   }
 
@@ -703,7 +831,11 @@ function renderPendingInto(container, withEditFocus) {
     elements.pendingPoints.value = t.pts;
     if (elements.pendingPriority) elements.pendingPriority.value = t.priority || 'media';
     elements.editPenIdx.value = i;
-    elements.btnSavePen.innerText = "Actualizar";
+    elements.btnSavePen.innerText = tr('pending.update');
+    if (elements.pendingDesc) elements.pendingDesc.value = t.desc || '';
+    if (elements.pendingDeadline) elements.pendingDeadline.value = t.deadline || '';
+    if (elements.pendingFormCollapse) elements.pendingFormCollapse.style.display = 'block';
+    if (elements.btnTogglePendingForm) elements.btnTogglePendingForm.innerText = getLang() === 'en' ? 'Cancel' : 'Cancelar';
     elements.pendingInput.focus();
     if (elements.pendingFullscreenModal) elements.pendingFullscreenModal.classList.remove('open');
   } : (t, i) => {
@@ -711,15 +843,19 @@ function renderPendingInto(container, withEditFocus) {
     elements.pendingPoints.value = t.pts;
     if (elements.pendingPriority) elements.pendingPriority.value = t.priority || 'media';
     elements.editPenIdx.value = i;
-    elements.btnSavePen.innerText = "Actualizar";
+    elements.btnSavePen.innerText = tr('pending.update');
+    if (elements.pendingDesc) elements.pendingDesc.value = t.desc || '';
+    if (elements.pendingDeadline) elements.pendingDeadline.value = t.deadline || '';
+    if (elements.pendingFormCollapse) elements.pendingFormCollapse.style.display = 'block';
+    if (elements.btnTogglePendingForm) elements.btnTogglePendingForm.innerText = getLang() === 'en' ? 'Cancel' : 'Cancelar';
     if (elements.pendingFullscreenModal) elements.pendingFullscreenModal.classList.remove('open');
   };
 
   // Group by priority
   const groups = [
-    { key: 'alta', label: 'Alta Prioridad' },
-    { key: 'media', label: 'Media Prioridad' },
-    { key: 'baja', label: 'Baja Prioridad' }
+    { key: 'alta', label: tr('priority.high.label') },
+    { key: 'media', label: tr('priority.medium.label') },
+    { key: 'baja', label: tr('priority.low.label') }
   ];
 
   groups.forEach(({ key, label }) => {
@@ -730,15 +866,52 @@ function renderPendingInto(container, withEditFocus) {
     if (groupTasks.length === 0) return;
 
     const prio = PRIORITY_META[key];
+    const collapsedKey = `collapsed_prio_${key}`;
+    const isCollapsed = localStorage.getItem(collapsedKey) === 'true';
+
     const header = document.createElement('div');
     header.className = 'pending-section-header';
     header.style.borderLeftColor = prio.color;
-    header.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${prio.color};"></span>${label}</span><span class="pending-section-count">${groupTasks.length}</span>`;
+    header.style.cursor = 'pointer';
+    header.style.display = 'flex';
+    header.style.alignItems = 'center';
+    header.style.justifyContent = 'space-between';
+    header.style.userSelect = 'none';
+
+    const chevronSvg = `<svg width="12" height="12" class="prio-chevron" style="transition: transform 0.2s; margin-right:4px; ${isCollapsed ? '' : 'transform: rotate(90deg);'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+
+    header.innerHTML = `
+      <span style="display:inline-flex; align-items:center; gap:6px;">
+        ${chevronSvg}
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${prio.color};"></span>
+        ${label}
+      </span>
+      <span class="pending-section-count">${groupTasks.length}</span>
+    `;
     container.appendChild(header);
 
+    const listContainer = document.createElement('div');
+    listContainer.className = 'pending-group-list';
+    listContainer.style.display = isCollapsed ? 'none' : 'flex';
+    listContainer.style.flexDirection = 'column';
+    listContainer.style.gap = '10px';
+    listContainer.style.marginTop = '6px';
+    listContainer.style.marginBottom = '12px';
+
     groupTasks.forEach(({ t, i }) => {
-      container.appendChild(buildPendingCard(t, i, onEdit));
+      listContainer.appendChild(buildPendingCard(t, i, onEdit));
     });
+    container.appendChild(listContainer);
+
+    header.onclick = () => {
+      const currentlyCollapsed = listContainer.style.display === 'none';
+      listContainer.style.display = currentlyCollapsed ? 'flex' : 'none';
+      localStorage.setItem(collapsedKey, currentlyCollapsed ? 'false' : 'true');
+      const chevron = header.querySelector('.prio-chevron');
+      if (chevron) {
+        chevron.style.transform = currentlyCollapsed ? 'rotate(90deg)' : '';
+      }
+    };
   });
 }
 
@@ -814,7 +987,7 @@ export function switchChartTab(tab) {
     state.store.todayLog.forEach(x => {
       if (pointsToday[x.who] !== undefined) pointsToday[x.who] += x.pts;
     });
-    const todayLabel = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+    const todayLabel = new Date().toLocaleDateString(getLang() === 'en' ? 'en-US' : 'es-ES', { day: '2-digit', month: '2-digit' });
 
     try {
       updateHistorialChart(histCanvas, state.store.config.users, state.store.history, pointsToday, todayLabel);
@@ -848,7 +1021,7 @@ export function renderTemplates() {
       item.onclick = () => {
         state.addLogEntry(t.name, t.pts);
         closeModal(elements.templateModal);
-        showToast(`Rutina "${t.name}" registrada`);
+        showToast(tr('routines.template.registered', { name: t.name }));
       };
 
       item.querySelector('.btn-edit-tpl').onclick = (e) => {
@@ -856,7 +1029,7 @@ export function renderTemplates() {
         elements.tplName.value = t.name;
         elements.tplPts.value = t.pts;
         elements.editTplIndex.value = i;
-        elements.tplFormTitle.innerText = "EDITAR RUTINA";
+        elements.tplFormTitle.innerText = tr('routines.edit');
         elements.btnDeleteTpl.style.display = 'inline-block';
       };
 
@@ -889,16 +1062,16 @@ function renderUserConfigList() {
           <input type="color" class="user-color-picker" value="${esc(u.color)}" style="width:28px; height:28px; border:none; padding:0; background:none; border-radius:50%; cursor:pointer;">
           <span style="font-weight:700; font-size:1rem; color:var(--text-main);">${esc(u.name)}</span>
         </div>
-        <button class="btn-delete-user" style="background:rgba(239, 68, 68, 0.1); color:var(--danger); border:none; border-radius:8px; padding:6px 12px; font-weight:700; font-size:0.75rem; cursor:pointer;">Eliminar</button>
+        <button class="btn-delete-user" style="background:rgba(239, 68, 68, 0.1); color:var(--danger); border:none; border-radius:8px; padding:6px 12px; font-weight:700; font-size:0.75rem; cursor:pointer;">${tr('user.delete.btn')}</button>
       </div>
-      
+
       <div style="display:flex; gap:10px;">
         <div style="flex:2;">
-          <label style="font-size:0.65rem; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">NOMBRE</label>
+          <label style="font-size:0.65rem; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">${tr('user.name.label')}</label>
           <input type="text" class="user-name-input" value="${esc(u.name)}" style="margin:0; padding:10px; background:rgba(15,23,42,0.25);">
         </div>
         <div style="flex:1;">
-          <label style="font-size:0.65rem; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">META DIARIA</label>
+          <label style="font-size:0.65rem; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">${tr('user.meta.label')}</label>
           <input type="number" class="user-meta-input" value="${u.meta || 15}" style="margin:0; text-align:center; padding:10px; background:rgba(15,23,42,0.25);">
         </div>
       </div>
@@ -908,37 +1081,37 @@ function renderUserConfigList() {
     card.querySelector('.user-color-picker').onchange = (e) => {
       u.color = e.target.value;
       state.saveState();
-      showToast("Color actualizado");
+      showToast(tr('toast.color.updated'));
     };
 
     // Bind name changes
     card.querySelector('.user-name-input').onchange = (e) => {
       u.name = e.target.value.trim();
       state.saveState();
-      showToast("Nombre actualizado");
+      showToast(tr('toast.name.updated'));
     };
 
     // Bind meta goal changes
     card.querySelector('.user-meta-input').onchange = (e) => {
       u.meta = parseInt(e.target.value) || 15;
       state.saveState();
-      showToast("Meta diaria actualizada");
+      showToast(tr('toast.meta.updated'));
     };
 
     // Bind delete user
     card.querySelector('.btn-delete-user').onclick = () => {
       if (state.store.config.users.length <= 1) {
-        showToast("La sala debe tener al menos un usuario.", "error");
+        showToast(tr('toast.min.users'), "error");
         return;
       }
-      showConfirm(`¿Eliminar permanentemente al miembro ${u.name}?`, () => {
+      showConfirm(tr('confirm.delete.profile', { name: u.name }), () => {
         state.store.config.users = state.store.config.users.filter(x => x.id !== u.id);
         if (state.localProfileId === u.id) {
           state.setLocalProfileId(state.store.config.users[0].id);
         }
         state.saveState();
         renderUserConfigList();
-        showToast("Miembro eliminado");
+        showToast(tr('toast.profile.deleted'));
       });
     };
 
@@ -979,7 +1152,7 @@ export function redeemPoints() {
   const balance = activeUser && activeUser.bank ? activeUser.bank : 0;
   
   if (balance <= 0) {
-    showToast("No tienes puntos ahorrados en tu saldo.", "error");
+    showToast(tr('bank.redeem.no.pts'), "error");
     return;
   }
 
@@ -990,16 +1163,16 @@ export function redeemPoints() {
   });
   
   if (activePts >= (activeUser.meta || 15)) {
-    showToast("¡Ya cumpliste tu meta de hoy! Te sugerimos no gastar tus ahorros.", "warning");
+    showToast(tr('bank.redeem.goal.warn'), "warning");
     return;
   }
 
-  const amount = prompt(`Tienes ${balance} pts ahorrados.\n¿Cuántos deseas rescatar para hoy?`);
+  const amount = prompt(tr('bank.redeem.prompt', { n: balance }));
   if (amount !== null) {
     state.redeemPointsFromBank(
       amount,
       (redeemedVal) => {
-        showToast(`¡Rescate exitoso! Se agregaron ${redeemedVal} pts a hoy.`);
+        showToast(tr('bank.redeem.success', { n: redeemedVal }));
         updateBankInModal();
       },
       (errorMsg) => {
@@ -1013,11 +1186,12 @@ export function redeemPoints() {
 export function showReport() {
   if (!elements.reportOverlay) return;
   
-  elements.docDate.innerText = new Date().toLocaleDateString('es-ES', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  const reportLocale = getLang() === 'en' ? 'en-US' : 'es-ES';
+  elements.docDate.innerText = new Date().toLocaleDateString(reportLocale, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
   }).toUpperCase();
 
   // Summary Grid
@@ -1032,7 +1206,7 @@ export function showReport() {
       
       summaryGrid.innerHTML += `
         <div class="summary-card" style="border-left-color: ${esc(u.color)}">
-          <span class="summary-label">PTS DE ${esc(u.name.toUpperCase())}</span>
+          <span class="summary-label">${getLang() === 'en' ? 'PTS FOR' : 'PTS DE'} ${esc(u.name.toUpperCase())}</span>
           <span class="summary-value" style="color:${esc(u.color)}">${pts}</span>
         </div>
       `;
@@ -1071,149 +1245,304 @@ export function triggerDownloadPDF() {
   }
 }
 
+export function emailDailyReport() {
+  const roomName = state.currentRoomName && state.currentRoomName !== 'la Sala' ? state.currentRoomName : tr('tracker.default.room');
+  const dateStr = elements.docDate ? elements.docDate.innerText : new Date().toDateString();
+  const subject = `[Productivity Tracker] Daily Report - ${roomName} (${dateStr})`;
+  
+  let body = `REGISTRO DE PRODUCTIVIDAD\n`;
+  body += `Fecha: ${dateStr}\n`;
+  body += `Sala: ${roomName}\n\n`;
+  
+  body += `PUNTOS POR USUARIO:\n`;
+  state.store.config.users.forEach(u => {
+    let pts = 0;
+    state.store.todayLog.forEach(x => {
+      if (x.who === u.id) pts += x.pts;
+    });
+    body += `- ${u.name}: ${pts} PTS\n`;
+  });
+  
+  body += `\nDETALLE DE ACTIVIDADES:\n`;
+  [...state.store.todayLog].reverse().forEach(x => {
+    const u = state.store.config.users.find(us => us.id === x.who);
+    body += `- [${x.time}] ${u?.name || '???'}: ${x.name} (+${x.pts} pts)\n`;
+  });
+  
+  body += `\nEnviado desde Productivity Tracker.`;
+  
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.open(gmailUrl, '_blank');
+}
+
+export function emailWeeklyReport() {
+  const roomName = state.currentRoomName && state.currentRoomName !== 'la Sala' ? state.currentRoomName : tr('tracker.default.room');
+  const now = new Date();
+  const dateLocale = getLang() === 'en' ? 'en-US' : 'es-ES';
+  const dateStr = now.toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
+  
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  const weekRange = `${monday.getDate().toString().padStart(2,'0')}/${(monday.getMonth()+1).toString().padStart(2,'0')} — ${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
+  
+  const salaAggs   = state.getWeekTaskAggregates(null);
+  const salaSummary = state.getWeekSummary(null);
+  const salaDaily  = state.getWeekDailyTotals(null);
+  const uniqueTasks = salaAggs.length;
+
+  const subject = `[Productivity Tracker] Weekly Report - ${roomName} (${weekRange})`;
+  
+  let body = `REPORTE DE PRODUCTIVIDAD SEMANAL\n`;
+  body += `Fecha: ${dateStr}\n`;
+  body += `Sala: ${roomName}\n`;
+  body += `Rango: ${weekRange}\n\n`;
+  
+  body += `RESUMEN GENERAL:\n`;
+  body += `- Puntos Totales: ${salaSummary.totalPts}\n`;
+  body += `- Días Activos: ${salaSummary.daysActive}\n`;
+  body += `- Días Meta Cumplida: ${salaSummary.daysGoalMet}\n`;
+  body += `- Promedio Diario: ${salaSummary.avgPtsPerDay} pts\n`;
+  body += `- Tareas Únicas: ${uniqueTasks}\n`;
+  body += `- Racha Consecutiva: ${salaSummary.streak} días\n\n`;
+  
+  body += `PROGRESO POR DÍA:\n`;
+  if (salaDaily.length > 0) {
+    salaDaily.forEach(d => {
+      body += `- ${d.label} (${d.dateStr}): ${d.pts} pts\n`;
+    });
+  } else {
+    body += `(Sin datos esta semana)\n`;
+  }
+  
+  body += `\nACTIVIDADES MÁS REPETIDAS:\n`;
+  const mostRep = [...salaAggs].sort((a,b)=>b.count-a.count).slice(0, 5);
+  if (mostRep.length > 0) {
+    mostRep.forEach((t, i) => {
+      body += `${i+1}. ${t.name}: ×${t.count} veces (+${t.totalPts} pts)\n`;
+    });
+  } else {
+    body += `(Ninguna)\n`;
+  }
+  
+  body += `\nEnviado desde Productivity Tracker.`;
+
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.open(gmailUrl, '_blank');
+}
+
 /* --- WEEKLY REPORT --- */
+
+// ── Weekly report helpers ──────────────────────────────────────────
+
+function _weekStatCard(label, value, color) {
+  return `
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px 12px;border-top:3px solid ${color};min-width:0;">
+      <div style="font-size:0.58rem;font-weight:700;color:#94a3b8;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</div>
+      <div style="font-size:1.55rem;font-weight:900;color:${color};font-family:'Outfit',sans-serif;line-height:1;">${value}</div>
+    </div>`;
+}
+
+function _weekSvgBars(days) {
+  if (!days.length) return '';
+  const W = 520, H = 110, pad = 12;
+  const n = days.length;
+  const maxPts = Math.max(...days.map(d => d.pts), 1);
+  const barW = Math.min(50, (W - pad * 2 - (n - 1) * 8) / n);
+  const totalW = n * barW + (n - 1) * 8;
+  const x0 = (W - totalW) / 2;
+  const chartH = H - 30;
+
+  const bars = days.map((d, i) => {
+    const x = x0 + i * (barW + 8);
+    const bh = Math.max(4, Math.round((d.pts / maxPts) * chartH));
+    const y = chartH - bh;
+    const isMax = d.pts === maxPts;
+    const fill = isMax ? '#1d4ed8' : '#3b82f6';
+    const opacity = isMax ? '1' : '0.7';
+    return `
+      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${bh}" rx="4" fill="${fill}" opacity="${opacity}"/>
+      <text x="${(x + barW / 2).toFixed(1)}" y="${(chartH + 14).toFixed(1)}" text-anchor="middle" font-size="10" font-family="Inter,sans-serif" fill="#64748b">${esc(d.label)}</text>
+      <text x="${(x + barW / 2).toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" font-size="10" font-family="Inter,sans-serif" font-weight="700" fill="${isMax ? '#1d4ed8' : '#475569'}">${d.pts}</text>`;
+  });
+
+  return `<svg width="100%" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;">${bars.join('')}</svg>`;
+}
+
+function _weekProfileCard(u, todayPts) {
+  const s = state.getWeekSummary(u.id);
+  const meta = Number(u.meta) || 15;
+  const metaWeek = meta * (state.store.config.days || 6);
+  const pct = metaWeek > 0 ? Math.min(100, Math.round((s.totalPts / metaWeek) * 100)) : 0;
+  const r = 28, cx = 36, cy = 36, circ = 2 * Math.PI * r;
+  const filled = circ * (pct / 100);
+  return `
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px;display:flex;align-items:center;gap:12px;">
+      <svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e2e8f0" stroke-width="5"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${esc(u.color)}" stroke-width="5"
+          stroke-dasharray="${filled.toFixed(1)} ${circ.toFixed(1)}"
+          stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+        <text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="13" font-weight="900" font-family="Outfit,sans-serif" fill="${esc(u.color)}">${pct}%</text>
+      </svg>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:800;font-size:0.95rem;color:${esc(u.color)};margin-bottom:5px;">${esc(u.name)}</div>
+        <div style="font-size:0.78rem;color:#475569;margin-bottom:2px;"><strong style="color:#1e293b;">${s.totalPts}</strong> ${tr('report.weekly.pts.week')}</div>
+        <div style="font-size:0.78rem;color:#475569;margin-bottom:2px;"><strong style="color:#1e293b;">${s.daysGoalMet}</strong> ${tr('report.weekly.days.goal')}</div>
+        <div style="font-size:0.78rem;color:#475569;"><strong style="color:#1e293b;">${s.avgPtsPerDay}</strong> ${tr('report.weekly.avg.day')}</div>
+        ${s.streak > 1 ? `<div style="font-size:0.78rem;color:#f59e0b;font-weight:700;margin-top:3px;">🔥 ${s.streak} ${tr('report.weekly.streak.label')}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function _weekHBars(aggs, totalPts) {
+  return aggs.slice(0, 9).map(t => {
+    const pct = totalPts > 0 ? Math.round((t.totalPts / totalPts) * 100) : 0;
+    return `
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:0.8rem;margin-bottom:4px;">
+          <span style="font-weight:700;color:#1e293b;max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.name)}</span>
+          <span style="color:#64748b;white-space:nowrap;font-size:0.74rem;">${pct}% &nbsp;·&nbsp; +${t.totalPts} pts &nbsp;·&nbsp; ×${t.count}</span>
+        </div>
+        <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#3b82f6,#6366f1);border-radius:4px;"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function _weekInsights(users, salaDaily, salaAggs, salaSummary) {
+  const lines = [];
+  if (salaDaily.length > 0) {
+    const best = salaDaily.reduce((a, b) => b.pts > a.pts ? b : a);
+    lines.push(tr('report.weekly.best.day', { day: `<strong>${esc(best.label)}</strong>`, pts: `<strong>${best.pts}</strong>` }));
+  }
+  if (salaAggs.length > 0) {
+    lines.push(tr('report.weekly.tasks.count', { tasks: `<strong>${salaAggs.length}</strong>`, sessions: `<strong>${salaAggs.reduce((s,t)=>s+t.count,0)}</strong>` }));
+    const top = salaAggs[0];
+    lines.push(tr('report.weekly.top.by.pts', { name: `<strong>${esc(top.name)}</strong>`, pts: top.totalPts, count: top.count }));
+    const topRep = [...salaAggs].sort((a,b)=>b.count-a.count)[0];
+    if (topRep !== top) lines.push(tr('report.weekly.top.by.count', { name: `<strong>${esc(topRep.name)}</strong>`, count: topRep.count, pts: topRep.totalPts }));
+  }
+  if (salaSummary.daysGoalMet > 0)
+    lines.push(tr('report.weekly.goal.days', { met: `<strong>${salaSummary.daysGoalMet}</strong>`, active: salaSummary.daysActive }));
+  if (salaSummary.streak > 1)
+    lines.push(tr('report.weekly.streak', { n: `<strong>${salaSummary.streak}</strong>` }));
+  // Trend
+  if (salaDaily.length >= 4) {
+    const mid = Math.floor(salaDaily.length / 2);
+    const f = salaDaily.slice(0, mid).reduce((s,d)=>s+d.pts,0);
+    const s2 = salaDaily.slice(mid).reduce((s,d)=>s+d.pts,0);
+    if (s2 > f * 1.1) lines.push(tr('report.weekly.trend.up'));
+    else if (s2 < f * 0.9) lines.push(tr('report.weekly.trend.down'));
+    else lines.push(tr('report.weekly.trend.stable'));
+  }
+  return lines;
+}
 
 export function showWeeklyReport() {
   if (!elements.weeklyReportOverlay || !elements.weeklyReportContent) return;
 
   const users = state.store.config.users || [];
-  const roomName = state.currentRoomName || 'la Sala';
+  const roomName = state.currentRoomName && state.currentRoomName !== 'la Sala' ? state.currentRoomName : tr('tracker.default.room');
   const now = new Date();
-  const dateStr = now.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
-
-  // Compute Monday of the current week
+  const dateLocale = getLang() === 'en' ? 'en-US' : 'es-ES';
+  const dateStr = now.toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
   const monday = new Date(now);
   monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
   const weekRange = `${monday.getDate().toString().padStart(2,'0')}/${(monday.getMonth()+1).toString().padStart(2,'0')} — ${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
 
-  // Sala-wide aggregates
-  const salaAggs = state.getWeekTaskAggregates(null);
+  const salaAggs   = state.getWeekTaskAggregates(null);
   const salaSummary = state.getWeekSummary(null);
-  const salaDaily = state.getWeekDailyTotals(null);
+  const salaDaily  = state.getWeekDailyTotals(null);
+  const totalActPts = salaAggs.reduce((s, t) => s + t.totalPts, 0) || 1;
+  const uniqueTasks = salaAggs.length;
+  const totalReps   = salaAggs.reduce((s, t) => s + t.count, 0);
+  const insights    = _weekInsights(users, salaDaily, salaAggs, salaSummary);
 
-  // Build report HTML
-  let html = `
+  const html = `
+    <!-- HEADER -->
     <div class="report-header">
-      <h1 class="report-title">REPORTE SEMANAL</h1>
+      <h1 class="report-title">${tr('report.weekly.title')}</h1>
       <div class="report-date">${esc(dateStr)}</div>
-      <div style="font-size:0.75rem; color:#64748b; margin-top:4px; font-weight:700; letter-spacing:0.05em;">${esc(roomName.toUpperCase())} · ${esc(weekRange)}</div>
+      <div style="font-size:0.72rem;color:#64748b;margin-top:4px;font-weight:700;letter-spacing:0.05em;">${esc(roomName.toUpperCase())} &nbsp;·&nbsp; ${esc(weekRange)}</div>
     </div>
 
-    <!-- RESUMEN DE SALA -->
-    <div class="report-subtitle">RESUMEN DE LA SALA</div>
-    <div class="summary-grid">
-      <div class="summary-card" style="border-left-color:#3b82f6">
-        <span class="summary-label">PUNTOS TOTALES</span>
-        <span class="summary-value" style="color:#3b82f6">${salaSummary.totalPts}</span>
-      </div>
-      <div class="summary-card" style="border-left-color:#10b981">
-        <span class="summary-label">DÍAS ACTIVOS</span>
-        <span class="summary-value" style="color:#10b981">${salaSummary.daysActive}</span>
-      </div>
-      <div class="summary-card" style="border-left-color:#f59e0b">
-        <span class="summary-label">PROMEDIO / DÍA</span>
-        <span class="summary-value" style="color:#f59e0b">${salaSummary.avgPtsPerDay}</span>
-      </div>
+    <!-- 6 KPI CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:20px;">
+      ${_weekStatCard(tr('report.weekly.kpi.pts'), salaSummary.totalPts, '#3b82f6')}
+      ${_weekStatCard(tr('report.weekly.kpi.days'), salaSummary.daysActive, '#10b981')}
+      ${_weekStatCard(tr('report.weekly.kpi.goal'), salaSummary.daysGoalMet, '#f59e0b')}
+      ${_weekStatCard(tr('report.weekly.kpi.avg'), salaSummary.avgPtsPerDay, '#6366f1')}
+      ${_weekStatCard(tr('report.weekly.kpi.tasks'), uniqueTasks, '#ec4899')}
+      ${_weekStatCard(tr('report.weekly.kpi.streak'), salaSummary.streak > 0 ? tr('report.weekly.streak.val', { n: salaSummary.streak }) : tr('report.weekly.no.streak'), '#f97316')}
     </div>
 
-    <!-- TENDENCIA DÍA A DÍA -->
-    ${salaDaily.length > 0 ? `
-    <div class="report-subtitle" style="margin-top:18px;">TENDENCIA DE LA SEMANA</div>
-    <table class="doc-table">
-      <thead><tr><th>DÍA</th><th style="text-align:right;">PTS SALA</th></tr></thead>
-      <tbody>
-        ${salaDaily.map(d => `<tr><td style="font-weight:700;">${esc(d.label)}</td><td style="text-align:right; font-weight:700; color:#3b82f6;">+${d.pts}</td></tr>`).join('')}
-      </tbody>
-    </table>` : ''}
+    <!-- SVG BAR CHART -->
+    <div class="report-subtitle">${tr('report.weekly.days.chart')}</div>
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 14px 6px;margin-bottom:20px;">
+      ${salaDaily.length > 0 ? _weekSvgBars(salaDaily) : `<div style="text-align:center;color:#94a3b8;padding:20px 0;font-size:0.85rem;">${tr('report.weekly.no.data')}</div>`}
+    </div>
 
     <!-- POR PERFIL -->
-    <div class="report-subtitle" style="margin-top:18px;">POR PERFIL</div>
-    <div class="summary-grid" style="margin-bottom:16px;">
-      ${users.map(u => {
-        const s = state.getWeekSummary(u.id);
-        const meta = Number(u.meta) || 15;
-        const metaWeek = meta * (state.store.config.days || 6);
-        const pct = metaWeek > 0 ? Math.min(100, Math.round((s.totalPts / metaWeek) * 100)) : 0;
-        return `
-          <div class="summary-card" style="border-left-color:${esc(u.color)}">
-            <span class="summary-label" style="color:${esc(u.color)}">${esc(u.name.toUpperCase())}</span>
-            <span class="summary-value" style="color:${esc(u.color)}">${s.totalPts} pts</span>
-            <span class="summary-label">${s.daysGoalMet} días meta · ${pct}% semana${s.streak > 1 ? ` · 🔥${s.streak}` : ''}</span>
-          </div>
-        `;
-      }).join('')}
+    <div class="report-subtitle">${tr('report.weekly.by.profile')}</div>
+    <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:20px;">
+      ${users.map(u => _weekProfileCard(u)).join('')}
     </div>
 
-    <!-- BLOQUE A: Ranking por puntos acumulados -->
+    <!-- DÓNDE SE VA LA FUERZA -->
     ${salaAggs.length > 0 ? `
-    <div class="report-subtitle">TAREAS MÁS PESADAS (ACUMULADO)</div>
-    <table class="doc-table">
-      <thead><tr><th>#</th><th>ACTIVIDAD</th><th style="text-align:right;">TOTAL PTS</th><th style="text-align:right;">VECES</th></tr></thead>
-      <tbody>
-        ${salaAggs.slice(0,8).map((t,i) => `
-          <tr>
-            <td style="color:#64748b; font-size:0.75rem;">${i+1}</td>
-            <td style="font-weight:700;">${esc(t.name)}</td>
-            <td style="text-align:right; font-weight:700; color:#3b82f6;">+${t.totalPts}</td>
-            <td style="text-align:right; color:#64748b;">×${t.count}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-
-    <!-- BLOQUE B: Top eventos sueltos más caros -->
-    <div class="report-subtitle" style="margin-top:18px;">TAREAS MÁS PESADAS (EVENTO SINGULAR)</div>
-    <table class="doc-table">
-      <thead><tr><th>#</th><th>ACTIVIDAD</th><th style="text-align:right;">MAX PTS</th></tr></thead>
-      <tbody>
-        ${[...salaAggs].sort((a,b) => b.maxSingle - a.maxSingle).slice(0,8).map((t,i) => `
-          <tr>
-            <td style="color:#64748b; font-size:0.75rem;">${i+1}</td>
-            <td style="font-weight:700;">${esc(t.name)}</td>
-            <td style="text-align:right; font-weight:700; color:#f59e0b;">+${t.maxSingle}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-
-    <!-- BLOQUE: Más repetidas -->
-    <div class="report-subtitle" style="margin-top:18px;">ACTIVIDADES MÁS REPETIDAS</div>
-    <table class="doc-table">
-      <thead><tr><th>#</th><th>ACTIVIDAD</th><th style="text-align:right;">VECES</th><th style="text-align:right;">TOTAL PTS</th></tr></thead>
-      <tbody>
-        ${[...salaAggs].sort((a,b) => b.count - a.count).slice(0,8).map((t,i) => `
-          <tr>
-            <td style="color:#64748b; font-size:0.75rem;">${i+1}</td>
-            <td style="font-weight:700;">${esc(t.name)}</td>
-            <td style="text-align:right; font-weight:700; color:#10b981;">×${t.count}</td>
-            <td style="text-align:right; color:#64748b;">+${t.totalPts}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-
-    <!-- BLOQUE: Dónde se va la fuerza (% del total) -->
-    <div class="report-subtitle" style="margin-top:18px;">DÓNDE SE VA LA FUERZA</div>
-    <div style="margin-bottom:8px;">
-      ${(() => {
-        const totalPts = salaAggs.reduce((s,t) => s + t.totalPts, 0) || 1;
-        return salaAggs.slice(0,10).map(t => {
-          const pct = Math.round((t.totalPts / totalPts) * 100);
-          return `
-            <div style="margin-bottom:8px;">
-              <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:700; margin-bottom:3px;">
-                <span style="color:#1e293b; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px;">${esc(t.name)}</span>
-                <span style="color:#3b82f6;">${pct}% · +${t.totalPts} pts</span>
-              </div>
-              <div style="height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
-                <div style="height:100%; width:${pct}%; background:#3b82f6; border-radius:3px;"></div>
-              </div>
-            </div>
-          `;
-        }).join('');
-      })()}
+    <div class="report-subtitle">${tr('report.weekly.where.force')}</div>
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:20px;">
+      ${_weekHBars(salaAggs, totalActPts)}
     </div>
-    ` : `<div style="text-align:center; padding:20px; color:#64748b; font-size:0.85rem;">Aún no hay datos de esta semana. Los datos se acumulan a partir de mañana.</div>`}
+
+    <!-- DOS TABLAS EN PARALELO -->
+    <div style="display:flex;flex-direction:column;gap:20px;margin-bottom:20px;">
+      <div>
+        <div class="report-subtitle" style="margin-top:0;">${tr('report.weekly.most.rep')}</div>
+        <table class="doc-table">
+          <thead><tr><th>#</th><th>${tr('report.weekly.col.activity')}</th><th style="text-align:right;">${tr('report.weekly.col.times')}</th><th style="text-align:right;">${tr('report.weekly.col.pts')}</th></tr></thead>
+          <tbody>
+            ${[...salaAggs].sort((a,b)=>b.count-a.count).slice(0,7).map((t,i)=>`
+              <tr>
+                <td style="color:#94a3b8;font-size:0.7rem;">${i+1}</td>
+                <td style="font-weight:700;font-size:0.78rem;">${esc(t.name)}</td>
+                <td style="text-align:right;font-weight:700;color:#10b981;">×${t.count}</td>
+                <td style="text-align:right;color:#64748b;font-size:0.78rem;">+${t.totalPts}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="report-subtitle" style="margin-top:0;">${tr('report.weekly.heaviest')}</div>
+        <table class="doc-table">
+          <thead><tr><th>#</th><th>${tr('report.weekly.col.activity')}</th><th style="text-align:right;">${tr('report.weekly.col.total')}</th><th style="text-align:right;">${tr('report.weekly.col.max')}</th></tr></thead>
+          <tbody>
+            ${salaAggs.slice(0,7).map((t,i)=>`
+              <tr>
+                <td style="color:#94a3b8;font-size:0.7rem;">${i+1}</td>
+                <td style="font-weight:700;font-size:0.78rem;">${esc(t.name)}</td>
+                <td style="text-align:right;font-weight:700;color:#3b82f6;">+${t.totalPts}</td>
+                <td style="text-align:right;color:#f59e0b;font-size:0.78rem;">+${t.maxSingle}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : ''}
+
+    <!-- INSIGHTS -->
+    ${insights.length > 0 ? `
+    <div class="report-subtitle">${tr('report.weekly.insights')}</div>
+    <div style="background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1px solid #bfdbfe;border-radius:8px;padding:16px;margin-bottom:20px;">
+      <ul style="margin:0;padding-left:18px;list-style:disc;">
+        ${insights.map(i=>`<li style="font-size:0.84rem;color:#1e293b;margin-bottom:7px;line-height:1.5;">${i}</li>`).join('')}
+      </ul>
+    </div>` : ''}
+
+    ${salaAggs.length === 0 ? `
+    <div style="text-align:center;padding:30px;color:#94a3b8;font-size:0.88rem;border:1px dashed #e2e8f0;border-radius:8px;">
+      ${tr('report.weekly.no.detail')}
+    </div>` : ''}
   `;
 
   elements.weeklyReportContent.innerHTML = html;
@@ -1238,7 +1567,7 @@ export function populateShoppingUsers() {
   const select = elements.shopItemUser;
   if (select) {
     const currentVal = select.value;
-    const roomName = state.currentRoomName || 'la Sala';
+    const roomName = state.currentRoomName && state.currentRoomName !== 'la Sala' ? state.currentRoomName : tr('tracker.default.room');
     select.innerHTML = '';
     const roomOpt = document.createElement('option');
     roomOpt.value = 'casa';
@@ -1266,6 +1595,12 @@ export function toggleShoppingTab(tabId) {
   const addBtn = elements.btnTabShoppingAdd;
   const savedBtn = elements.btnTabShoppingSaved;
 
+  // Scroll to top
+  const screenShopping = document.getElementById('screenShopping');
+  if (screenShopping) {
+    screenShopping.scrollTop = 0;
+  }
+
   // Hide all, deactivate all buttons
   [viewTab, addTab, savedTab].forEach(t => t && t.classList.add('hidden'));
   [viewBtn, addBtn, savedBtn].forEach(b => b && b.classList.remove('active'));
@@ -1281,11 +1616,7 @@ export function toggleShoppingTab(tabId) {
     if (elements.shopItemName) elements.shopItemName.value = '';
     if (elements.shopItemQty) elements.shopItemQty.value = '';
     if (elements.shopItemImage) elements.shopItemImage.value = '';
-    if (elements.shopImageFileName) elements.shopImageFileName.innerText = 'Sin foto seleccionada';
-    if (elements.btnRemoveShopImage) elements.btnRemoveShopImage.style.display = 'none';
-    if (elements.shopImagePreviewContainer) elements.shopImagePreviewContainer.style.display = 'none';
-    if (elements.shopImagePreview) elements.shopImagePreview.src = '';
-  } else if (tabId === 'saved') {
+} else if (tabId === 'saved') {
     if (savedTab) savedTab.classList.remove('hidden');
     if (savedBtn) savedBtn.classList.add('active');
     renderSavedLists();
@@ -1302,59 +1633,113 @@ export function renderSavedLists() {
   const lists = state.getSavedShoppingLists();
 
   if (emptyEl) emptyEl.style.display = lists.length === 0 ? 'block' : 'none';
-  if (limitHint) limitHint.style.display = lists.length >= 3 ? 'block' : 'none';
-  if (createBtn) createBtn.style.display = lists.length >= 3 ? 'none' : 'flex';
+  if (limitHint) limitHint.style.display = lists.length >= 10 ? 'block' : 'none';
+  if (createBtn) createBtn.style.display = lists.length >= 10 ? 'none' : 'flex';
 
   container.innerHTML = '';
   lists.forEach(list => {
     const items = list.items || [];
+    const isCardCollapsed = localStorage.getItem(`collapsed_saved_list_${list.id}`) === 'true';
+
+    const allTags = [];
+    items.forEach(it => {
+      (it.tags || []).forEach(t => {
+        if (!allTags.includes(t)) allTags.push(t);
+      });
+    });
+
+    const activeFilter = activeSavedListFilters[list.id] || '';
+    const displayedItems = activeFilter
+      ? items.filter(it => (it.tags || []).includes(activeFilter))
+      : items;
+
+    let filtersHtml = '';
+    if (allTags.length > 0) {
+      filtersHtml = `
+        <div class="saved-list-filters" style="display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
+          <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">${tr('saved.filter.label')}</span>
+          <span class="filter-pill ${!activeFilter ? 'active' : ''}" data-tag="" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${!activeFilter ? '#3b82f6' : 'rgba(15,23,42,0.05)'}; color:${!activeFilter ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${tr('saved.filter.all')}</span>
+          ${allTags.map(tag => {
+            const isActive = activeFilter === tag;
+            return `<span class="filter-pill ${isActive ? 'active' : ''}" data-tag="${esc(tag)}" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${isActive ? '#3b82f6' : 'rgba(15,23,42,0.05)'}; color:${isActive ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${esc(tag)}</span>`;
+          }).join('')}
+        </div>
+      `;
+    }
+
     const card = document.createElement('div');
+    card.className = 'saved-list-card';
     card.style.cssText = 'background:var(--card-bg); border:1px solid var(--card-border); border-radius:var(--radius-md); padding:16px; margin-bottom:16px; box-shadow:0 4px 12px rgba(15,23,42,0.02);';
 
     card.innerHTML = `
-      <!-- Header -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <span style="font-weight:800; font-size:1rem; color:var(--text-primary);">${esc(list.name)}</span>
+        <div style="display:flex; align-items:center; gap:6px; cursor:pointer;" data-action="toggle-collapse" data-id="${esc(list.id)}">
+          <button style="border:none; background:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; width:24px; height:24px; pointer-events:none; transition: transform 0.2s; ${isCardCollapsed ? '' : 'transform: rotate(90deg);'}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+          <span style="font-weight:800; font-size:1rem; color:var(--text-primary);">${esc(list.name)}</span>
+        </div>
         <div style="display:flex; gap:6px;">
-          <button data-action="rename" data-id="${esc(list.id)}" style="border:none; background:rgba(15,23,42,0.06); border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="Renombrar">
+          <button data-action="toggle-edit-panel" data-id="${esc(list.id)}" style="border:none; background:rgba(79,70,229,0.08); border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#4f46e5;" title="${esc(tr('saved.edit.panel.tooltip'))}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          </button>
+          <button data-action="rename" data-id="${esc(list.id)}" style="border:none; background:rgba(15,23,42,0.06); border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="${esc(tr('saved.rename.tooltip'))}">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
           </button>
-          <button data-action="delete" data-id="${esc(list.id)}" style="border:none; background:rgba(220,38,38,0.08); border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--danger);" title="Eliminar lista">
+          <button data-action="delete" data-id="${esc(list.id)}" style="border:none; background:rgba(220,38,38,0.08); border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--danger);" title="${esc(tr('saved.delete.tooltip'))}">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>
           </button>
         </div>
       </div>
 
-      <!-- Items checklist -->
-      <div style="margin-bottom:14px;">
-        ${items.length === 0
-          ? `<p style="font-size:0.82rem; color:var(--text-muted); margin:0 0 10px;">Lista vacía — pegá tus artículos abajo.</p>`
-          : items.map(item => `
-            <label style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--card-border); cursor:pointer;">
-              <input type="checkbox" class="saved-item-check" data-item-id="${esc(item.id)}" style="width:17px; height:17px; flex-shrink:0; accent-color:#3b82f6; cursor:pointer;">
-              <span style="flex:1; font-size:0.9rem; color:var(--text-primary);">${esc(item.name)}${item.qty ? `<span style="color:var(--text-muted); font-size:0.78rem; margin-left:5px;">${esc(item.qty)}</span>` : ''}</span>
-              <button data-action="remove-item" data-list-id="${esc(list.id)}" data-item-id="${esc(item.id)}" style="border:none; background:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem; line-height:1; padding:0 4px; flex-shrink:0;">×</button>
-            </label>
-          `).join('')
-        }
-      </div>
+      <div class="saved-list-body" id="savedListBody_${list.id}" style="display:${isCardCollapsed ? 'none' : 'block'};">
+        ${filtersHtml}
+        <div style="margin-bottom:14px;">
+          ${displayedItems.length === 0
+            ? `<p style="font-size:0.82rem; color:var(--text-muted); margin:0 0 10px;">${tr('saved.list.empty')}</p>`
+            : displayedItems.map(item => {
+              const itemTagsHtml = (item.tags || []).map(t => {
+                const s = getTagStyle(t);
+                return `<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; font-weight:700; background:${s.bg}; color:${s.text}; border:1px solid ${s.border}; margin-left:4px; display:inline-block;">${esc(t)}</span>`;
+              }).join('');
 
-      <!-- Bulk add textarea -->
-      <textarea class="saved-list-bulk" placeholder="Añadir artículos (uno por línea):&#10;Leche&#10;Pan&#10;Jabón x2..." style="width:100%; min-height:72px; resize:vertical; padding:10px; border:1px solid var(--card-border); border-radius:var(--radius-md); font-family:var(--font-body); font-size:0.88rem; margin-bottom:10px; box-sizing:border-box;"></textarea>
-      <button class="btn-save saved-list-bulk-add" data-list-id="${esc(list.id)}" style="width:100%; margin:0 0 14px; background:#475569; box-shadow:none; font-size:0.88rem; padding:10px;">Guardar en la lista</button>
+              return `
+                <label style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--card-border); cursor:pointer;">
+                  <input type="checkbox" class="saved-item-check" checked data-item-id="${esc(item.id)}" style="width:17px; height:17px; flex-shrink:0; accent-color:#3b82f6; cursor:pointer;">
+                  <span style="flex:1; font-size:0.9rem; color:var(--text-primary); display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
+                    ${esc(item.name)}
+                    ${item.qty ? `<span style="color:var(--text-muted); font-size:0.78rem;">(${esc(item.qty)})</span>` : ''}
+                    ${itemTagsHtml}
+                  </span>
+                  <button data-action="edit-item" data-list-id="${esc(list.id)}" data-item-id="${esc(item.id)}" style="border:none; background:none; color:var(--text-muted); cursor:pointer; font-size:0.9rem; padding:4px 6px; display:flex; align-items:center;" title="${esc(tr('saved.edit.item.tooltip'))}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                  </button>
+                  <button data-action="remove-item" data-list-id="${esc(list.id)}" data-item-id="${esc(item.id)}" style="border:none; background:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem; line-height:1; padding:0 4px; flex-shrink:0;">×</button>
+                </label>
+              `;
+            }).join('')
+          }
+        </div>
 
-      <!-- Action row -->
-      <div style="display:flex; gap:8px;">
-        <button class="btn-save saved-list-use-selected" data-list-id="${esc(list.id)}" style="flex:1; margin:0; padding:10px 8px; font-size:0.82rem; background:#334155; box-shadow:none;">Añadir marcados</button>
-        <button class="btn-save saved-list-use-all" data-list-id="${esc(list.id)}" style="flex:1; margin:0; padding:10px 8px; font-size:0.82rem; background:var(--active-color); box-shadow:none;">Pedir todo</button>
-        <button class="btn-save saved-list-share" data-list-id="${esc(list.id)}" style="flex:0 0 42px; margin:0; padding:10px; background:#7c3aed; box-shadow:none; display:flex; align-items:center; justify-content:center;" title="Compartir">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-save saved-list-use-selected" data-list-id="${esc(list.id)}" style="flex:1; margin:0; padding:10px 8px; font-size:0.82rem; background:#334155; box-shadow:none;">${tr('saved.use.selected')}</button>
+          <button class="btn-save saved-list-use-all" data-list-id="${esc(list.id)}" style="flex:1; margin:0; padding:10px 8px; font-size:0.82rem; background:var(--active-color); box-shadow:none;">${tr('saved.use.all')}</button>
+          <button class="btn-save saved-list-share" data-list-id="${esc(list.id)}" style="flex:0 0 42px; margin:0; padding:10px; background:#7c3aed; box-shadow:none; display:flex; align-items:center; justify-content:center;" title="${esc(tr('saved.share.tooltip'))}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          </button>
+        </div>
       </div>
     `;
 
-    // Header button events (rename / delete / remove-item)
     card.addEventListener('click', e => {
+      const filterPill = e.target.closest('.filter-pill');
+      if (filterPill) {
+        const tag = filterPill.dataset.tag;
+        activeSavedListFilters[list.id] = tag;
+        renderSavedLists();
+        return;
+      }
+
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
       const action = btn.dataset.action;
@@ -1363,13 +1748,13 @@ export function renderSavedLists() {
       const itemId = btn.dataset.itemId;
 
       if (action === 'delete') {
-        showConfirm(`¿Eliminar la lista "${esc(list.name)}"?`, () => {
+        showConfirm(tr('confirm.delete.list', { name: list.name }), () => {
           state.deleteSavedShoppingList(id);
           renderSavedLists();
-          showToast('Lista eliminada');
+          showToast(tr('toast.list.deleted'));
         });
       } else if (action === 'rename') {
-        const newName = prompt('Nuevo nombre:', list.name);
+        const newName = prompt(tr('saved.rename.prompt'), list.name);
         if (newName && newName.trim()) {
           state.renameSavedShoppingList(id, newName.trim());
           renderSavedLists();
@@ -1377,66 +1762,116 @@ export function renderSavedLists() {
       } else if (action === 'remove-item') {
         state.removeItemFromSavedList(listId, itemId);
         renderSavedLists();
+      } else if (action === 'toggle-collapse') {
+        const collapsedKey = `collapsed_saved_list_${id}`;
+        const currentlyCollapsed = localStorage.getItem(collapsedKey) === 'true';
+        localStorage.setItem(collapsedKey, currentlyCollapsed ? 'false' : 'true');
+        renderSavedLists();
+      } else if (action === 'toggle-edit-panel') {
+        const currentList = state.getSavedShoppingLists().find(l => l.id === id);
+        if (currentList) {
+          elements.editSavedListModalName.value = currentList.name;
+          elements.editSavedListModal.dataset.listId = id;
+          if (Array.isArray(currentList.items)) {
+            elements.editSavedListModalItems.value = currentList.items.map(it => {
+              let lineStr = it.name;
+              if (it.qty) {
+                lineStr += ` x${it.qty}`;
+              }
+              if (it.tags && it.tags.length > 0) {
+                lineStr += ` ${it.tags.map(t => `#${t}`).join(' ')}`;
+              }
+              return lineStr;
+            }).join('\n');
+          } else {
+            elements.editSavedListModalItems.value = '';
+          }
+          openModal(elements.editSavedListModal);
+          setTimeout(() => elements.editSavedListModalItems.focus(), 100);
+        }
+      } else if (action === 'edit-item') {
+        const labelRow = btn.closest('label');
+        if (!labelRow) return;
+        const itemObj = items.find(i => i.id === itemId);
+        if (!itemObj) return;
+
+        const editDiv = document.createElement('div');
+        editDiv.style.cssText = 'display:flex; flex-direction:column; gap:8px; padding:10px; border-bottom:1px solid var(--card-border); background:rgba(15,23,42,0.01); width:100%; border-radius:6px; box-sizing:border-box; margin:4px 0;';
+        editDiv.innerHTML = `
+          <div style="display:flex; gap:6px; align-items:center;">
+            <input type="text" class="edit-item-name" value="${esc(itemObj.name)}" placeholder="${esc(tr('saved.item.name'))}" style="flex:2; margin:0; padding:6px 10px; font-size:0.85rem;">
+            <input type="text" class="edit-item-qty" value="${esc(itemObj.qty)}" placeholder="${esc(tr('saved.item.qty'))}" style="flex:1; margin:0; padding:6px 10px; font-size:0.85rem; max-width:65px;">
+          </div>
+          <div>
+            <input type="text" class="edit-item-tags" value="${esc((itemObj.tags || []).join(', '))}" placeholder="${esc(tr('saved.item.tags'))}" style="width:100%; margin:0; padding:6px 10px; font-size:0.85rem;">
+          </div>
+          <div style="display:flex; gap:6px; justify-content:flex-end;">
+            <button class="btn-save save-inline-edit" style="width:auto; margin:0; padding:6px 12px; font-size:0.78rem; background:#3b82f6;">${tr('saved.save.btn')}</button>
+            <button class="btn-confirm-no cancel-inline-edit" style="width:auto; margin:0; padding:6px 12px; font-size:0.78rem;">${tr('saved.cancel.btn')}</button>
+          </div>
+        `;
+        
+        labelRow.style.display = 'none';
+        labelRow.parentNode.insertBefore(editDiv, labelRow);
+
+        editDiv.querySelector('.cancel-inline-edit').onclick = (ev) => {
+          ev.preventDefault();
+          editDiv.remove();
+          labelRow.style.display = 'flex';
+        };
+
+        editDiv.querySelector('.save-inline-edit').onclick = (ev) => {
+          ev.preventDefault();
+          const nameVal = editDiv.querySelector('.edit-item-name').value.trim();
+          const qtyVal = editDiv.querySelector('.edit-item-qty').value.trim();
+          const tagsVal = editDiv.querySelector('.edit-item-tags').value;
+          const parsedTags = tagsVal.split(',').map(t => t.trim()).filter(Boolean);
+
+          if (!nameVal) {
+            showToast(tr('toast.item.empty'), 'warning');
+            return;
+          }
+
+          state.updateItemInSavedList(listId, itemId, nameVal, qtyVal, parsedTags);
+          showToast(tr('saved.item.updated'));
+          renderSavedLists();
+        };
       }
     });
 
-    // Bulk add from textarea
-    const bulkBtn = card.querySelector('.saved-list-bulk-add');
-    const textarea = card.querySelector('.saved-list-bulk');
-    if (bulkBtn && textarea) {
-      bulkBtn.onclick = () => {
-        const raw = textarea.value.trim();
-        if (!raw) { showToast('Escribe al menos un artículo.', 'warning'); return; }
-        // Parse lines: each line becomes an item, optionally "nombre x2" or "nombre (2L)"
-        const lines = raw.split('\n').map(l => l.replace(/^[-*•\d.\)\s]+/, '').trim()).filter(Boolean);
-        lines.forEach(line => {
-          const qtyMatch = line.match(/\s+(?:x|×)(\d+\S*)$/i) || line.match(/\s+\(([^)]+)\)$/);
-          const qty = qtyMatch ? qtyMatch[1] : '';
-          const name = qtyMatch ? line.slice(0, line.length - qtyMatch[0].length).trim() : line;
-          if (name) state.addItemToSavedList(list.id, name, qty);
-        });
-        textarea.value = '';
-        showToast(`${lines.length} artículo${lines.length !== 1 ? 's' : ''} guardado${lines.length !== 1 ? 's' : ''}`);
-        renderSavedLists();
-      };
-    }
-
-    // Use selected (only checked items)
     const useSelectedBtn = card.querySelector('.saved-list-use-selected');
     if (useSelectedBtn) {
       useSelectedBtn.onclick = () => {
         const listId = useSelectedBtn.dataset.listId;
         const checks = card.querySelectorAll('.saved-item-check:checked');
-        if (!checks.length) { showToast('Marca los artículos que querés añadir.', 'warning'); return; }
+        if (!checks.length) { showToast(tr('toast.list.select.first'), 'warning'); return; }
         const selectedIds = [...checks].map(c => c.dataset.itemId);
         const count = state.addSavedListToShopping(listId, selectedIds, 'casa');
-        showToast(`${count} artículo${count !== 1 ? 's' : ''} añadido${count !== 1 ? 's' : ''} a la compra`);
+        showToast(plural('toast.list.added.shop', count));
         toggleShoppingTab('list');
       };
     }
 
-    // Use all
     const useAllBtn = card.querySelector('.saved-list-use-all');
     if (useAllBtn) {
       useAllBtn.onclick = () => {
         const count = state.addSavedListToShopping(useAllBtn.dataset.listId, null, 'casa');
-        showToast(`${count} artículo${count !== 1 ? 's' : ''} añadido${count !== 1 ? 's' : ''} a la compra`);
+        showToast(plural('toast.list.added.shop', count));
         toggleShoppingTab('list');
       };
     }
 
-    // Share
     const shareBtn = card.querySelector('.saved-list-share');
     if (shareBtn) {
       shareBtn.onclick = () => {
         const text = state.buildShareText(shareBtn.dataset.listId);
-        if (!text) { showToast('La lista está vacía.', 'warning'); return; }
+        if (!text) { showToast(tr('toast.list.empty'), 'warning'); return; }
         if (navigator.share) {
           navigator.share({ title: list.name, text }).catch(() => {});
         } else {
           navigator.clipboard.writeText(text)
-            .then(() => showToast('Lista copiada al portapapeles'))
-            .catch(() => showToast('No se pudo copiar.', 'error'));
+            .then(() => showToast(tr('toast.list.copied')))
+            .catch(() => showToast(tr('toast.list.copy.err'), 'error'));
         }
       };
     }
@@ -1492,8 +1927,54 @@ function _applyShopGrid(container) {
   }
 }
 
+function renderGeneralShoppingFilters() {
+  const container = document.getElementById('generalShoppingFilters');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const rawItems = state.store.shoppingList || [];
+  const allTags = [];
+  rawItems.forEach(it => {
+    (it.tags || []).forEach(t => {
+      if (!allTags.includes(t)) allTags.push(t);
+    });
+  });
+  
+  if (allTags.length === 0) {
+    activeGeneralListFilter = '';
+    return;
+  }
+  
+  const activeFilter = activeGeneralListFilter || '';
+  
+  const div = document.createElement('div');
+  div.className = 'saved-list-filters';
+  div.style.cssText = 'display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; align-items:center;';
+  
+  div.innerHTML = `
+    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">${tr('saved.filter.label')}</span>
+    <span class="filter-pill ${!activeFilter ? 'active' : ''}" data-tag="" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${!activeFilter ? 'var(--active-color)' : 'rgba(15,23,42,0.05)'}; color:${!activeFilter ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${tr('saved.filter.all')}</span>
+    ${allTags.map(tag => {
+      const isActive = activeFilter === tag;
+      return `<span class="filter-pill ${isActive ? 'active' : ''}" data-tag="${esc(tag)}" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${isActive ? 'var(--active-color)' : 'rgba(15,23,42,0.05)'}; color:${isActive ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${esc(tag)}</span>`;
+    }).join('')}
+  `;
+  
+  div.querySelectorAll('.filter-pill').forEach(pill => {
+    pill.onclick = () => {
+      activeGeneralListFilter = pill.dataset.tag;
+      renderShoppingList();
+    };
+  });
+  
+  container.appendChild(div);
+}
+
 export function renderShoppingList() {
   _applyShopGrid(elements.shoppingListDisplay, false);
+  
+  renderGeneralShoppingFilters();
+  
   renderShoppingItemsInto(elements.shoppingListDisplay);
   if (elements.shoppingFullscreenModal && elements.shoppingFullscreenModal.classList.contains('open')) {
     _applyShopGrid(elements.shoppingListFullscreenDisplay, true);
@@ -1505,17 +1986,20 @@ function renderShoppingItemsInto(list) {
   if (!list) return;
   list.innerHTML = '';
 
-  const items = state.store.shoppingList || [];
+  const rawItems = state.store.shoppingList || [];
+  const items = activeGeneralListFilter
+    ? rawItems.filter(it => (it.tags || []).includes(activeGeneralListFilter))
+    : rawItems;
   const isTile = shopCols === 2;
 
   if (items.length === 0) {
-    list.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No hay compras pendientes. ¡Todo al día!</div>`;
+    list.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">${tr('shop.empty')}</div>`;
     return;
   }
 
-  const roomName = state.currentRoomName || 'la Sala';
+  const roomName = state.currentRoomName && state.currentRoomName !== 'la Sala' ? state.currentRoomName : tr('tracker.default.room');
 
-  items.forEach((item, index) => {
+  items.forEach((item) => {
     let targetBadge = '';
     if (!item.assignedTo || item.assignedTo === 'casa') {
       targetBadge = `<span class="shop-badge-room">${esc(roomName)}</span>`;
@@ -1526,7 +2010,7 @@ function renderShoppingItemsInto(list) {
       targetBadge = `<span class="shop-badge-user" style="background:${esc(color)}15;color:${esc(color)};border-color:${esc(color)}30;">${esc(name)}</span>`;
     }
 
-    const displayName = item.name && item.name.trim() ? item.name : 'Artículo en foto';
+    const displayName = item.name && item.name.trim() ? item.name : tr('shop.item.photo.fallback');
     const hasImage = !!item.image;
 
     const card = document.createElement('div');
@@ -1546,10 +2030,14 @@ function renderShoppingItemsInto(list) {
           <div class="shop-tile-meta">
             ${item.qty ? `<span class="shop-qty">${esc(item.qty)}</span>` : ''}
             ${targetBadge}
+            ${(item.tags || []).map(t => {
+              const s = getTagStyle(t);
+              return `<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; font-weight:700; background:${s.bg}; color:${s.text}; border:1px solid ${s.border}; margin-left:2px; display:inline-block;">${esc(t)}</span>`;
+            }).join('')}
           </div>
           <div class="shop-tile-btns">
-            <button class="shop-tile-btn shop-tile-buy" title="Comprado"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Comprado</button>
-            <button class="shop-tile-btn shop-tile-del" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            <button class="shop-tile-btn shop-tile-buy" title="${esc(tr('shop.item.bought'))}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> ${tr('shop.item.bought')}</button>
+            <button class="shop-tile-btn shop-tile-del" title="${esc(tr('shop.item.delete'))}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
         </div>
       `;
@@ -1563,27 +2051,31 @@ function renderShoppingItemsInto(list) {
             <div class="shop-card-meta">
               ${item.qty ? `<span class="shop-qty">${esc(item.qty)}</span>` : ''}
               ${targetBadge}
+              ${(item.tags || []).map(t => {
+                const s = getTagStyle(t);
+                return `<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; font-weight:700; background:${s.bg}; color:${s.text}; border:1px solid ${s.border}; margin-left:2px; display:inline-block;">${esc(t)}</span>`;
+              }).join('')}
             </div>
           </div>
           <div class="shop-card-btns">
-            <button class="btn-buy-shop" title="Comprado"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
-            <button class="btn-del-shop" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            <button class="btn-buy-shop" title="${esc(tr('shop.item.bought'))}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+            <button class="btn-del-shop" title="${esc(tr('shop.item.delete'))}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
         </div>
         <div class="shop-card-detail" style="display:none;">
           ${hasImage ? `<img class="shop-card-detail-img" src="${esc(item.image)}" alt="${esc(displayName)}">` : ''}
-          ${item.qty ? `<div class="shop-card-detail-row"><span class="shop-detail-label">Cantidad:</span> ${esc(item.qty)}</div>` : ''}
-          <div class="shop-card-detail-row"><span class="shop-detail-label">Para:</span> ${targetBadge}</div>
+          ${item.qty ? `<div class="shop-card-detail-row"><span class="shop-detail-label">${tr('shop.detail.qty')}</span> ${esc(item.qty)}</div>` : ''}
+          <div class="shop-card-detail-row"><span class="shop-detail-label">${tr('shop.detail.for')}</span> ${targetBadge}</div>
         </div>
       `;
     }
 
     // ── Actions ──
-    const doBuy = () => { state.buyShoppingItem(index); showToast(`${displayName} comprado`); };
+    const doBuy = () => { state.buyShoppingItem(item.id); showToast(tr('toast.item.bought', { name: displayName })); };
     const doDelete = () => {
-      showConfirm(`¿Eliminar "${displayName}"?`, () => {
-        state.deleteShoppingItem(index);
-        showToast("Artículo eliminado");
+      showConfirm(tr('confirm.delete.item', { name: displayName }), () => {
+        state.deleteShoppingItem(item.id);
+        showToast(tr('toast.item.deleted'));
       });
     };
 
@@ -1654,7 +2146,7 @@ function renderTodayLogInto(container) {
   container.innerHTML = '';
   const logs = [...state.store.todayLog].reverse();
   if (logs.length === 0) {
-    container.innerHTML = `<div style="padding:40px 20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">No hay actividad registrada hoy todavía.</div>`;
+    container.innerHTML = `<div style="padding:40px 20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">${tr('tracker.empty')}</div>`;
     return;
   }
   logs.forEach(x => {
@@ -1686,7 +2178,7 @@ export function resetTplForm() {
   if (elements.tplName) elements.tplName.value = "";
   if (elements.tplPts) elements.tplPts.value = "";
   if (elements.editTplIndex) elements.editTplIndex.value = "";
-  if (elements.tplFormTitle) elements.tplFormTitle.innerText = "NUEVA RUTINA";
+  if (elements.tplFormTitle) elements.tplFormTitle.innerText = tr('routines.new');
   if (elements.btnDeleteTpl) elements.btnDeleteTpl.style.display = 'none';
 }
 
@@ -1777,12 +2269,12 @@ export function renderRoomsList(rooms, onOpen) {
   rooms.forEach(r => {
     const card = document.createElement('div');
     card.className = 'room-card';
-    const roleLabel = r.role === 'owner' ? 'Dueño' : 'Miembro';
+    const roleLabel = r.role === 'owner' ? tr('role.owner') : tr('role.member');
     const badgeClass = r.role === 'owner' ? 'badge-owner' : 'badge-member';
     card.innerHTML = `
       <div style="overflow:hidden;">
         <div class="room-card-name">${esc(r.name)}</div>
-        <div class="room-card-meta">${r.memberCount} miembro${r.memberCount === 1 ? '' : 's'}</div>
+        <div class="room-card-meta">${plural('rooms.member.count', r.memberCount)}</div>
       </div>
       <span class="room-card-badge ${badgeClass}">${roleLabel}</span>
     `;
@@ -1808,16 +2300,16 @@ export function renderMembers(members, currentUid, isOwner, onRemove) {
   members.forEach(m => {
     const row = document.createElement('div');
     row.className = 'member-row';
-    const roleLabel = m.role === 'owner' ? 'Dueño' : 'Miembro';
+    const roleLabel = m.role === 'owner' ? tr('role.owner') : tr('role.member');
     const isSelf = m.uid === currentUid;
     const canRemove = isOwner && m.role !== 'owner' && !isSelf;
 
     row.innerHTML = `
       <div style="overflow:hidden;">
         <div class="member-email">${esc(m.email || m.name || 'Usuario')}</div>
-        <div class="member-role">${roleLabel}${isSelf ? ' · tú' : ''}</div>
+        <div class="member-role">${roleLabel}${isSelf ? tr('role.self') : ''}</div>
       </div>
-      ${canRemove ? '<button class="btn-remove-member">Quitar</button>' : ''}
+      ${canRemove ? `<button class="btn-remove-member">${tr('member.remove.btn')}</button>` : ''}
     `;
 
     if (canRemove) {
@@ -1946,7 +2438,7 @@ export function renderRoadmap() {
   }
   
   if (elements.roadmapUserTitle) {
-    elements.roadmapUserTitle.innerText = `Plan de Hoy · ${activeUser.name}`;
+    elements.roadmapUserTitle.innerText = tr('plan.today.user', { name: activeUser.name });
     elements.roadmapUserTitle.style.color = activeUser.color;
   }
 
@@ -1961,6 +2453,41 @@ export function renderRoadmap() {
   const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
   const items = plan && Array.isArray(plan.items) ? plan.items : [];
   const locked = plan && plan.locked === true;
+
+  // Day change rollover prompt logic
+  if (plan && items.length > 0) {
+    const todayStr = new Date().toDateString();
+    const planDate = plan.date || state.store.lastActiveDate;
+    if (planDate && planDate !== todayStr && !plan.promptedRollover) {
+      plan.promptedRollover = true; // prevent double prompts
+      showConfirm(
+        tr('plan.rollover.query') || 'Tienes objetivos del día anterior en tu roadmap. ¿Deseas conservarlos para hoy?',
+        () => {
+          // Keep: Filter to keep only uncompleted items, reset date and unlock
+          plan.items = plan.items.filter(it => !it.completed);
+          plan.date = todayStr;
+          plan.locked = false;
+          delete plan.promptedRollover;
+          state.saveState();
+        },
+        () => {
+          // Clear: Remove all items, reset date and unlock
+          plan.items = [];
+          plan.date = todayStr;
+          plan.locked = false;
+          delete plan.promptedRollover;
+          state.saveState();
+        },
+        tr('plan.rollover.keep') || 'Conservar',
+        tr('plan.rollover.clear') || 'Limpiar todo'
+      );
+      return;
+    }
+  } else if (plan && (!plan.date || plan.date !== new Date().toDateString())) {
+    plan.date = new Date().toDateString();
+    plan.locked = false;
+    state.saveState();
+  }
 
   // Toggle internal sub-tabs bar visibility based on lock status
   const tabsContainer = document.querySelector('.roadmap-tabs');
@@ -1992,7 +2519,7 @@ export function renderRoadmap() {
   }
 
   if (items.length === 0) {
-    list.innerHTML = `<p class="roadmap-text empty" style="padding: 15px 5px; text-align: center;">No hay bloques en el plan de hoy. ¡Construye uno en la pestaña de Actividades!</p>`;
+    list.innerHTML = `<p class="roadmap-text empty" style="padding: 15px 5px; text-align: center;">${tr('plan.empty')}</p>`;
     return;
   }
 
@@ -2000,16 +2527,16 @@ export function renderRoadmap() {
     const el = document.createElement('div');
     
     // Determine badge and colors based on block type
-    let badgeText = "Personal";
+    let badgeText = tr('plan.tab.personal');
     let badgeStyle = "background: rgba(100, 116, 139, 0.1); color: var(--text-muted);";
     let pointsHtml = "";
 
     if (item.type === 'pending') {
-      badgeText = "Pendiente";
+      badgeText = tr('plan.badge.pending');
       badgeStyle = "background: rgba(59, 130, 246, 0.1); color: #2563eb;";
       if (item.pts) pointsHtml = `<span class="badge" style="padding: 1px 5px; font-size: 0.6rem; margin-left: 6px;">${item.pts} pts</span>`;
     } else if (item.type === 'routine') {
-      badgeText = "Rutina";
+      badgeText = tr('plan.badge.routine');
       badgeStyle = "background: rgba(16, 185, 129, 0.1); color: #059669;";
       if (item.pts) pointsHtml = `<span class="badge" style="padding: 1px 5px; font-size: 0.6rem; margin-left: 6px;">+${item.pts} pts</span>`;
     }
@@ -2059,7 +2586,7 @@ export function renderRoadmap() {
     el.querySelector('.btn-check-roadmap').onclick = (e) => {
       e.stopPropagation();
       state.toggleRoadmapItem(item.id);
-      showToast(item.completed ? "Bloque pendiente" : "¡Bloque completado!");
+      showToast(tr(item.completed ? 'toast.block.pending' : 'toast.block.done'));
     };
 
     // Bind delete item
@@ -2068,7 +2595,7 @@ export function renderRoadmap() {
       delBtn.onclick = (e) => {
         e.stopPropagation();
         state.deleteRoadmapItem(item.id);
-        showToast("Bloque quitado del plan");
+        showToast(tr('toast.block.removed'));
       };
     }
 
@@ -2104,10 +2631,10 @@ export function renderRoadmap() {
       unlockBtn.style.alignItems = 'center';
       unlockBtn.style.justifyContent = 'center';
       unlockBtn.style.gap = '6px';
-      unlockBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Modificar Plan';
+      unlockBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>' + tr('plan.unlock.btn');
       unlockBtn.onclick = () => {
         state.unlockRoadmap();
-        showToast("Plan desbloqueado para modificación");
+        showToast(tr('toast.plan.unlocked'));
       };
       actionDiv.appendChild(unlockBtn);
     } else {
@@ -2126,10 +2653,10 @@ export function renderRoadmap() {
       lockBtn.style.alignItems = 'center';
       lockBtn.style.justifyContent = 'center';
       lockBtn.style.gap = '8px';
-      lockBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>Listo, Fijar Plan de Hoy';
+      lockBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>' + tr('plan.lock.btn');
       lockBtn.onclick = () => {
         state.lockRoadmap();
-        showToast("¡Plan de hoy fijado! A enfocarse.");
+        showToast(tr('toast.plan.locked'));
       };
       actionDiv.appendChild(lockBtn);
     }
@@ -2152,6 +2679,11 @@ export function toggleRoadmapTab(tabName) {
   const viewBtn = elements.btnTabRoadmapView;
   const builderBtn = elements.btnTabRoadmapBuilder;
   
+  const screenRoadmap = document.getElementById('screenRoadmap');
+  if (screenRoadmap) {
+    screenRoadmap.scrollTop = 0;
+  }
+
   if (tabName === 'view') {
     if (viewTab) viewTab.classList.remove('hidden');
     if (builderTab) builderTab.classList.add('hidden');
@@ -2212,7 +2744,7 @@ function _buildBlock(name, pts, type) {
     void btn.offsetWidth;
     btn.classList.add('just-added');
     updateBuilderCount();
-    showToast(`"${name}" añadido al plan`);
+    showToast(tr('toast.added.to.plan', { name }));
   };
 
   return btn;
@@ -2227,7 +2759,7 @@ export function renderRoadmapBuilder() {
     pendingGrid.innerHTML = '';
     const pend = state.store.pendingList || [];
     if (pend.length === 0) {
-      pendingGrid.innerHTML = `<div class="builder-empty">No tienes tareas pendientes.<br>Créalas en la pestaña Pendientes.</div>`;
+      pendingGrid.innerHTML = `<div class="builder-empty">${tr('plan.pending.empty').replace('\n', '<br>')}</div>`;
     } else {
       pend.forEach(t => pendingGrid.appendChild(_buildBlock(t.name, t.pts, 'pending')));
     }
@@ -2238,7 +2770,7 @@ export function renderRoadmapBuilder() {
     routineGrid.innerHTML = '';
     const tpls = state.store.templates || [];
     if (tpls.length === 0) {
-      routineGrid.innerHTML = `<div class="builder-empty">No tienes rutinas guardadas.<br>Guárdalas desde el menú de plantillas.</div>`;
+      routineGrid.innerHTML = `<div class="builder-empty">${tr('plan.routines.empty').replace('\n', '<br>')}</div>`;
     } else {
       tpls.forEach(t => routineGrid.appendChild(_buildBlock(t.name, t.pts, 'routine')));
     }
@@ -2255,7 +2787,7 @@ export function updateBuilderCount() {
   if (!countEl) return;
   const plan = state.store.roadmaps && state.store.roadmaps[state.localProfileId];
   const n = plan && Array.isArray(plan.items) ? plan.items.length : 0;
-  countEl.textContent = `Tu plan: ${n} ${n === 1 ? 'bloque' : 'bloques'}`;
+  countEl.textContent = tr('plan.blocks.count', { n });
 }
 
 /**
@@ -2275,7 +2807,8 @@ export function renderFocusTree(animate = true) {
     diffSelect.onchange = (e) => {
       state.setTreeDifficulty(e.target.value);
       renderFocusTree();
-      showToast(`Exigencia del árbol configurada en: ${e.target.value === 'minimo' ? 'Mínimo' : e.target.value === 'maximo' ? 'Máximo' : 'Medio'}`);
+      const levelKey = e.target.value === 'minimo' ? 'tree.level.min' : e.target.value === 'maximo' ? 'tree.level.max' : 'tree.level.mid';
+      showToast(tr('tree.toast.difficulty', { level: tr(levelKey) }));
     };
   }
 
@@ -2297,7 +2830,7 @@ export function renderFocusTree(animate = true) {
     d.setDate(now.getDate() - i);
     daysList.push({
       dateStr: d.toDateString(),
-      niceName: d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })
+      niceName: d.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'es-ES', { weekday: 'short', day: 'numeric' })
     });
   }
 
@@ -2346,7 +2879,7 @@ export function renderFocusTree(animate = true) {
         const count = Math.ceil(earned / 5);
         for (let j = 0; j < count; j++) {
           leafItems.push({
-            text: `Actividad registrada`,
+            text: tr('tree.activity.logged'),
             type: 'activityLog',
             pts: earned,
             time: ''
@@ -2438,12 +2971,12 @@ export function renderFocusTree(animate = true) {
     const flowerIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="12" cy="12" r="3"></circle><path d="M12 9.5V4M12 14.5V20M9.5 12H4M14.5 12H20M10.2 10.2 6.5 6.5M13.8 10.2 17.5 6.5M10.2 13.8 6.5 17.5M13.8 13.8 17.5 17.5"></path></svg>`;
     const dropIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>`;
     if (isWithered) {
-      statusHint.innerHTML = `<span style="color: var(--danger); font-weight:700;">${leafIcon} Tu árbol se está marchitando por falta de constancia.</span> ¡Completa tareas del roadmap o registra actividades hoy para revivirlo!`;
+      statusHint.innerHTML = `<span style="color: var(--danger); font-weight:700;">${leafIcon} ${tr('tree.withering')}</span> ${tr('tree.withering.hint')}`;
     } else if (isBloomed) {
-      statusHint.innerHTML = `<span style="color: #db2777; font-weight:700;">${flowerIcon} ¡Espectacular! Tu árbol ha florecido.</span> Has mantenido un ritmo de enfoque excelente esta semana.`;
+      statusHint.innerHTML = `<span style="color: #db2777; font-weight:700;">${flowerIcon} ${tr('tree.bloomed')}</span> ${tr('tree.bloomed.hint')}`;
     } else {
       const daysNeeded = Math.max(0, 5 - fullBranchesCount);
-      statusHint.innerHTML = `${dropIcon} Regado y creciendo con tu constancia. Completa ${fullBranchThreshold}+ actividades por día para hacerlo florecer (Faltan ${daysNeeded} días de enfoque).`;
+      statusHint.innerHTML = `${dropIcon} ${tr('tree.growing')} ${tr('tree.growing.hint', { n: fullBranchThreshold, days: daysNeeded })}`;
     }
   }
 
@@ -2516,7 +3049,7 @@ export function renderFocusTree(animate = true) {
     const textX = growsLeft ? 96 : 304;
     const textAnchor = growsLeft ? 'end' : 'start';
     const textFill = isToday && !isWithered ? activeUser.color : 'var(--text-muted)';
-    svgContent += `<text x="${textX}" y="${y - 28}" text-anchor="${textAnchor}" font-family="var(--font-title)" font-size="10.5px" font-weight="${isToday ? '800' : '600'}" fill="${textFill}">${isToday ? 'Hoy' : day.niceName}</text>`;
+    svgContent += `<text x="${textX}" y="${y - 28}" text-anchor="${textAnchor}" font-family="var(--font-title)" font-size="10.5px" font-weight="${isToday ? '800' : '600'}" fill="${textFill}">${isToday ? tr('nav.today') : day.niceName}</text>`;
 
     // Get Completed tasks and activities for this day
     const leafItems = getDailyLeafItems(day.dateStr);
@@ -2569,14 +3102,14 @@ export function renderFocusTree(animate = true) {
         svgContent += `<ellipse cx="0" cy="-4.8" rx="3.1" ry="4.8" fill="#f9a8d4" stroke="#f472b6" stroke-width="0.6" transform="rotate(${k * 72})"/>`;
       }
       svgContent += `</g><circle cx="${p2.x}" cy="${p2.y}" r="2.6" fill="#fbbf24"/><circle cx="${p2.x}" cy="${p2.y}" r="1.1" fill="#fde68a"/>`
-        + `<circle cx="${p2.x}" cy="${p2.y}" r="9" fill="transparent" class="tree-flower" data-name="Flor de Enfoque" data-desc="¡Rama de Enfoque Llena!"/>`
+        + `<circle cx="${p2.x}" cy="${p2.y}" r="9" fill="transparent" class="tree-flower" data-name="${tr('tree.flower.name')}" data-desc="${tr('tree.flower.desc')}"/>`
         + `</g></g>`;
 
       // Lush foliage sprouted along the branch
       [0.2, 0.5, 0.78].forEach((td, k) => {
         const P = getBezierPoint(td, p0, p1, p2);
         const angD = (growsLeft ? 1 : -1) * (140 + k * 28);
-        svgContent += `<g transform="translate(${P.x.toFixed(1)} ${(P.y + 2).toFixed(1)}) rotate(${angD})"><path d="${leafPath(9)}" fill="#10b981" opacity="0.85" class="tree-decor-leaf" data-name="Follaje Florecido" data-desc="El árbol rebosa vida"/></g>`;
+        svgContent += `<g transform="translate(${P.x.toFixed(1)} ${(P.y + 2).toFixed(1)}) rotate(${angD})"><path d="${leafPath(9)}" fill="#10b981" opacity="0.85" class="tree-decor-leaf" data-name="${tr('tree.foliage.name')}" data-desc="${tr('tree.foliage.desc')}"/></g>`;
       });
     }
 
@@ -2650,13 +3183,13 @@ function bindTreeTooltips() {
       if (desc) {
         text += `<br/><span style="color: #cbd5e1;">${esc(desc)}</span>`;
       } else {
-        let typeText = "Personal";
-        if (type === 'pending') typeText = `Pendiente (${pts} pts)`;
-        else if (type === 'routine') typeText = `Rutina (+${pts} pts)`;
+        let typeText = tr('tree.tooltip.personal');
+        if (type === 'pending') typeText = tr('tree.tooltip.pending', { pts });
+        else if (type === 'routine') typeText = tr('tree.tooltip.routine', { pts });
         
         text += `<br/><span style="color: #cbd5e1;">${typeText}</span>`;
         if (time) {
-          text += `<br/><span style="color: #94a3b8; font-size: 0.7rem;">Completado: ${time}</span>`;
+          text += `<br/><span style="color: #94a3b8; font-size: 0.7rem;">${tr('tree.tooltip.completed', { time })}</span>`;
         }
       }
 
@@ -2748,7 +3281,7 @@ export function renderRoomSwitcher(rooms, currentRoomId, onSwitch) {
   list.innerHTML = '';
 
   if (!rooms || rooms.length === 0) {
-    list.innerHTML = `<div class="rooms-hint" style="padding:10px 0;">No tienes otras salas.</div>`;
+    list.innerHTML = `<div class="rooms-hint" style="padding:10px 0;">${tr('switcher.no.others')}</div>`;
     return;
   }
 
@@ -2756,12 +3289,12 @@ export function renderRoomSwitcher(rooms, currentRoomId, onSwitch) {
     const isCurrent = r.roomId === currentRoomId;
     const card = document.createElement('div');
     card.className = 'room-card' + (isCurrent ? ' room-card-current' : '');
-    const roleLabel = r.role === 'owner' ? 'Dueño' : 'Miembro';
+    const roleLabel = r.role === 'owner' ? tr('role.owner') : tr('role.member');
     const badgeClass = r.role === 'owner' ? 'badge-owner' : 'badge-member';
     card.innerHTML = `
       <div style="overflow:hidden;">
-        <div class="room-card-name">${esc(r.name)}${isCurrent ? ' <span style="color:var(--success); font-size:0.7rem;">• actual</span>' : ''}</div>
-        <div class="room-card-meta">${r.memberCount} miembro${r.memberCount === 1 ? '' : 's'}</div>
+        <div class="room-card-name">${esc(r.name)}${isCurrent ? ` <span style="color:var(--success); font-size:0.7rem;">${tr('rooms.current.badge')}</span>` : ''}</div>
+        <div class="room-card-meta">${plural('rooms.member.count', r.memberCount)}</div>
       </div>
       <span class="room-card-badge ${badgeClass}">${roleLabel}</span>
     `;

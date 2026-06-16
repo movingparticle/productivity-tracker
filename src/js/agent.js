@@ -1,5 +1,6 @@
 import { getCurrentUser } from "./firebase";
 import * as state from "./state";
+import { getLang } from "./i18n";
 
 /**
  * Ask the AI agent something. Calls our own serverless function (/api/agent),
@@ -13,7 +14,8 @@ import * as state from "./state";
  */
 export async function askAgent(prompt, system) {
   const user = getCurrentUser();
-  if (!user) throw new Error("Inicia sesión para usar el asistente.");
+  const isEn = getLang() === 'en';
+  if (!user) throw new Error(isEn ? "Sign in to use the assistant." : "Inicia sesión para usar el asistente.");
 
   const token = await user.getIdToken();
 
@@ -30,7 +32,7 @@ export async function askAgent(prompt, system) {
   try { data = await res.json(); } catch { /* ignore */ }
 
   if (!res.ok) {
-    const err = new Error(data.message || data.error || "No se pudo contactar al asistente.");
+    const err = new Error(data.message || data.error || (isEn ? "Could not contact the assistant." : "No se pudo contactar al asistente."));
     err.code = data.error;
     throw err;
   }
@@ -43,6 +45,7 @@ export async function askAgent(prompt, system) {
  * context about the user's tasks, shopping list, routines and points.
  */
 export function buildAppContext() {
+  const isEn = getLang() === 'en';
   const s = state.store || {};
   const config = s.config || {};
   const users = Array.isArray(config.users) ? config.users : [];
@@ -55,26 +58,29 @@ export function buildAppContext() {
   });
 
   const pending = (s.pendingList || [])
-    .map(t => `- ${t.name} [prioridad ${t.priority || 'media'}, ${t.pts} pts]`)
+    .map(t => {
+      const prio = isEn ? (t.priority === 'alta' ? 'high' : t.priority === 'baja' ? 'low' : 'medium') : (t.priority || 'media');
+      return `- ${t.name} [${isEn ? 'priority' : 'prioridad'} ${prio}, ${t.pts} pts]`;
+    })
     .slice(0, 30)
-    .join('\n') || '(sin tareas pendientes)';
+    .join('\n') || (isEn ? '(no pending tasks)' : '(sin tareas pendientes)');
 
   const shopping = (s.shoppingList || [])
-    .map(it => `- ${it.name || '(foto)'}${it.qty ? ' (' + it.qty + ')' : ''}`)
+    .map(it => `- ${it.name || (isEn ? '(photo)' : '(foto)')}${it.qty ? ' (' + it.qty + ')' : ''}`)
     .slice(0, 40)
-    .join('\n') || '(lista de compras vacía)';
+    .join('\n') || (isEn ? '(empty shopping list)' : '(lista de compras vacía)');
 
   const routines = (s.templates || [])
     .map(t => `- ${t.name} (+${t.pts} pts)`)
     .slice(0, 30)
-    .join('\n') || '(sin rutinas guardadas)';
+    .join('\n') || (isEn ? '(no saved routines)' : '(sin rutinas guardadas)');
 
   return [
-    `Sala actual: ${state.currentRoomName || 'la Sala'}.`,
-    activeUser ? `Perfil activo: ${activeUser.name}. Puntos de hoy: ${todayPts}/${activeUser.meta || 15}.` : '',
-    `Tareas pendientes:\n${pending}`,
-    `Lista de compras:\n${shopping}`,
-    `Rutinas guardadas:\n${routines}`
+    isEn ? `Current room: ${state.currentRoomName || 'the Room'}.` : `Sala actual: ${state.currentRoomName || 'la Sala'}.`,
+    activeUser ? (isEn ? `Active profile: ${activeUser.name}. Today's points: ${todayPts}/${activeUser.meta || 15}.` : `Perfil activo: ${activeUser.name}. Puntos de hoy: ${todayPts}/${activeUser.meta || 15}.`) : '',
+    isEn ? `Pending tasks:\n${pending}` : `Tareas pendientes:\n${pending}`,
+    isEn ? `Shopping list:\n${shopping}` : `Lista de compras:\n${shopping}`,
+    isEn ? `Saved routines:\n${routines}` : `Rutinas guardadas:\n${routines}`
   ].filter(Boolean).join('\n\n');
 }
 
@@ -82,7 +88,16 @@ export function buildAppContext() {
  * The assistant's persona + the live app context.
  */
 export function assistantSystemPrompt() {
-  return [
+  const isEn = getLang() === 'en';
+  return isEn ? [
+    'You are the built-in assistant of a productivity app for families and teams.',
+    'You help with pending tasks, daily planning, shopping lists, routines, and motivation.',
+    'ALWAYS reply in English, in a brief, clear, and practical manner. Use short lists when helpful.',
+    'You have access to the current state of the room (below). Use it to provide concrete answers.',
+    '',
+    '=== CURRENT ROOM CONTEXT ===',
+    buildAppContext()
+  ].join('\n') : [
     'Eres el asistente integrado de una app de productividad para familias y equipos.',
     'Ayudas con tareas pendientes, planificación del día, listas de compras, rutinas y motivación.',
     'Responde SIEMPRE en español, de forma breve, clara y práctica. Usa listas cortas cuando ayude.',
@@ -108,7 +123,16 @@ export function askAssistant(userPrompt) {
  * lo ordena en artículos individuales con su cantidad.
  */
 export async function fixShoppingListWithAI(rawText) {
-  const system = [
+  const isEn = getLang() === 'en';
+  const system = isEn ? [
+    'You are an assistant that organizes shopping lists.',
+    'You are given an unorganized text (it might come all together, with commas, line breaks, or typos).',
+    'Return it as a clean list: ONE item per line, with the exact format:',
+    'name | quantity',
+    'The quantity is optional; if not mentioned, leave the field empty after the bar.',
+    'Do not add numbering, bullets, comments, or headers. ONLY the item lines.',
+    'Correct capitalization to make it look neat (e.g., "Milk", "Whole wheat bread").'
+  ].join('\n') : [
     'Eres un asistente que ordena listas de compras.',
     'Te dan un texto desordenado (puede venir todo junto, con comas, saltos de línea o errores).',
     'Devuélvelo como una lista limpia: UN artículo por línea, con el formato exacto:',
@@ -118,7 +142,8 @@ export async function fixShoppingListWithAI(rawText) {
     'Corrige mayúsculas/minúsculas para que se vea prolijo (ej: "Leche", "Pan integral").'
   ].join('\n');
 
-  const text = await askAgent(`Ordena esta lista de compras:\n\n${rawText}`, system);
+  const prompt = isEn ? `Sort this shopping list:\n\n${rawText}` : `Ordena esta lista de compras:\n\n${rawText}`;
+  const text = await askAgent(prompt, system);
 
   // Parse "name | qty" lines into objects.
   return String(text)

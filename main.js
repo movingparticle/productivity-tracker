@@ -1,5 +1,6 @@
 import * as state from "./src/js/state";
 import * as ui from "./src/js/ui";
+import { initI18n, applyLang, getLang, t as tr, plural } from "./src/js/i18n";
 import {
   connectToRoomDb,
   disconnectRoomDb,
@@ -58,43 +59,46 @@ function authErrorMessage(error) {
   switch (code) {
     case 'auth/popup-closed-by-user':
     case 'auth/cancelled-popup-request':
-      return 'Cerraste la ventana de Google antes de terminar. Intenta de nuevo.';
+      return tr('err.popup.closed');
     case 'auth/popup-blocked':
-      return 'El navegador bloqueó la ventana de Google. Permite las ventanas emergentes e intenta de nuevo.';
+      return tr('err.popup.blocked');
     case 'auth/unauthorized-domain':
-      return 'Este dominio no está autorizado en Firebase. Agrégalo en Authentication → Settings → Dominios autorizados.';
+      return tr('err.domain');
     case 'auth/operation-not-allowed':
-      return 'El acceso con Google no está habilitado en Firebase. Actívalo en la consola.';
+      return tr('err.not.allowed');
     case 'auth/network-request-failed':
-      return 'Error de red. Revisa tu conexión.';
+      return tr('err.network');
     default:
-      return 'No se pudo iniciar sesión con Google. Intenta de nuevo.';
+      return tr('err.login');
   }
 }
 
 // Clock and rollover check loop
-function startClock() {
-  const updateClock = () => {
-    const now = new Date();
-    const options = {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    };
-    const dateStr = now.toLocaleDateString('es-ES', options);
-
-    if (ui.elements.liveClockDisplay) {
-      ui.elements.liveClockDisplay.innerText = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-    }
-
-    // Check if day rollover is needed
-    state.checkDateAutoClose();
+let clockInterval = null;
+function updateClock() {
+  const now = new Date();
+  const options = {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
   };
+  const clockLocale = getLang() === 'en' ? 'en-US' : 'es-ES';
+  const dateStr = now.toLocaleDateString(clockLocale, options);
 
+  if (ui.elements.liveClockDisplay) {
+    ui.elements.liveClockDisplay.innerText = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+  }
+
+  // Check if day rollover is needed
+  state.checkDateAutoClose();
+}
+
+function startClock() {
   updateClock();
-  setInterval(updateClock, 1000);
+  if (clockInterval) clearInterval(clockInterval);
+  clockInterval = setInterval(updateClock, 1000);
 }
 
 /* ------------------------------------------------------------------ */
@@ -110,7 +114,7 @@ async function connectToRoom(roomId) {
     meta = await getRoomMeta(roomId);
   } catch (e) {
     console.error(e);
-    ui.showRoomsError("No se pudo abrir la sala. Puede que ya no seas miembro.");
+    ui.showRoomsError(tr('toast.room.open.err'));
     return;
   }
 
@@ -171,16 +175,14 @@ async function refreshRoomsList() {
 
     if (ui.elements.createRoomHint) {
       if (allowance <= 0) {
-        ui.elements.createRoomHint.innerText =
-          'Para crear tu propia sala necesitas un código de acceso o una suscripción. Mientras tanto, puedes unirte a salas con un código de invitación.';
+        ui.elements.createRoomHint.innerText = tr('rooms.err.need.code');
       } else {
-        ui.elements.createRoomHint.innerText =
-          `Tienes ${owned}/${allowance} salas propias. Cada sala admite hasta ${MAX_MEMBERS_PER_ROOM} miembros.`;
+        ui.elements.createRoomHint.innerText = tr('rooms.hint.slots', { owned, max: allowance, members: MAX_MEMBERS_PER_ROOM });
       }
     }
   } catch (e) {
     console.error(e);
-    ui.showRoomsError("No se pudieron cargar tus salas. Revisa tu conexión o las reglas de Firebase.");
+    ui.showRoomsError(tr('toast.room.load.err'));
   }
 }
 
@@ -188,7 +190,7 @@ async function handleCreateRoom() {
   const user = getCurrentUser();
   const name = ui.elements.newRoomName.value.trim();
   if (!name) {
-    ui.showRoomsError("Escribe un nombre para la sala.");
+    ui.showRoomsError(tr('toast.room.name.empty'));
     return;
   }
   ui.clearRoomsError();
@@ -197,15 +199,15 @@ async function handleCreateRoom() {
     const roomId = await createRoom(user, name);
     ui.elements.newRoomName.value = '';
     await connectToRoom(roomId);
-    ui.showToast(`Sala "${name}" creada`);
+    ui.showToast(tr('toast.room.created', { name }));
   } catch (e) {
     if (e.code === 'limit/needPro') {
-      ui.showRoomsError("Necesitas un código de acceso o una suscripción para crear salas. Usa el campo \"Tengo un código de acceso\".");
+      ui.showRoomsError(tr('rooms.err.need.code'));
     } else if (e.code === 'limit/rooms') {
-      ui.showRoomsError(`Llegaste a tu límite de ${MAX_ROOMS_PRO} salas. Elimina una para crear otra.`);
+      ui.showRoomsError(tr('rooms.err.limit', { n: MAX_ROOMS_PRO }));
     } else {
       console.error(e);
-      ui.showRoomsError("No se pudo crear la sala. Revisa las reglas de Firebase.");
+      ui.showRoomsError(tr('rooms.err.create'));
     }
   } finally {
     ui.elements.btnCreateRoom.disabled = false;
@@ -221,7 +223,7 @@ async function handleRedeemCode() {
   const input = ui.elements.redeemCodeInput;
   const code = input ? input.value.trim() : '';
   if (!code) {
-    ui.showRoomsError("Escribe tu código de acceso.");
+    ui.showRoomsError(tr('rooms.code.empty'));
     return;
   }
   ui.clearRoomsError();
@@ -229,18 +231,18 @@ async function handleRedeemCode() {
   try {
     await redeemAccessCode(code, user);
     if (input) input.value = '';
-    ui.showToast("¡Código activado! Ya puedes crear salas y usar el asistente.");
+    ui.showToast(tr('toast.code.activated'));
     await refreshRoomsList();
   } catch (e) {
     if (e.code === 'code/invalid') {
-      ui.showRoomsError("Código inválido. Revisa que esté bien escrito.");
+      ui.showRoomsError(tr('rooms.code.invalid'));
     } else if (e.code === 'code/used') {
-      ui.showRoomsError("Ese código ya fue usado por otra persona.");
+      ui.showRoomsError(tr('rooms.code.used'));
     } else if (e.code === 'code/expired') {
-      ui.showRoomsError("Este código ya venció. Pídeme uno nuevo 🙏");
+      ui.showRoomsError(tr('rooms.code.expired'));
     } else {
       console.error(e);
-      ui.showRoomsError("No se pudo activar el código. Intenta de nuevo.");
+      ui.showRoomsError(tr('rooms.code.err'));
     }
   } finally {
     if (ui.elements.btnRedeemCode) ui.elements.btnRedeemCode.disabled = false;
@@ -251,7 +253,7 @@ async function handleJoinRoom() {
   const user = getCurrentUser();
   const code = ui.elements.joinCodeInput.value.trim().toUpperCase();
   if (!code) {
-    ui.showRoomsError("Escribe el código de invitación.");
+    ui.showRoomsError(tr('rooms.join.empty'));
     return;
   }
   ui.clearRoomsError();
@@ -260,15 +262,15 @@ async function handleJoinRoom() {
     const roomId = await acceptInvite(code, user);
     ui.elements.joinCodeInput.value = '';
     await connectToRoom(roomId);
-    ui.showToast("¡Te uniste a la sala!");
+    ui.showToast(tr('toast.joined'));
   } catch (e) {
     if (e.code === 'invite/invalid') {
-      ui.showRoomsError("Código de invitación inválido o expirado.");
+      ui.showRoomsError(tr('rooms.join.invalid'));
     } else if (e.code === 'limit/members') {
-      ui.showRoomsError(`Esa sala ya está llena (${MAX_MEMBERS_PER_ROOM} miembros).`);
+      ui.showRoomsError(tr('rooms.join.full', { n: MAX_MEMBERS_PER_ROOM }));
     } else {
       console.error(e);
-      ui.showRoomsError("No se pudo unir a la sala.");
+      ui.showRoomsError(tr('rooms.join.err'));
     }
   } finally {
     ui.elements.btnJoinRoom.disabled = false;
@@ -287,22 +289,22 @@ async function handleInvite() {
     const code = await createInvite(roomId, user);
     const link = `${location.origin}${location.pathname}?invite=${code}`;
     ui.showInviteLink(link);
-    ui.showToast("Enlace de invitación generado");
+    ui.showToast(tr('toast.invite.generated'));
   } catch (e) {
     console.error(e);
-    ui.showToast("No se pudo generar la invitación.", "error");
+    ui.showToast(tr('toast.invite.err'), "error");
   }
 }
 
 function handleRemoveMember(uid) {
   const roomId = state.currentRoomId;
-  ui.showConfirm("¿Quitar a este miembro de la sala?", async () => {
+  ui.showConfirm(tr('confirm.remove.member'), async () => {
     try {
       await removeMember(roomId, uid);
-      ui.showToast("Miembro eliminado");
+      ui.showToast(tr('toast.member.removed'));
     } catch (e) {
       console.error(e);
-      ui.showToast("No se pudo quitar al miembro.", "error");
+      ui.showToast(tr('toast.member.remove.err'), "error");
     }
   });
 }
@@ -327,7 +329,7 @@ async function openRoomSwitcher() {
     ui.renderRoomSwitcher(rooms, state.currentRoomId, (roomId) => switchRoom(roomId));
   } catch (e) {
     console.error(e);
-    ui.showToast("No se pudieron cargar tus salas.", "error");
+    ui.showToast(tr('toast.room.load.err.short'), "error");
   }
 }
 
@@ -346,7 +348,7 @@ async function switchRoom(roomId) {
   // Reset to the main tab for the new room.
   const trackerBtn = document.getElementById('navTrackerBtn');
   if (trackerBtn) ui.navTo('tracker', trackerBtn);
-  ui.showToast("Sala cambiada");
+  ui.showToast(tr('toast.room.changed'));
 }
 
 /* ------------------------------------------------------------------ */
@@ -370,19 +372,19 @@ async function sendAgentMessage(text) {
   if (ui.elements.agentInput) ui.elements.agentInput.value = '';
   ui.appendAgentMessage(prompt, 'user');
 
-  const thinking = ui.appendAgentMessage('Pensando…', 'bot');
+  const thinking = ui.appendAgentMessage(tr('ai.thinking'), 'bot');
   if (thinking) thinking.classList.add('agent-thinking');
 
   try {
     const reply = await askAssistant(prompt);
     if (thinking) {
       thinking.classList.remove('agent-thinking');
-      thinking.innerText = reply || 'No tengo una respuesta para eso.';
+      thinking.innerText = reply || tr('ai.no.answer');
     }
   } catch (e) {
-    let msg = "No pude contactar al asistente. Revisa la configuración del agente.";
+    let msg = tr('ai.contact.err');
     if (e.code === 'limit') {
-      msg = e.message || "Llegaste a tu límite diario gratis del asistente. Vuelve mañana.";
+      msg = e.message || msg;
     } else if (e.message) {
       msg = e.message;
     }
@@ -417,13 +419,13 @@ async function handleGoogleLogin() {
 }
 
 function doSignOut() {
-  ui.showConfirm("¿Cerrar sesión de tu cuenta?", async () => {
+  ui.showConfirm(tr('confirm.signout'), async () => {
     try {
       await logoutUser();
       location.reload();
     } catch (error) {
       console.error(error);
-      ui.showToast("No se pudo cerrar sesión. Intenta de nuevo.", "error");
+      ui.showToast(tr('toast.signout.err'), "error");
     }
   });
 }
@@ -569,7 +571,7 @@ function bindEvents() {
   if (ui.elements.btnGoToRooms) {
     ui.elements.btnGoToRooms.onclick = () => {
       ui.closeModal(ui.elements.roomSwitcherModal);
-      ui.showConfirm("¿Ir a tus salas (crear o unirte)?", () => backToRooms());
+      ui.showConfirm(tr('confirm.go.rooms'), () => backToRooms());
     };
   }
 
@@ -606,14 +608,14 @@ function bindEvents() {
   }
   if (ui.elements.btnCreateSavedList) {
     ui.elements.btnCreateSavedList.onclick = () => {
-      const name = prompt('Nombre para la nueva lista (ej: Despensa, Farmacia…):');
+      const name = prompt(tr('prompt.new.list'));
       if (!name || !name.trim()) return;
       const result = state.createSavedShoppingList(name.trim());
       if (!result) {
-        ui.showToast('Límite de 3 listas alcanzado.', 'warning');
+        ui.showToast(tr('toast.list.limit'), 'warning');
         return;
       }
-      ui.showToast(`Lista "${result.name}" creada`);
+      ui.showToast(tr('toast.list.created', { name: result.name }));
       ui.renderSavedLists();
     };
   }
@@ -676,7 +678,7 @@ function bindEvents() {
       e.preventDefault();
       selectedImageBase64 = null;
       if (ui.elements.shopItemImage) ui.elements.shopItemImage.value = '';
-      if (ui.elements.shopImageFileName) ui.elements.shopImageFileName.innerText = 'Sin foto seleccionada';
+      if (ui.elements.shopImageFileName) ui.elements.shopImageFileName.innerText = tr('shop.item.no.photo');
       if (ui.elements.btnRemoveShopImage) ui.elements.btnRemoveShopImage.style.display = 'none';
       if (ui.elements.shopImagePreviewContainer) ui.elements.shopImagePreviewContainer.style.display = 'none';
       if (ui.elements.shopImagePreview) ui.elements.shopImagePreview.src = '';
@@ -688,7 +690,7 @@ function bindEvents() {
     if (ui.elements.shopItemQty) ui.elements.shopItemQty.value = '';
     selectedImageBase64 = null;
     if (ui.elements.shopItemImage) ui.elements.shopItemImage.value = '';
-    if (ui.elements.shopImageFileName) ui.elements.shopImageFileName.innerText = 'Sin foto seleccionada';
+    if (ui.elements.shopImageFileName) ui.elements.shopImageFileName.innerText = tr('shop.item.no.photo');
     if (ui.elements.btnRemoveShopImage) ui.elements.btnRemoveShopImage.style.display = 'none';
     if (ui.elements.shopImagePreviewContainer) ui.elements.shopImagePreviewContainer.style.display = 'none';
     if (ui.elements.shopImagePreview) ui.elements.shopImagePreview.src = '';
@@ -702,12 +704,12 @@ function bindEvents() {
 
       // A photo on its own is enough (no name required).
       if (!name && !selectedImageBase64) {
-        ui.showToast("Escribe el artículo o sube una foto.", "warning");
+        ui.showToast(tr('toast.item.empty'), "warning");
         return;
       }
 
       state.saveShoppingItem(name, qty, target, selectedImageBase64);
-      ui.showToast("Artículo añadido a la lista");
+      ui.showToast(tr('toast.item.added'));
       resetShopForm();
       ui.toggleShoppingTab('list');
     };
@@ -720,12 +722,13 @@ function bindEvents() {
       const target = ui.elements.shopItemUser ? ui.elements.shopItemUser.value : 'casa';
       const items = parseBulkLines(raw);
       if (items.length === 0) {
-        ui.showToast("Escribe al menos un artículo.", "warning");
+        ui.showToast(tr('toast.bulk.empty'), "warning");
         return;
       }
       const count = state.saveShoppingItemsBulk(items, target);
       if (ui.elements.shopBulkInput) ui.elements.shopBulkInput.value = '';
-      ui.showToast(`${count} artículo${count === 1 ? '' : 's'} añadido${count === 1 ? '' : 's'}`);
+      // Use plural helper via ui
+      ui.showToast(plural('toast.bulk.added', count));
       ui.toggleShoppingTab('list');
     };
   }
@@ -736,22 +739,22 @@ function bindEvents() {
       const raw = ui.elements.shopBulkInput ? ui.elements.shopBulkInput.value.trim() : '';
       const target = ui.elements.shopItemUser ? ui.elements.shopItemUser.value : 'casa';
       if (!raw) {
-        ui.showToast("Escribe tu lista primero.", "warning");
+        ui.showToast(tr('toast.bulk.ai.empty'), "warning");
         return;
       }
       const btn = ui.elements.btnFixListAI;
       const original = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = 'Ordenando...';
+      btn.innerHTML = tr('toast.bulk.ai.sorting');
       try {
         const items = await fixShoppingListWithAI(raw);
         if (!items.length) {
-          ui.showToast("No pude ordenar la lista. Intenta de nuevo.", "error");
+          ui.showToast(tr('toast.bulk.ai.err'), "error");
           return;
         }
         const count = state.saveShoppingItemsBulk(items, target);
         if (ui.elements.shopBulkInput) ui.elements.shopBulkInput.value = '';
-        ui.showToast(`${count} artículo${count === 1 ? '' : 's'} ordenado${count === 1 ? '' : 's'} y añadido${count === 1 ? '' : 's'}`);
+        ui.showToast(plural('toast.bulk.ai.done', count));
         ui.toggleShoppingTab('list');
       } catch (e) {
         let msg = "No se pudo usar la IA. Revisa la configuración del agente.";
@@ -771,6 +774,23 @@ function bindEvents() {
   }
   if (ui.elements.btnCloseShoppingFullscreen) {
     ui.elements.btnCloseShoppingFullscreen.onclick = () => ui.closeShoppingFullscreen();
+  }
+  
+  // General shopping list sharing
+  if (ui.elements.btnShoppingShare) {
+    ui.elements.btnShoppingShare.onclick = () => {
+      const text = state.buildGeneralShareText();
+      if (!text) {
+        ui.showToast(tr('toast.shop.empty.share') || 'La lista de compras está vacía', 'warning');
+        return;
+      }
+      if (navigator.share) {
+        navigator.share({ title: 'Lista de Compras', text }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(text);
+        ui.showToast(tr('toast.copied.clipboard') || 'Copiado al portapapeles');
+      }
+    };
   }
 
   // Shopping column toggles (1 or 2 cols)
@@ -792,6 +812,57 @@ function bindEvents() {
   }
   if (ui.elements.btnCloseTodayFullscreen) {
     ui.elements.btnCloseTodayFullscreen.onclick = () => ui.closeTodayFullscreen();
+  }
+
+  // Pending task creation form collapse/expand toggle
+  if (ui.elements.btnTogglePendingForm && ui.elements.pendingFormCollapse) {
+    ui.elements.btnTogglePendingForm.onclick = () => {
+      const isHidden = ui.elements.pendingFormCollapse.style.display === 'none';
+      ui.elements.pendingFormCollapse.style.display = isHidden ? 'block' : 'none';
+      ui.elements.btnTogglePendingForm.innerText = isHidden 
+        ? tr('pending.cancel') 
+        : tr('pending.add.toggle');
+      
+      // Close saved list form if open
+      if (isHidden && ui.elements.savedListFormCollapse) {
+        ui.elements.savedListFormCollapse.style.display = 'none';
+        if (ui.elements.btnToggleSavedListForm) {
+          ui.elements.btnToggleSavedListForm.innerText = tr('pending.add.list.toggle');
+        }
+      }
+      
+      // Clear inputs if canceling/closing
+      if (!isHidden) {
+        ui.elements.pendingInput.value = "";
+        ui.elements.editPenIdx.value = "";
+        if (ui.elements.pendingDesc) ui.elements.pendingDesc.value = "";
+        if (ui.elements.pendingDeadline) ui.elements.pendingDeadline.value = "";
+        if (ui.elements.pendingPriority) ui.elements.pendingPriority.value = 'media';
+        ui.elements.btnSavePen.innerText = tr('pending.save');
+        // Reset photo
+        if (ui.elements.pendingTaskImage) ui.elements.pendingTaskImage.value = '';
+        if (ui.elements.pendingImageFile) ui.elements.pendingImageFile.value = '';
+        if (ui.elements.pendingImageLabel) ui.elements.pendingImageLabel.innerText = tr('pending.photo.none.label');
+        if (ui.elements.pendingImagePreviewContainer) ui.elements.pendingImagePreviewContainer.style.display = 'none';
+        if (ui.elements.btnRemovePendingImage) ui.elements.btnRemovePendingImage.style.display = 'none';
+      }
+    };
+  }
+
+  // Saved list creation form toggle
+  if (ui.elements.btnToggleSavedListForm && ui.elements.savedListFormCollapse) {
+    ui.elements.btnToggleSavedListForm.onclick = () => {
+      const isHidden = ui.elements.savedListFormCollapse.style.display === 'none';
+      ui.elements.savedListFormCollapse.style.display = isHidden ? 'block' : 'none';
+      ui.elements.btnToggleSavedListForm.innerText = isHidden
+        ? tr('pending.cancel')
+        : tr('pending.add.list.toggle');
+
+      if (!isHidden) {
+        if (ui.elements.savedListFormName) ui.elements.savedListFormName.value = '';
+        if (ui.elements.savedListFormItems) ui.elements.savedListFormItems.value = '';
+      }
+    };
   }
 
   // Pending task photo upload
@@ -818,7 +889,7 @@ function bindEvents() {
     ui.elements.btnRemovePendingImage.onclick = () => {
       if (ui.elements.pendingTaskImage) ui.elements.pendingTaskImage.value = '';
       if (ui.elements.pendingImageFile) ui.elements.pendingImageFile.value = '';
-      if (ui.elements.pendingImageLabel) ui.elements.pendingImageLabel.innerText = 'Sin foto';
+      if (ui.elements.pendingImageLabel) ui.elements.pendingImageLabel.innerText = tr('pending.photo.none.label');
       if (ui.elements.pendingImagePreviewContainer) ui.elements.pendingImagePreviewContainer.style.display = 'none';
       if (ui.elements.btnRemovePendingImage) ui.elements.btnRemovePendingImage.style.display = 'none';
     };
@@ -834,6 +905,9 @@ function bindEvents() {
   }
   if (ui.elements.btnDownloadPDF) {
     ui.elements.btnDownloadPDF.onclick = () => ui.triggerDownloadPDF();
+  }
+  if (ui.elements.btnEmailReport) {
+    ui.elements.btnEmailReport.onclick = () => ui.emailDailyReport();
   }
 
   // Chart tab toggle
@@ -854,9 +928,43 @@ function bindEvents() {
   if (ui.elements.btnDownloadWeeklyPDF) {
     ui.elements.btnDownloadWeeklyPDF.onclick = () => ui.triggerDownloadWeeklyPDF();
   }
+  if (ui.elements.btnEmailWeeklyReport) {
+    ui.elements.btnEmailWeeklyReport.onclick = () => ui.emailWeeklyReport();
+  }
+
+  // --- LANG + THEME TOGGLES ---
+  const btnLangEs = document.getElementById('btnLangEs');
+  const btnLangEn = document.getElementById('btnLangEn');
+  const handleLangToggle = (lang) => {
+    applyLang(lang);
+    syncLangButtons(lang);
+    updateClock();
+    if (state.currentRoomId) {
+      ui.updateUI();
+      // Re-render open overlays
+      if (ui.elements.weeklyReportOverlay && ui.elements.weeklyReportOverlay.classList.contains('open')) {
+        ui.showWeeklyReport();
+      }
+      if (ui.elements.reportOverlay && ui.elements.reportOverlay.classList.contains('open')) {
+        ui.showReport();
+      }
+    } else {
+      refreshRoomsList();
+    }
+  };
+  if (btnLangEs) btnLangEs.onclick = () => handleLangToggle('es');
+  if (btnLangEn) btnLangEn.onclick = () => handleLangToggle('en');
+
+  const toggleDark = document.getElementById('toggleDarkMode');
+  if (toggleDark) {
+    toggleDark.onchange = () => applyTheme(toggleDark.checked ? 'dark' : 'light');
+  }
 
   if (ui.elements.btnOpenConfig) {
     ui.elements.btnOpenConfig.onclick = () => {
+      // Sync dark toggle state when opening settings
+      const dm = document.getElementById('toggleDarkMode');
+      if (dm) dm.checked = (localStorage.getItem('prodTrackerTheme') === 'dark');
       ui.openModal(ui.elements.configModal);
     };
   }
@@ -907,7 +1015,7 @@ function bindEvents() {
       };
       saveGameRules(rules);
       ui.closeModal(ui.elements.gameRulesModal);
-      ui.showToast("Reglas guardadas");
+      ui.showToast(tr('toast.rules.saved'));
     };
   }
   if (ui.elements.btnCloseGameRules) {
@@ -923,6 +1031,60 @@ function bindEvents() {
     };
   }
 
+  // Edit Saved List Modal listeners
+  if (ui.elements.btnCloseEditSavedListModal) {
+    ui.elements.btnCloseEditSavedListModal.onclick = () => ui.closeModal(ui.elements.editSavedListModal);
+  }
+  if (ui.elements.btnCancelEditSavedListModal) {
+    ui.elements.btnCancelEditSavedListModal.onclick = () => ui.closeModal(ui.elements.editSavedListModal);
+  }
+  if (ui.elements.editSavedListModal) {
+    ui.elements.editSavedListModal.onclick = (e) => {
+      if (e.target === ui.elements.editSavedListModal) {
+        ui.closeModal(ui.elements.editSavedListModal);
+      }
+    };
+  }
+
+  if (ui.elements.btnSaveEditSavedListModal) {
+    ui.elements.btnSaveEditSavedListModal.onclick = () => {
+      const listId = ui.elements.editSavedListModal.dataset.listId;
+      const newName = ui.elements.editSavedListModalName.value.trim();
+      const raw = ui.elements.editSavedListModalItems.value.trim();
+
+      if (!newName) {
+        ui.showToast(tr('toast.list.name.empty'), 'warning');
+        return;
+      }
+
+      state.renameSavedShoppingList(listId, newName);
+
+      const lines = raw ? raw.split('\n').map(l => l.trim()).filter(Boolean) : [];
+      const parsedItems = [];
+      lines.forEach(line => {
+        const tags = [];
+        let cleanLine = line;
+        const tagMatches = [...line.matchAll(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g)];
+        if (tagMatches.length > 0) {
+          tagMatches.forEach(m => tags.push(m[1]));
+          cleanLine = line.replace(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g, '').trim();
+        }
+
+        const qtyMatch = cleanLine.match(/\s+(?:x|×)(\d+\S*)$/i) || cleanLine.match(/\s+\(([^)]+)\)$/);
+        const qty = qtyMatch ? qtyMatch[1] : '';
+        const name = qtyMatch ? cleanLine.slice(0, cleanLine.length - qtyMatch[0].length).trim() : cleanLine;
+        if (name) {
+          parsedItems.push({ name, qty, tags });
+        }
+      });
+
+      state.replaceSavedListItems(listId, parsedItems);
+      ui.showToast(tr('saved.list.updated'));
+      ui.closeModal(ui.elements.editSavedListModal);
+      ui.renderSavedLists();
+    };
+  }
+
   // Save Pending Task Form
   if (ui.elements.btnSavePen) {
     ui.elements.btnSavePen.onclick = () => {
@@ -932,24 +1094,165 @@ function bindEvents() {
       const idx = ui.elements.editPenIdx.value;
 
       if (!name) {
-        ui.showToast("El nombre de la tarea no puede estar vacío.", "warning");
+        ui.showToast(tr('toast.task.empty.name'), "warning");
         return;
       }
 
+      const desc = ui.elements.pendingDesc ? ui.elements.pendingDesc.value.trim() : '';
+      const deadline = ui.elements.pendingDeadline ? ui.elements.pendingDeadline.value : '';
+
       const imageB64 = ui.elements.pendingTaskImage ? ui.elements.pendingTaskImage.value || null : null;
-      state.savePendingTask(name, pts, priority, idx, imageB64);
-      ui.showToast(idx !== "" ? "Tarea actualizada" : "Tarea guardada");
+      state.savePendingTask(name, pts, priority, idx, imageB64, desc, deadline, []);
+      ui.showToast(tr(idx !== "" ? 'toast.task.updated' : 'toast.task.saved'));
 
       ui.elements.pendingInput.value = "";
       ui.elements.editPenIdx.value = "";
       if (ui.elements.pendingPriority) ui.elements.pendingPriority.value = 'media';
-      ui.elements.btnSavePen.innerText = "Guardar";
+      ui.elements.btnSavePen.innerText = tr('pending.save');
+      if (ui.elements.pendingDesc) ui.elements.pendingDesc.value = "";
+      if (ui.elements.pendingDeadline) ui.elements.pendingDeadline.value = "";
+
+      // Collapse the form
+      if (ui.elements.pendingFormCollapse) {
+        ui.elements.pendingFormCollapse.style.display = 'none';
+      }
+      if (ui.elements.btnTogglePendingForm) {
+        ui.elements.btnTogglePendingForm.innerText = tr('pending.add.toggle');
+      }
+
       // Reset photo
       if (ui.elements.pendingTaskImage) ui.elements.pendingTaskImage.value = '';
       if (ui.elements.pendingImageFile) ui.elements.pendingImageFile.value = '';
-      if (ui.elements.pendingImageLabel) ui.elements.pendingImageLabel.innerText = 'Sin foto';
+      if (ui.elements.pendingImageLabel) ui.elements.pendingImageLabel.innerText = tr('pending.photo.none.label');
       if (ui.elements.pendingImagePreviewContainer) ui.elements.pendingImagePreviewContainer.style.display = 'none';
       if (ui.elements.btnRemovePendingImage) ui.elements.btnRemovePendingImage.style.display = 'none';
+    };
+  }
+
+  // Destination selection logic inside task-associated shopping list form
+  if (ui.elements.savedListFormDestination) {
+    ui.elements.savedListFormDestination.onchange = () => {
+      const dest = ui.elements.savedListFormDestination.value;
+      if (ui.elements.savedListFormNewNameContainer) {
+        ui.elements.savedListFormNewNameContainer.style.display = dest === 'new' ? 'block' : 'none';
+      }
+      if (ui.elements.savedListFormExistingContainer) {
+        ui.elements.savedListFormExistingContainer.style.display = dest === 'existing' ? 'block' : 'none';
+      }
+      
+      // Populate existing select
+      if (dest === 'existing' && ui.elements.savedListFormExistingSelect) {
+        ui.elements.savedListFormExistingSelect.innerHTML = '';
+        const lists = state.getSavedShoppingLists();
+        if (lists.length === 0) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.innerText = tr('saved.no.lists') || 'No hay listas guardadas';
+          ui.elements.savedListFormExistingSelect.appendChild(opt);
+        } else {
+          lists.forEach(l => {
+            const opt = document.createElement('option');
+            opt.value = l.id;
+            opt.innerText = l.name;
+            ui.elements.savedListFormExistingSelect.appendChild(opt);
+          });
+        }
+      }
+    };
+  }
+
+  // Save Saved List Form (from Pending Screen)
+  if (ui.elements.btnSaveSavedListForm) {
+    ui.elements.btnSaveSavedListForm.onclick = () => {
+      const dest = ui.elements.savedListFormDestination ? ui.elements.savedListFormDestination.value : 'general';
+      const name = ui.elements.savedListFormName.value.trim();
+      const raw = ui.elements.savedListFormItems.value.trim();
+
+      if (!raw) {
+        ui.showToast(tr('toast.list.items.empty'), "warning");
+        return;
+      }
+
+      // Parse items
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+      const parsedItems = [];
+      lines.forEach(line => {
+        const tags = [];
+        let cleanLine = line;
+        const tagMatches = [...line.matchAll(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g)];
+        if (tagMatches.length > 0) {
+          tagMatches.forEach(m => tags.push(m[1]));
+          cleanLine = line.replace(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g, '').trim();
+        }
+
+        const qtyMatch = cleanLine.match(/\s+(?:x|×)(\d+\S*)$/i) || cleanLine.match(/\s+\(([^)]+)\)$/);
+        const qty = qtyMatch ? qtyMatch[1] : '';
+        const itemName = qtyMatch ? cleanLine.slice(0, cleanLine.length - qtyMatch[0].length).trim() : cleanLine;
+        if (itemName) {
+          parsedItems.push({ name: itemName, qty, tags });
+        }
+      });
+
+      if (parsedItems.length === 0) {
+        ui.showToast(tr('toast.list.items.empty'), "warning");
+        return;
+      }
+
+      if (dest === 'general') {
+        state.saveShoppingItemsBulk(parsedItems, 'casa');
+        ui.showToast(tr('toast.items.added.general') || 'Artículos añadidos a la lista general');
+      } else if (dest === 'existing') {
+        const listId = ui.elements.savedListFormExistingSelect ? ui.elements.savedListFormExistingSelect.value : '';
+        if (!listId) {
+          ui.showToast(tr('saved.no.lists') || 'No hay listas guardadas', "warning");
+          return;
+        }
+        parsedItems.forEach(item => {
+          state.addItemToSavedList(listId, item.name, item.qty, item.tags);
+        });
+        ui.showToast(tr('toast.items.added.existing') || 'Artículos añadidos a la lista guardada');
+      } else { // dest === 'new'
+        if (!name) {
+          ui.showToast(tr('toast.list.name.empty'), "warning");
+          return;
+        }
+        const currentLists = state.getSavedShoppingLists();
+        if (currentLists.length >= 10) {
+          ui.showToast(tr('toast.list.limit'), "warning");
+          return;
+        }
+        const createdList = state.createSavedShoppingList(name);
+        if (!createdList) {
+          ui.showToast(tr('toast.list.limit'), "warning");
+          return;
+        }
+        parsedItems.forEach(item => {
+          state.addItemToSavedList(createdList.id, item.name, item.qty, item.tags);
+        });
+        ui.showToast(tr('toast.list.created', { name }));
+      }
+
+      // Clear and collapse
+      ui.elements.savedListFormName.value = '';
+      ui.elements.savedListFormItems.value = '';
+      if (ui.elements.savedListFormDestination) {
+        ui.elements.savedListFormDestination.value = 'general';
+      }
+      if (ui.elements.savedListFormNewNameContainer) {
+        ui.elements.savedListFormNewNameContainer.style.display = 'none';
+      }
+      if (ui.elements.savedListFormExistingContainer) {
+        ui.elements.savedListFormExistingContainer.style.display = 'none';
+      }
+      if (ui.elements.savedListFormCollapse) {
+        ui.elements.savedListFormCollapse.style.display = 'none';
+      }
+      if (ui.elements.btnToggleSavedListForm) {
+        ui.elements.btnToggleSavedListForm.innerText = tr('pending.add.list.toggle');
+      }
+
+      ui.renderSavedLists();
+      ui.renderShoppingList();
     };
   }
 
@@ -961,12 +1264,12 @@ function bindEvents() {
       const idx = ui.elements.editTplIndex.value;
 
       if (!name || !pts) {
-        ui.showToast("Completa el nombre y valor de puntos de la rutina.", "warning");
+        ui.showToast(tr('toast.routine.empty'), "warning");
         return;
       }
 
       state.saveTemplateItem(name, pts, idx);
-      ui.showToast(idx !== "" ? "Rutina actualizada" : "Rutina creada");
+      ui.showToast(tr(idx !== "" ? 'toast.routine.updated' : 'toast.routine.saved'));
       ui.resetTplForm();
       ui.renderTemplates();
     };
@@ -976,11 +1279,11 @@ function bindEvents() {
     ui.elements.btnDeleteTpl.onclick = () => {
       const idx = ui.elements.editTplIndex.value;
       if (idx !== "") {
-        ui.showConfirm("¿Eliminar esta rutina permanentemente?", () => {
+        ui.showConfirm(tr('confirm.delete.routine'), () => {
           state.deleteTemplateItem(parseInt(idx));
           ui.resetTplForm();
           ui.renderTemplates();
-          ui.showToast("Rutina eliminada");
+          ui.showToast(tr('toast.routine.deleted'));
         });
       }
     };
@@ -1028,7 +1331,7 @@ function bindEvents() {
       state.saveState();
       ui.renderTemplates();
       ui.updateUI();
-      ui.showToast("Nuevo perfil añadido");
+      ui.showToast(tr('toast.profile.added'));
     };
   }
 
@@ -1042,7 +1345,7 @@ function bindEvents() {
       }
       state.saveState();
       ui.closeModal(ui.elements.configModal);
-      ui.showToast("Ajustes guardados correctamente");
+      ui.showToast(tr('toast.settings.saved'));
     };
   }
 
@@ -1054,7 +1357,7 @@ function bindEvents() {
     ui.elements.btnCopyInvite.onclick = () => {
       if (ui.elements.inviteLink && ui.elements.inviteLink.value) {
         navigator.clipboard.writeText(ui.elements.inviteLink.value);
-        ui.showToast("Enlace copiado al portapapeles");
+        ui.showToast(tr('toast.invite.copied'));
       }
     };
   }
@@ -1065,7 +1368,7 @@ function bindEvents() {
       const newName = ui.elements.newRoomNameInput.value.trim();
       if (!newName) return;
 
-      ui.showConfirm(`¿Renombrar la sala a "${newName}"?`, async () => {
+      ui.showConfirm(tr('confirm.rename', { name: newName }), async () => {
         try {
           await renameRoom(state.currentRoomId, newName);
           currentRoomMeta = { ...(currentRoomMeta || {}), name: newName };
@@ -1073,10 +1376,10 @@ function bindEvents() {
           if (ui.elements.roomTitleDisplay) ui.elements.roomTitleDisplay.innerText = newName;
           if (ui.elements.codeDisplay) ui.elements.codeDisplay.innerText = newName;
           ui.elements.newRoomNameInput.value = "";
-          ui.showToast("Sala renombrada");
+          ui.showToast(tr('toast.room.renamed'));
         } catch (error) {
           console.error(error);
-          ui.showToast("No se pudo renombrar la sala.", "error");
+          ui.showToast(tr('toast.room.rename.err'), "error");
         }
       });
     };
@@ -1084,20 +1387,20 @@ function bindEvents() {
 
   if (ui.elements.btnWeeklyReset) {
     ui.elements.btnWeeklyReset.onclick = () => {
-      ui.showConfirm("¿RESETEO SEMANAL?\nSe borrará el acumulado de esta semana y el log de hoy. Se conservan perfiles, ahorros y rutinas.", () => {
+      ui.showConfirm(tr('confirm.weekly.reset'), () => {
         state.weeklyResetState();
         ui.closeModal(ui.elements.configModal);
-        ui.showToast("Progreso semanal reiniciado");
+        ui.showToast(tr('toast.weekly.reset'));
       });
     };
   }
 
   if (ui.elements.btnHardReset) {
     ui.elements.btnHardReset.onclick = () => {
-      ui.showConfirm("¿RESET TOTAL?\nEsto borrará todos los registros, perfiles, rutinas y datos de ESTA sala.", () => {
+      ui.showConfirm(tr('confirm.hard.reset'), () => {
         state.hardResetState();
         ui.closeModal(ui.elements.configModal);
-        ui.showToast("Los datos de la sala han sido borrados.");
+        ui.showToast(tr('toast.hard.reset'));
       });
     };
   }
@@ -1105,14 +1408,14 @@ function bindEvents() {
   // Leave room (member)
   if (ui.elements.btnLeaveRoom) {
     ui.elements.btnLeaveRoom.onclick = () => {
-      ui.showConfirm("¿Salir de esta sala? Dejarás de tener acceso a ella.", async () => {
+      ui.showConfirm(tr('confirm.leave.room'), async () => {
         try {
           const user = getCurrentUser();
           await removeMember(state.currentRoomId, user.uid);
           backToRooms();
         } catch (error) {
           console.error(error);
-          ui.showToast("No se pudo salir de la sala.", "error");
+          ui.showToast(tr('toast.leave.err'), "error");
         }
       });
     };
@@ -1121,13 +1424,13 @@ function bindEvents() {
   // Delete room (owner)
   if (ui.elements.btnDeleteRoom) {
     ui.elements.btnDeleteRoom.onclick = () => {
-      ui.showConfirm("¿Eliminar la sala para SIEMPRE?\nSe borran todos los datos y se expulsa a todos los miembros.", async () => {
+      ui.showConfirm(tr('confirm.delete.room'), async () => {
         try {
           await deleteRoom(state.currentRoomId);
           backToRooms();
         } catch (error) {
           console.error(error);
-          ui.showToast("No se pudo eliminar la sala.", "error");
+          ui.showToast(tr('toast.delete.room.err'), "error");
         }
       });
     };
@@ -1136,7 +1439,7 @@ function bindEvents() {
   // Back to rooms list
   if (ui.elements.btnLogout) {
     ui.elements.btnLogout.onclick = () => {
-      ui.showConfirm("¿Volver a tus salas?", () => {
+      ui.showConfirm(tr('confirm.back.rooms'), () => {
         backToRooms();
       });
     };
@@ -1192,11 +1495,11 @@ function bindEvents() {
       const input = ui.elements.inputRoadmapCustom;
       const val = input.value.trim();
       if (!val) {
-        ui.showToast("Escribe una actividad personal.", "warning");
+        ui.showToast(tr('toast.personal.empty'), "warning");
         return;
       }
       state.addRoadmapItem(val, 'personal', 0);
-      ui.showToast(`"${val}" añadida al plan`);
+      ui.showToast(tr('toast.personal.added', { name: val }));
       input.value = "";
       input.focus();
       ui.updateBuilderCount();
@@ -1226,16 +1529,16 @@ async function startSession(user) {
     try {
       const roomId = await acceptInvite(invite, user);
       await connectToRoom(roomId);
-      ui.showToast("¡Te uniste a la sala!");
+      ui.showToast(tr('toast.joined'));
       return;
     } catch (e) {
       if (e.code === 'limit/members') {
-        ui.showToast(`La sala está llena (máx. ${MAX_MEMBERS_PER_ROOM}).`, "error");
+        ui.showToast(tr('toast.invite.full', { max: MAX_MEMBERS_PER_ROOM }), "error");
       } else if (e.code === 'invite/invalid') {
-        ui.showToast("Invitación inválida o expirada.", "error");
+        ui.showToast(tr('toast.invite.invalid'), "error");
       } else {
         console.error(e);
-        ui.showToast("No se pudo aceptar la invitación.", "error");
+        ui.showToast(tr('toast.invite.accept.err'), "error");
       }
     }
   }
@@ -1256,13 +1559,104 @@ function handleAuthState(user) {
   }
 }
 
-// Initial Load Handler
+// ── i18n + theme helpers ─────────────────────────────────────────
+
+function initTheme() {
+  const saved = localStorage.getItem('prodTrackerTheme') || 'light';
+  applyTheme(saved);
+  const toggle = document.getElementById('toggleDarkMode');
+  if (toggle) toggle.checked = (saved === 'dark');
+}
+
+function applyTheme(theme) {
+  localStorage.setItem('prodTrackerTheme', theme);
+  document.documentElement.dataset.theme = theme === 'dark' ? 'dark' : '';
+}
+
+function syncLangButtons(lang) {
+  const es = document.getElementById('btnLangEs');
+  const en = document.getElementById('btnLangEn');
+  if (!es || !en) return;
+  es.classList.toggle('active', lang === 'es');
+  en.classList.toggle('active', lang === 'en');
+  es.style.background = lang === 'es' ? 'var(--active-color)' : 'transparent';
+  es.style.color      = lang === 'es' ? '#fff' : 'var(--text-muted)';
+  es.style.borderColor= lang === 'es' ? 'var(--active-color)' : 'var(--card-border)';
+  en.style.background = lang === 'en' ? 'var(--active-color)' : 'transparent';
+  en.style.color      = lang === 'en' ? '#fff' : 'var(--text-muted)';
+  en.style.borderColor= lang === 'en' ? 'var(--active-color)' : 'var(--card-border)';
+}
+
+function initDraggableFab() {
+  const fab = document.getElementById('mainFab');
+  if (!fab) return;
+
+  // Restore saved position
+  const sL = localStorage.getItem('fabLeft');
+  const sB = localStorage.getItem('fabBottom');
+  if (sL !== null) {
+    fab.style.left   = sL;
+    fab.style.right  = 'auto';
+    fab.style.bottom = sB ?? '20px';
+  }
+
+  let dragging = false;
+  let moved = false;
+  let ox = 0, oy = 0, startL = 0, startB = 0;
+
+  fab.addEventListener('pointerdown', e => {
+    dragging = true;
+    moved = false;
+    fab.setPointerCapture(e.pointerId);
+    ox = e.clientX;
+    oy = e.clientY;
+    const r = fab.getBoundingClientRect();
+    startL = r.left;
+    startB = window.innerHeight - r.bottom;
+    fab.classList.add('dragging');
+    e.preventDefault();
+  });
+
+  fab.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - ox;
+    const dy = e.clientY - oy;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+    const sz = 56;
+    const nl = Math.max(8, Math.min(window.innerWidth  - sz - 8, startL + dx));
+    const nb = Math.max(8, Math.min(window.innerHeight - sz - 8, startB - dy));
+    fab.style.left   = nl + 'px';
+    fab.style.right  = 'auto';
+    fab.style.bottom = nb + 'px';
+  });
+
+  fab.addEventListener('pointerup', () => {
+    if (!dragging) return;
+    dragging = false;
+    fab.classList.remove('dragging');
+    if (moved) {
+      localStorage.setItem('fabLeft',   fab.style.left);
+      localStorage.setItem('fabBottom', fab.style.bottom);
+    }
+  });
+
+  // Absorb click when drag happened so template modal doesn't open
+  fab.addEventListener('click', e => {
+    if (moved) { e.stopImmediatePropagation(); moved = false; }
+  }, true);
+}
+
+// ── Initial Load Handler ─────────────────────────────────────────
 function initApp() {
   ui.initDomElements();
+  initI18n();
+  initTheme();
+  syncLangButtons(getLang());
   bindAuthEvents();
   bindRoomsEvents();
   bindEvents();
   initTabSwipe();
+  initDraggableFab();
 
   state.registerUiRenderer(() => ui.updateUI());
 

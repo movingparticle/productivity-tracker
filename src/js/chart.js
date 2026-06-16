@@ -1,4 +1,5 @@
 import Chart from 'chart.js/auto';
+import { t as tr } from './i18n';
 
 let chartInstance = null;
 let weekBarChartInstance = null;
@@ -59,10 +60,10 @@ export function updateTimeChart(canvasElement, todayLog, users) {
       chartInstance.destroy();
     }
 
-    // Colors matching light theme
-    const textColor = '#64748b'; // Slate gray labels
-    const gridColor = 'rgba(15, 23, 42, 0.05)'; // Light grey grids
-    const legendColor = '#1e293b'; // Slate dark legend text
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    const textColor = isDark ? '#94a3b8' : '#64748b'; // Slate gray labels
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.05)'; // Grey grids
+    const legendColor = isDark ? '#f1f5f9' : '#1e293b'; // Slate dark/light legend text
 
     // Create new chart instance
     chartInstance = new Chart(ctx, {
@@ -160,7 +161,7 @@ export function updateWeekBarChart(canvas, users, getDailyTotals) {
     const labelSet = new Set();
     users.forEach(u => getDailyTotals(u.id).forEach(d => labelSet.add(d.label)));
     const labels = [...labelSet];
-    if (labels.length === 0) labels.push('Sin datos');
+    if (labels.length === 0) labels.push(tr('report.weekly.no.data'));
 
     const datasets = users.map(u => {
       const daily = getDailyTotals(u.id);
@@ -176,8 +177,10 @@ export function updateWeekBarChart(canvas, users, getDailyTotals) {
       };
     });
 
-    const textColor = '#64748b';
-    const gridColor = 'rgba(15, 23, 42, 0.05)';
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.05)';
+    const legendColor = isDark ? '#f1f5f9' : '#1e293b';
 
     weekBarChartInstance = new Chart(canvas.getContext('2d'), {
       type: 'bar',
@@ -200,7 +203,7 @@ export function updateWeekBarChart(canvas, users, getDailyTotals) {
           legend: {
             position: 'bottom',
             labels: {
-              color: '#1e293b',
+              color: legendColor,
               font: { family: "'Outfit', sans-serif", weight: 'bold', size: 11 },
               padding: 12,
               usePointStyle: true,
@@ -272,8 +275,10 @@ export function updateHistorialChart(canvas, users, history, todayPoints, todayL
       };
     });
 
-    const textColor = '#64748b';
-    const gridColor = 'rgba(15, 23, 42, 0.05)';
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.05)';
+    const legendColor = isDark ? '#f1f5f9' : '#1e293b';
 
     historialChartInstance = new Chart(canvas.getContext('2d'), {
       type: 'line',
@@ -296,7 +301,7 @@ export function updateHistorialChart(canvas, users, history, todayPoints, todayL
           legend: {
             position: 'bottom',
             labels: {
-              color: '#1e293b',
+              color: legendColor,
               font: { family: "'Outfit', sans-serif", weight: 'bold', size: 11 },
               padding: 15,
               usePointStyle: true,
