@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Tracker">
   <link rel="manifest" href="/productivity-tracker/manifest.json">
   <link rel="apple-touch-icon" href="/productivity-tracker/icon-192.svg">
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-B27nsXBG.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-BMw6h3KP.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-yShwFDqn.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-CE7-fCV9.css">
 <script id="vite-plugin-pwa:register-sw" src="/productivity-tracker/registerSW.js"></script></head>
 <body>
 
@@ -19,11 +19,11 @@
   <div class="login-screen" id="authScreen">
     <div class="login-header">
       <h1 class="login-logo">Tracker Premium</h1>
-      <p class="login-subtitle" id="authSubtitle">Inicia sesión para continuar</p>
+      <p class="login-subtitle" id="authSubtitle" data-i18n="auth.subtitle">Inicia sesión para continuar</p>
     </div>
 
     <div class="login-card">
-      <button class="btn-google" id="btnGoogleLogin">
+      <button class="btn-google" id="btnGoogleLogin" data-i18n="auth.btn">
         <svg class="google-icon" viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
           <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
           <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -35,29 +35,29 @@
 
       <div class="auth-error" id="authError"></div>
 
-      <p class="auth-note">Solo necesitas tu cuenta de Google. Sin contraseñas que recordar.</p>
+      <p class="auth-note" data-i18n="auth.note">Solo necesitas tu cuenta de Google. Sin contraseñas que recordar.</p>
     </div>
   </div>
 
   <!-- ROOMS SCREEN (MIS SALAS) -->
   <div class="login-screen hidden" id="roomsScreen">
     <div class="login-header">
-      <h1 class="login-logo">Mis Salas</h1>
+      <h1 class="login-logo" data-i18n="rooms.title">Mis Salas</h1>
       <p class="login-subtitle" id="roomsUserLabel">Sesión iniciada</p>
     </div>
 
     <div class="login-card">
       <div id="roomsList" class="rooms-list"></div>
-      <div id="roomsEmpty" class="rooms-empty">Aún no tienes salas. Crea una nueva o únete con un código de invitación.</div>
+      <div id="roomsEmpty" class="rooms-empty" data-i18n="rooms.empty">Aún no tienes salas. Crea una nueva o únete con un código de invitación.</div>
 
       <div class="rooms-section">
         <label class="login-label" for="newRoomName" style="display: flex; align-items: center; gap: 6px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Crear una sala nueva
+          <span data-i18n="rooms.create">Crear una sala nueva</span>
         </label>
         <div class="rooms-inline">
-          <input type="text" id="newRoomName" class="login-input" placeholder="Ej: Familia">
-          <button class="btn-login btn-inline" id="btnCreateRoom">Crear</button>
+          <input type="text" id="newRoomName" class="login-input" placeholder="Ej: Familia" data-i18n-ph="rooms.new.name.ph">
+          <button class="btn-login btn-inline" id="btnCreateRoom" data-i18n="rooms.create.btn">Crear</button>
         </div>
         <div class="rooms-hint" id="createRoomHint">Puedes crear hasta 2 salas, con 5 miembros cada una.</div>
       </div>
@@ -67,11 +67,11 @@
       <div class="rooms-section">
         <label class="login-label" for="joinCodeInput" style="display: flex; align-items: center; gap: 6px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
-          Unirme con código de invitación
+          <span data-i18n="rooms.join">Unirme con código de invitación</span>
         </label>
         <div class="rooms-inline">
           <input type="text" id="joinCodeInput" class="login-input" placeholder="Ej: ABC123" style="text-transform:uppercase;">
-          <button class="btn-login btn-inline btn-join" id="btnJoinRoom">Unirme</button>
+          <button class="btn-login btn-inline btn-join" id="btnJoinRoom" data-i18n="rooms.join.btn">Unirme</button>
         </div>
       </div>
 
@@ -81,25 +81,25 @@
       <div class="rooms-section" id="redeemSection">
         <label class="login-label" for="redeemCodeInput" style="display: flex; align-items: center; gap: 6px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-          Tengo un código de acceso (prueba gratis)
+          <span data-i18n="rooms.redeem">Tengo un código de acceso (prueba gratis)</span>
         </label>
         <div class="rooms-inline">
           <input type="text" id="redeemCodeInput" class="login-input" placeholder="Ej: PRUEBA-AB12C" style="text-transform:uppercase;">
-          <button class="btn-login btn-inline" id="btnRedeemCode" style="background:linear-gradient(135deg, #7c3aed, #4f46e5);">Activar</button>
+          <button class="btn-login btn-inline" id="btnRedeemCode" style="background:linear-gradient(135deg, #7c3aed, #4f46e5);" data-i18n="rooms.redeem.btn">Activar</button>
         </div>
-        <div class="rooms-hint">Con un código desbloqueas crear salas y el asistente de IA.</div>
+        <div class="rooms-hint" data-i18n="rooms.hint.pro">Con un código desbloqueas crear salas y el asistente de IA.</div>
       </div>
 
       <div class="auth-error" id="roomsError"></div>
 
-      <span class="auth-link" id="btnRoomsSignOut" style="display:block; text-align:center; margin-top:18px;">Cerrar sesión</span>
+      <span class="auth-link" id="btnRoomsSignOut" style="display:block; text-align:center; margin-top:18px;" data-i18n="rooms.signout">Cerrar sesión</span>
     </div>
   </div>
 
   <!-- MAIN APP CONTAINER -->
   <div class="app-container" id="appContainer">
     <!-- Live sync status indicator -->
-    <div class="sync-status" id="syncIndicator">● Conectado</div>
+    <div class="sync-status" id="syncIndicator" data-i18n="sync.connected">● Conectado</div>
 
     <!-- TRACKER TAB (TODAY ACTIVITY) -->
     <div class="screen active" id="screenTracker">
@@ -130,11 +130,11 @@
         </div>
       
         <div class="big-score" id="displayScore">0</div>
-        <span class="score-label" id="displayLabel">Puntos Acumulados</span>
+        <span class="score-label" id="displayLabel" data-i18n="tracker.pts">Puntos Acumulados</span>
       
         <div class="goal-row">
           <div class="goal-info">
-            <span>META DIARIA</span>
+            <span data-i18n="tracker.meta">META DIARIA</span>
             <span id="dailyText">0/0</span>
           </div>
           <div class="progress-track">
@@ -145,7 +145,7 @@
 
         <div class="goal-row">
           <div class="goal-info">
-            <span>SALDO SEMANAL</span>
+            <span data-i18n="tracker.balance">SALDO SEMANAL</span>
             <span id="weeklyText">0/0</span>
           </div>
           <div class="progress-track">
@@ -156,8 +156,8 @@
       </div>
 
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-        <h4 class="section-title" style="margin:0;">Actividad Hoy</h4>
-        <button class="btn-fullscreen" id="btnTodayFullscreen" title="Pantalla completa">
+        <h4 class="section-title" style="margin:0;" data-i18n="tracker.activity">Actividad Hoy</h4>
+        <button class="btn-fullscreen" id="btnTodayFullscreen" title="Pantalla completa" data-i18n-title="tooltip.fullscreen">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
         </button>
       </div>
@@ -169,7 +169,7 @@
     <!-- ROADMAP TAB (DAILY PLAN) -->
     <div class="screen" id="screenRoadmap" style="overflow-y: auto;">
       <div class="header-row">
-        <span class="app-title">Plan de Enfoque</span>
+        <span class="app-title" data-i18n="plan.title">Plan de Enfoque</span>
       </div>
 
       <!-- User Profile Selector (so they can switch profiles on the roadmap too) -->
@@ -181,11 +181,11 @@
 
       <!-- Sub-Tabs Navigation (Roadmap / Actividades) -->
       <div class="roadmap-tabs">
-        <button class="roadmap-tab-btn active" id="btnTabRoadmapView">
+        <button class="roadmap-tab-btn active" id="btnTabRoadmapView" data-i18n="plan.tab.view">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
           Roadmap
         </button>
-        <button class="roadmap-tab-btn" id="btnTabRoadmapBuilder">
+        <button class="roadmap-tab-btn" id="btnTabRoadmapBuilder" data-i18n="plan.tab.build">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>
           Actividades
         </button>
@@ -204,28 +204,28 @@
         </div>
         
         <button id="btnShowProgressTree" class="btn-save" style="background: var(--active-color); font-weight: 700; width: 100%; margin-top: 15px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); display: flex; align-items: center; justify-content: center; gap: 8px;">
-          <span>Ver el Árbol</span>
+          <span data-i18n="plan.see.tree">Ver el Árbol</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7Z"></path><path d="M12 22v-3"></path></svg>
         </button>
       </div>
 
       <!-- TAB 2: BUILD ROADMAP (interactive blocks) -->
       <div id="roadmapBuilderTab" class="hidden">
-        <h4 class="section-title">Toca bloques para armar tu plan</h4>
+        <h4 class="section-title" data-i18n="plan.builder.hint">Toca bloques para armar tu plan</h4>
 
         <!-- Sub-tabs: Pendientes / Rutinas / Personal -->
         <div class="builder-subtabs">
           <button class="builder-subtab active" id="btnBuilderSubPending" data-sub="pending">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-            <span>Pendientes</span>
+            <span data-i18n="plan.tab.pending">Pendientes</span>
           </button>
           <button class="builder-subtab" id="btnBuilderSubRoutine" data-sub="routine">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-            <span>Rutinas</span>
+            <span data-i18n="plan.tab.routines">Rutinas</span>
           </button>
           <button class="builder-subtab" id="btnBuilderSubPersonal" data-sub="personal">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            <span>Personal</span>
+            <span data-i18n="plan.tab.personal">Personal</span>
           </button>
         </div>
 
@@ -246,60 +246,120 @@
         <!-- Panel: Personal -->
         <div class="builder-panel hidden" id="builderPanelPersonal">
           <div class="builder-personal-card">
-            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Actividad Libre / Personal</label>
+            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" data-i18n="plan.personal.label">Actividad Libre / Personal</label>
             <div style="display: flex; gap: 8px;">
               <input type="text" id="inputRoadmapCustom" placeholder="Ej: Cita médica, almuerzo, descanso..." style="flex: 1; margin: 0; padding: 10px 12px; border: 1px solid rgba(15, 23, 42, 0.15); border-radius: var(--radius-md); font-size: 0.9rem;">
-              <button class="btn-save" id="btnAddCustomToRoadmap" style="width: auto; margin: 0; background: var(--active-color); font-size: 0.85rem; padding: 8px 16px;">Añadir</button>
+              <button class="btn-save" id="btnAddCustomToRoadmap" style="width: auto; margin: 0; background: var(--active-color); font-size: 0.85rem; padding: 8px 16px;" data-i18n="plan.add">Añadir</button>
             </div>
-            <div class="rooms-hint" style="margin-top: 4px;">Las actividades personales no otorgan puntos en el historial del equipo.</div>
+            <div class="rooms-hint" style="margin-top: 4px;" data-i18n="plan.personal.hint">Las actividades personales no otorgan puntos en el historial del equipo.</div>
           </div>
         </div>
 
         <!-- Live footer: count + go to plan -->
         <div class="builder-footer" id="builderFooter">
           <span class="builder-footer-count" id="builderPlanCount">Tu plan: 0 bloques</span>
-          <button class="builder-footer-btn" id="btnBuilderGoToPlan">Ver plan →</button>
+          <button class="builder-footer-btn" id="btnBuilderGoToPlan" data-i18n="plan.go">Ver plan →</button>
         </div>
       </div>
     </div>
 
     <!-- PENDING TAB (CHECKLIST) -->
-    <div class="screen" id="screenPending">
+    <div class="screen" id="screenPending" style="overflow-y: auto;">
       <div class="header-row">
-        <span class="app-title">Pendientes</span>
-        <button class="btn-fullscreen" id="btnPendingFullscreen" title="Pantalla completa">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+        <span class="app-title" data-i18n="pending.title">Pendientes</span>
+      </div>
+
+      <!-- Toggle buttons for form and list -->
+      <div style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;">
+        <button class="btn-save" id="btnTogglePendingForm" style="margin:0; width:auto; display:flex; align-items:center; gap:8px;" data-i18n="pending.add.toggle">
+          + Agregar Tarea
         </button>
       </div>
 
       <!-- New task form -->
-      <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding:16px; border-radius:var(--radius-md); margin-bottom:15px; flex-shrink:0;">
+      <div id="pendingFormCollapse" style="display:none; background: var(--card-bg); border: 1px solid var(--card-border); padding:16px; border-radius:var(--radius-md); margin-bottom:15px; flex-shrink:0;">
         <input type="hidden" id="editPenIdx">
         <input type="hidden" id="pendingTaskImage">
-        <input type="text" id="pendingInput" placeholder="Nombre de la tarea pendiente..." style="margin-bottom:10px;">
-        <div style="display:flex; gap:8px; align-items:stretch; margin-bottom:8px;">
-          <input type="number" id="pendingPoints" placeholder="Pts" value="5" style="width:62px; text-align:center; margin-bottom:0;">
-          <select id="pendingPriority" title="Prioridad" style="flex:1; margin-bottom:0; padding:11px; font-size:0.85rem;">
-            <option value="alta">Alta</option>
-            <option value="media" selected>Media</option>
-            <option value="baja">Baja</option>
-          </select>
-          <button class="btn-save" id="btnSavePen" style="width:auto; margin:0; padding:10px 18px;">Guardar</button>
+        <input type="text" id="pendingInput" placeholder="Nombre de la tarea pendiente..." style="margin-bottom:10px;" data-i18n-ph="pending.placeholder">
+        
+        <!-- Description input -->
+        <textarea id="pendingDesc" placeholder="Descripción de la tarea..." style="margin-bottom:10px; width:100%; min-height:60px; padding:12px 14px; border: 1px solid rgba(15, 23, 42, 0.15); border-radius: var(--radius-md); font-family:inherit; font-size:0.95rem; outline:none; transition:var(--transition);" data-i18n-ph="pending.desc.placeholder"></textarea>
+        
+        <!-- Row for points, priority, and deadline with explicit labels -->
+        <div style="display:grid; grid-template-columns: 80px 1fr 1.2fr; gap:10px; margin-bottom:10px;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label for="pendingPoints" style="font-size:0.75rem; font-weight:700; color:var(--text-muted);" data-i18n="pending.points">Puntos</label>
+            <input type="number" id="pendingPoints" placeholder="Pts" value="5" style="width:100%; text-align:center; margin-bottom:0; padding:10px 6px; font-size:0.85rem; border:1px solid rgba(15, 23, 42, 0.15); border-radius:var(--radius-md); background:var(--card-bg); color:var(--text-main);">
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label for="pendingPriority" style="font-size:0.75rem; font-weight:700; color:var(--text-muted);" data-i18n="pending.priority">Prioridad</label>
+            <select id="pendingPriority" style="width:100%; margin-bottom:0; padding:10px; font-size:0.85rem; border:1px solid rgba(15, 23, 42, 0.15); border-radius:var(--radius-md); background:var(--card-bg); color:var(--text-main);">
+              <option value="alta" data-i18n="priority.high">Alta</option>
+              <option value="media" selected data-i18n="priority.medium">Media</option>
+              <option value="baja" data-i18n="priority.low">Baja</option>
+            </select>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label for="pendingDeadline" style="font-size:0.75rem; font-weight:700; color:var(--text-muted);" data-i18n="pending.deadline">Fecha límite</label>
+            <input type="date" id="pendingDeadline" style="width:100%; margin-bottom:0; padding:9px 10px; font-size:0.85rem; border:1px solid rgba(15, 23, 42, 0.15); border-radius:var(--radius-md); background:var(--card-bg); color:var(--text-main);" title="Fecha límite">
+          </div>
         </div>
-        <!-- Photo row for task -->
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="file" id="pendingImageFile" accept="image/*" style="display:none;">
-          <button type="button" id="btnUploadPendingImage" style="display:flex; align-items:center; gap:6px; background:var(--card-bg); border:1px dashed var(--card-border); color:var(--text-muted); font-size:0.8rem; padding:7px 12px; border-radius:8px; cursor:pointer; flex-shrink:0;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Foto (opcional)
+
+        <!-- Create Saved List option inside Add Task Form -->
+        <div style="margin-bottom: 12px; border-top: 1px dashed var(--card-border); padding-top: 12px;">
+          <button type="button" class="btn-save" id="btnToggleSavedListForm" style="margin:0; width:auto; display:flex; align-items:center; gap:8px; background:#475569;" data-i18n="pending.add.list.toggle">
+            + Crear Lista de Compras
           </button>
-          <span id="pendingImageLabel" style="font-size:0.75rem; color:var(--text-muted); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Sin foto</span>
-          <button type="button" id="btnRemovePendingImage" style="display:none; background:none; border:none; color:var(--danger); cursor:pointer; padding:4px; display:none; align-items:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+          
+          <div id="savedListFormCollapse" style="display:none; background: var(--card-bg); border: 1px solid var(--card-border); padding:16px; border-radius:var(--radius-md); margin-top:10px; flex-shrink:0;">
+            <label style="font-size:0.72rem; font-weight:700; color:var(--text-muted); margin-bottom:4px; display:block;" data-i18n="saved.list.form.destination.label">Destino de los artículos</label>
+            <select id="savedListFormDestination" style="width:100%; margin-bottom:10px; padding:10px; font-size:0.85rem; border:1px solid rgba(15, 23, 42, 0.15); border-radius:var(--radius-md); background:var(--card-bg); color:var(--text-main);">
+              <option value="general" data-i18n="saved.list.form.destination.general">Lista General de Compras</option>
+              <option value="existing" data-i18n="saved.list.form.destination.existing">Añadir a Lista Guardada existente</option>
+              <option value="new" data-i18n="saved.list.form.destination.new">Crear una Nueva Lista Guardada</option>
+            </select>
+            <div id="savedListFormNewNameContainer" style="display:none;">
+              <input type="text" id="savedListFormName" placeholder="Nombre de la lista (ej: Supermercado)..." style="margin-bottom:10px;" data-i18n-ph="saved.list.form.name.ph">
+            </div>
+            <div id="savedListFormExistingContainer" style="display:none;">
+              <select id="savedListFormExistingSelect" style="width:100%; margin-bottom:10px; padding:10px; font-size:0.85rem; border:1px solid rgba(15, 23, 42, 0.15); border-radius:var(--radius-md); background:var(--card-bg); color:var(--text-main);">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            <textarea id="savedListFormItems" placeholder="Artículos (uno por línea, ej: Leche x2 #Lidl)..." style="width:100%; min-height:80px; padding:12px 14px; border: 1px solid rgba(15, 23, 42, 0.15); border-radius: var(--radius-md); font-family:inherit; font-size:0.95rem; outline:none; transition:var(--transition); margin-bottom:10px;" data-i18n-ph="saved.list.form.items.ph"></textarea>
+            <div style="display:flex; justify-content:flex-end;">
+              <button type="button" class="btn-save" id="btnSaveSavedListForm" style="width:auto; margin:0; padding:10px 18px;" data-i18n="saved.list.form.save">Crear Lista</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <!-- Photo row for task -->
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="file" id="pendingImageFile" accept="image/*" style="display:none;">
+            <button type="button" id="btnUploadPendingImage" style="display:flex; align-items:center; gap:6px; background:var(--card-bg); border:1px dashed var(--card-border); color:var(--text-muted); font-size:0.8rem; padding:7px 12px; border-radius:8px; cursor:pointer; flex-shrink:0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span data-i18n="pending.photo">Foto (opcional)</span>
+            </button>
+            <span id="pendingImageLabel" style="font-size:0.75rem; color:var(--text-muted); max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" data-i18n="pending.photo.none">Sin foto</span>
+            <button type="button" id="btnRemovePendingImage" style="display:none; background:none; border:none; color:var(--danger); cursor:pointer; padding:4px; display:none; align-items:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+          </div>
+          <button class="btn-save" id="btnSavePen" style="width:auto; margin:0; padding:10px 18px;" data-i18n="pending.save">Guardar</button>
         </div>
         <div id="pendingImagePreviewContainer" style="display:none; margin-top:8px;">
           <img id="pendingImagePreview" src="" style="max-height:80px; border-radius:8px; object-fit:cover; border:1px solid var(--card-border);">
         </div>
-        <div class="rooms-hint" style="margin-top:8px;">Las tareas se ordenan por urgencia: la prioridad y los días que llevan esperando.</div>
+        <div class="rooms-hint" style="margin-top:8px;" data-i18n="pending.hint">Las tareas se ordenan por urgencia: la prioridad y los días que llevan esperando.</div>
+      </div>
+
+      <!-- Saved list form removed from here and relocated inside task form -->
+
+      <!-- List Title + Fullscreen button row -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; margin-top:8px;">
+        <h4 class="section-title" style="margin:0;" data-i18n="pending.list.title">Tareas</h4>
+        <button class="btn-fullscreen" id="btnPendingFullscreen" title="Pantalla completa" data-i18n-title="tooltip.fullscreen">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+        </button>
       </div>
 
       <div class="pending-grid" id="pendingListDisplay"></div>
@@ -308,58 +368,71 @@
     <!-- METRICS TAB (CHARTS AND STATS) -->
     <div class="screen" id="screenMetrics" style="overflow-y:auto;">
       <div class="header-row">
-        <span class="app-title">Estadísticas</span>
+        <span class="app-title" data-i18n="stats.title">Estadísticas</span>
       </div>
       
-      <h4 class="section-title">Progreso Hoy (%)</h4>
+      <h4 class="section-title" data-i18n="stats.progress">Progreso Hoy (%)</h4>
       <div class="percent-container" id="userPercentDisplay"></div>
 
       <!-- Month total accumulator card -->
       <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: 1px solid var(--card-border); padding:20px; border-radius:var(--radius-md); margin-bottom:20px; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.15);">
-        <div style="font-size:0.75rem; opacity:0.8; letter-spacing:0.05em; font-weight:700; text-transform:uppercase; color: rgba(255,255,255,0.9);">TOTAL MES ACUMULADO</div>
+        <div style="font-size:0.75rem; opacity:0.8; letter-spacing:0.05em; font-weight:700; text-transform:uppercase; color: rgba(255,255,255,0.9);" data-i18n="stats.month.label">TOTAL MES ACUMULADO</div>
         <div style="font-size:2.5rem; font-weight:900; font-family: var(--font-title); margin-top:4px;" id="monthTotal">0</div>
       </div>
       
-      <h4 class="section-title">Tiempo vs Puntos (Hoy)</h4>
-      <div style="display:block; height:240px; margin-bottom:20px; background: var(--card-bg); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--card-border); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
-        <canvas id="timeChart"></canvas>
+      <!-- Chart with Hoy / Historial toggle -->
+      <div class="roadmap-tabs" style="margin-bottom:0; border-bottom-left-radius:0; border-bottom-right-radius:0;">
+        <button class="roadmap-tab-btn active" id="btnChartTabHoy" data-i18n="stats.tab.today">Hoy</button>
+        <button class="roadmap-tab-btn" id="btnChartTabHistorial" data-i18n="stats.tab.history">Historial</button>
       </div>
-      
-      <h4 class="section-title">Reportes e Historial</h4>
+      <div style="display:block; height:240px; margin-bottom:20px; background: var(--card-bg); padding: 12px; border-radius: 0 0 var(--radius-md) var(--radius-md); border: 1px solid var(--card-border); border-top:none; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
+        <canvas id="timeChart" style="display:block;"></canvas>
+        <canvas id="historialChart" style="display:none;"></canvas>
+      </div>
+
+      <h4 class="section-title" data-i18n="reports.title">Reportes</h4>
       <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02); display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-        <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 4px;">
-          Visualiza el detalle de actividades de hoy de todos los miembros del equipo y exporta un reporte en PDF.
+        <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 4px;" data-i18n="reports.hint">
+          Exporta un reporte detallado de hoy o de toda la semana en PDF.
         </p>
         <button id="btnOpenReport" class="btn-save" style="background: var(--active-color); display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; box-shadow: none;">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-          Generar Reporte Diario (PDF)
+          <span data-i18n="reports.daily">Reporte Diario (PDF)</span>
+        </button>
+        <button id="btnOpenWeeklyReport" class="btn-save" style="background: #7c3aed; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; box-shadow: none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span data-i18n="reports.weekly">Reporte Semanal (PDF)</span>
         </button>
       </div>
 
       <!-- Current room widget -->
       <div style="text-align:center; padding:18px; background: rgba(15, 23, 42, 0.03); border-radius:var(--radius-md); border:1px dashed var(--card-border); margin-top:20px;">
-        <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); letter-spacing:0.05em; text-transform:uppercase;">SALA ACTUAL</span>
+        <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); letter-spacing:0.05em; text-transform:uppercase;" data-i18n="stats.current.room.label">SALA ACTUAL</span>
         <div style="font-size:1.6rem; font-weight:900; color:#3b82f6; margin:6px 0; font-family: var(--font-title);" id="codeDisplay">---</div>
       </div>
 
-      <button id="btnLogout" class="btn-close-txt" style="display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>Cambiar de Sala</button>
+      <button id="btnLogout" class="btn-close-txt" style="display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg><span data-i18n="reports.room.switch">Cambiar de Sala</span></button>
     </div>
 
     <!-- SHOPPING TAB (COMPRAS DE LA CASA) -->
     <div class="screen" id="screenShopping" style="overflow-y: auto;">
       <div class="header-row">
-        <span class="app-title">Compras de la Sala</span>
+        <span class="app-title" data-i18n="shop.title">Compras de la Sala</span>
       </div>
 
-      <!-- Sub-Tabs Navigation (Lista / Añadir) -->
+      <!-- Sub-Tabs Navigation (Lista / Añadir / Mis Listas) -->
       <div class="roadmap-tabs">
-        <button class="roadmap-tab-btn active" id="btnTabShoppingList">
+        <button class="roadmap-tab-btn active" id="btnTabShoppingList" data-i18n="shop.tab.list">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
           Lista
         </button>
-        <button class="roadmap-tab-btn" id="btnTabShoppingAdd">
+        <button class="roadmap-tab-btn" id="btnTabShoppingAdd" data-i18n="shop.tab.add">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Añadir
+        </button>
+        <button class="roadmap-tab-btn" id="btnTabShoppingSaved" data-i18n="shop.tab.saved">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+          Mis Listas
         </button>
       </div>
 
@@ -368,18 +441,26 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px; gap:8px;">
           <!-- Column toggle (1 or 2 cols only) -->
           <div style="display:flex; gap:4px;">
-            <button class="btn-col-toggle active" id="btnCol1" data-cols="1" title="Lista">
+            <button class="btn-col-toggle active" id="btnCol1" data-cols="1" title="Lista" data-i18n-title="tooltip.list">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
             </button>
-            <button class="btn-col-toggle" id="btnCol2" data-cols="2" title="Cuadrícula">
+            <button class="btn-col-toggle" id="btnCol2" data-cols="2" title="Cuadrícula" data-i18n-title="tooltip.grid">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>
             </button>
           </div>
-          <button id="btnShoppingFullscreen" class="btn-fullscreen" title="Ver en pantalla completa">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
-            Pantalla completa
-          </button>
+          <div style="display:flex; gap:6px; margin-left:auto;">
+            <button id="btnShoppingShare" class="btn-fullscreen" title="Compartir lista" data-i18n-title="saved.share.tooltip" style="background:#7c3aed; color:#fff; border-color:#7c3aed;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+              <span data-i18n="shop.share">Compartir</span>
+            </button>
+            <button id="btnShoppingFullscreen" class="btn-fullscreen" title="Ver en pantalla completa" data-i18n-title="tooltip.fullscreen.view">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
+              <span data-i18n="tooltip.fullscreen">Pantalla completa</span>
+            </button>
+          </div>
         </div>
+        <!-- Filter Bar for General Shopping List -->
+        <div id="generalShoppingFilters" style="margin-top: 10px; margin-bottom: 5px;"></div>
         <div class="template-list" id="shoppingListDisplay" style="margin-top: 8px; min-height: 250px; border: none; background: transparent; overflow-y: visible; max-height: none; margin-bottom: 90px;">
           <!-- Dynamically populated shopping items -->
         </div>
@@ -389,36 +470,40 @@
       <div id="shoppingAddTab" class="hidden">
 
         <!-- BULK: pegar/escribir toda la lista de una y ordenarla con IA -->
-        <h4 class="section-title">Lista rápida</h4>
+        <h4 class="section-title" data-i18n="shop.quick.title">Lista rápida</h4>
         <div class="roadmap-builder-card" style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
-          <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:inline-flex; align-items:center; gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>Escribe todo de corrido</label>
-          <textarea id="shopBulkInput" placeholder="Ej:&#10;Leche 2L&#10;Pan&#10;Jabón, arroz, 3 manzanas..." style="width:100%; min-height:90px; resize:vertical; padding:11px; border:1px solid var(--card-border); border-radius:var(--radius-md); font-family:var(--font-body); font-size:0.9rem;"></textarea>
+          <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:inline-flex; align-items:center; gap:6px;" data-i18n="shop.quick.label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>Escribe todo de corrido</label>
+          <textarea id="shopBulkInput" placeholder="Ej:&#10;Leche 2L&#10;Pan&#10;Jabón, arroz, 3 manzanas..." style="width:100%; min-height:90px; resize:vertical; padding:11px; border:1px solid var(--card-border); border-radius:var(--radius-md); font-family:var(--font-body); font-size:0.9rem;" data-i18n-ph="shop.quick.placeholder"></textarea>
           <div style="display:flex; gap:8px;">
-            <button class="btn-save" id="btnAddBulkList" style="flex:1; margin:0; background:#475569; box-shadow:none; font-size:0.85rem; padding:11px;">Añadir tal cual</button>
-            <button class="btn-save" id="btnFixListAI" style="flex:1; margin:0; background:linear-gradient(135deg, #7c3aed, #4f46e5); box-shadow:none; font-size:0.85rem; padding:11px; display:flex; align-items:center; justify-content:center; gap:6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"></path></svg>Arreglar con IA</button>
+            <button class="btn-save" id="btnAddBulkList" style="flex:1; margin:0; background:#475569; box-shadow:none; font-size:0.85rem; padding:11px;" data-i18n="shop.quick.add">Añadir tal cual</button>
+            <button class="btn-save" id="btnFixListAI" style="flex:1; margin:0; background:linear-gradient(135deg, #7c3aed, #4f46e5); box-shadow:none; font-size:0.85rem; padding:11px; display:flex; align-items:center; justify-content:center; gap:6px;" data-i18n="shop.quick.ai"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"></path></svg>Arreglar con IA</button>
           </div>
-          <div class="rooms-hint">Pega tu lista entera y la IA la separa en artículos ordenados.</div>
+          <div class="rooms-hint" data-i18n="shop.quick.hint">Pega tu lista entera y la IA la separa en artículos ordenados.</div>
         </div>
 
-        <h4 class="section-title">Solicitar un artículo</h4>
+        <h4 class="section-title" data-i18n="shop.item.title">Solicitar un artículo</h4>
         <div class="roadmap-builder-card" style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 15px; margin-bottom: 90px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
 
           <!-- Nombre (opcional si hay foto) -->
           <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px;">
-            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:inline-flex; align-items:center; gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>Nombre del Artículo <span style="text-transform:none; font-weight:600; color:var(--text-muted);">(o solo sube una foto)</span></label>
-            <input type="text" id="shopItemName" placeholder="¿Qué se necesita? Ej: Leche, Jabón..." style="margin:0;">
+            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:inline-flex; align-items:center; gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+              <span data-i18n="shop.item.name">Nombre del Artículo</span>
+              <span style="text-transform:none; font-weight:600; color:var(--text-muted); margin-left:4px;" data-i18n="shop.item.name.photo">(o solo sube una foto)</span>
+            </label>
+            <input type="text" id="shopItemName" placeholder="¿Qué se necesita? Ej: Leche, Jabón..." style="margin:0;" data-i18n-ph="shop.item.name.ph">
           </div>
 
           <!-- Foto (Opcional) -->
           <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px;">
-            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:inline-flex; align-items:center; gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>Foto (Opcional)</label>
+            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:inline-flex; align-items:center; gap:6px;" data-i18n="shop.item.photo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>Foto (Opcional)</label>
             <div style="display:flex; gap:8px; align-items:center;">
-              <button class="btn-save" id="btnUploadImageTrigger" style="background:#475569; font-size:0.85rem; padding:10px 16px; margin:0; width:auto; display:flex; align-items:center; gap:6px; box-shadow:none; flex-shrink:0;">
+              <button class="btn-save" id="btnUploadImageTrigger" style="background:#475569; font-size:0.85rem; padding:10px 16px; margin:0; width:auto; display:flex; align-items:center; gap:6px; box-shadow:none; flex-shrink:0;" data-i18n="shop.item.upload">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                 Subir Imagen
               </button>
               <input type="file" id="shopItemImage" accept="image/*" style="display:none;">
-              <span id="shopImageFileName" style="font-size:0.75rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; flex:1;">Sin foto seleccionada</span>
+              <span id="shopImageFileName" style="font-size:0.75rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; flex:1;" data-i18n="shop.item.no.photo">Sin foto seleccionada</span>
               <button id="btnRemoveShopImage" style="display:none; border:none; background:none; color:var(--danger); font-size:1.4rem; cursor:pointer; line-height: 1; padding: 0 4px;">×</button>
             </div>
             <div id="shopImagePreviewContainer" style="display:none; position:relative; width:80px; height:80px; border-radius:var(--radius-sm); overflow:hidden; border:1px solid var(--card-border); margin-top:8px;">
@@ -429,20 +514,35 @@
           <!-- Detalles de compra (Cant, Asignado) -->
           <div style="display:flex; gap:8px; align-items:flex-end;">
             <div style="flex:1;">
-              <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:block; margin-bottom:4px;">Cantidad</label>
-              <input type="text" id="shopItemQty" placeholder="Ej: 2L, x3..." style="margin:0;">
+              <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:block; margin-bottom:4px;" data-i18n="shop.item.qty">Cantidad</label>
+              <input type="text" id="shopItemQty" placeholder="Ej: 2L, x3..." style="margin:0;" data-i18n-ph="shop.item.qty.ph">
             </div>
             <div style="flex:1.5;">
-              <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:block; margin-bottom:4px;">Para quién</label>
+              <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:block; margin-bottom:4px;" data-i18n="shop.item.for">Para quién</label>
               <select id="shopItemUser" style="margin:0; font-size:0.85rem; padding: 11px;">
-                <option value="casa">La Sala</option>
+                <option value="casa" data-i18n="shop.item.for.all">La Sala</option>
               </select>
             </div>
           </div>
 
-          <button class="btn-save" id="btnSaveShopItem" style="margin-top: 5px; background: var(--active-color);">Añadir a la Lista</button>
+          <button class="btn-save" id="btnSaveShopItem" style="margin-top: 5px; background: var(--active-color);" data-i18n="shop.item.add">Añadir a la Lista</button>
         </div>
       </div>
+
+      <!-- TAB 3: MIS LISTAS (REGULARS) -->
+      <div id="shoppingSavedTab" class="hidden" style="padding-bottom:80px;">
+        <div id="savedListsContainer"></div>
+        <div id="savedListsEmpty" style="text-align:center; padding:32px 0; display:none;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block; margin:0 auto 12px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0;" data-i18n="saved.empty.hint">Guardá hasta 10 listas para reutilizarlas.<br>Ej: Despensa, Farmacia, Limpieza.</p>
+        </div>
+        <div id="savedListsLimitHint" style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding:8px 0; display:none;" data-i18n="saved.limit.hint">Límite de 10 listas alcanzado.</div>
+        <button id="btnCreateSavedList" class="btn-save" style="background:#475569; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span data-i18n="saved.new.btn">Nueva lista guardada</span>
+        </button>
+      </div>
+
     </div>
 
     <!-- BOTTOM TAB NAVIGATION -->
@@ -451,31 +551,31 @@
           <span>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon-svg"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           </span>
-          <span>Hoy</span>
+          <span data-i18n="nav.today">Hoy</span>
       </button>
       <button class="nav-item" id="navRoadmapBtn">
           <span>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon-svg"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>
           </span>
-          <span>Plan</span>
+          <span data-i18n="nav.plan">Plan</span>
       </button>
       <button class="nav-item" id="navPendingBtn">
           <span>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon-svg"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><line x1="9" y1="14" x2="15" y2="14"></line><line x1="9" y1="18" x2="15" y2="18"></line><line x1="9" y1="10" x2="15" y2="10"></line></svg>
           </span>
-          <span>Tareas</span>
+          <span data-i18n="nav.pending">Tareas</span>
       </button>
       <button class="nav-item" id="navShoppingBtn">
           <span>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon-svg"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
           </span>
-          <span>Compras</span>
+          <span data-i18n="nav.shopping">Compras</span>
       </button>
       <button class="nav-item" id="navMetricsBtn">
           <span>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon-svg"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
           </span>
-          <span>Stats</span>
+          <span data-i18n="nav.stats">Stats</span>
       </button>
     </div>
   </div>
@@ -484,17 +584,17 @@
   <div class="modal-overlay" id="templateModal">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="margin:0; font-family: var(--font-title); font-weight:800;">Rutinas Guardadas</h3>
+        <h3 style="margin:0; font-family: var(--font-title); font-weight:800;" data-i18n="routines.title">Rutinas Guardadas</h3>
         <button id="btnCloseTplModal" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer;">×</button>
       </div>
     
       <!-- Savings Balance Display -->
       <div class="bank-widget" id="bankWidget">
           <div>
-              <div style="font-size:0.65rem; opacity:0.9; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;">AHORRO DISPONIBLE</div>
+              <div style="font-size:0.65rem; opacity:0.9; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;" data-i18n="routines.savings">AHORRO DISPONIBLE</div>
               <div class="bank-balance" id="bankBalanceDisplay">0 pts</div>
           </div>
-          <button class="btn-redeem" id="btnRedeemBank" style="display:inline-flex; align-items:center; gap:6px;">USAR SALDO<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
+          <button class="btn-redeem" id="btnRedeemBank" style="display:inline-flex; align-items:center; gap:6px;"><span data-i18n="routines.use.savings">USAR SALDO</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
       </div>
      
       <input type="text" id="searchInput" class="search-bar" placeholder="Buscar rutina...">
@@ -509,8 +609,8 @@
           <input type="number" id="tplPts" placeholder="Pts" style="width:70px; text-align:center; margin:0;">
         </div>
         <div style="display:flex; gap:8px; margin-top:10px;">
-          <button class="btn-save" id="btnSaveTpl" style="flex:1;">Guardar</button>
-          <button class="btn-save" id="btnDeleteTpl" style="background: var(--danger); width:auto; display:none;">Borrar</button>
+          <button class="btn-save" id="btnSaveTpl" style="flex:1;" data-i18n="routines.save">Guardar</button>
+          <button class="btn-save" id="btnDeleteTpl" style="background: var(--danger); width:auto; display:none;" data-i18n="routines.delete">Borrar</button>
         </div>
       </div>
     </div>
@@ -522,7 +622,7 @@
 
       <!-- Header -->
       <div class="config-modal-header">
-        <h3 class="config-modal-title">Ajustes</h3>
+        <h3 class="config-modal-title" data-i18n="cfg.title">Ajustes</h3>
         <button class="config-close-btn" id="btnCloseConfig" title="Cerrar">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -533,66 +633,93 @@
 
       <!-- SALA -->
       <div class="config-section">
-        <div class="config-section-label">Sala</div>
-        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:5px;">Nombre</label>
+        <div class="config-section-label" data-i18n="cfg.room">Sala</div>
+        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:5px;" data-i18n="cfg.room.name">Nombre</label>
         <div style="display:flex; gap:8px; margin-bottom:14px;">
           <input type="text" id="newRoomNameInput" placeholder="Ej: EMMA" style="margin:0; flex:1;">
-          <button class="btn-save" style="background:#f59e0b; width:auto; box-shadow:none; padding: 0 14px;" id="btnRenameRoom">Renombrar</button>
+          <button class="btn-save" style="background:#f59e0b; width:auto; box-shadow:none; padding: 0 14px;" id="btnRenameRoom" data-i18n="cfg.room.rename">Renombrar</button>
         </div>
-        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:5px;">Días activos por semana</label>
+        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:5px;" data-i18n="cfg.room.days">Días activos por semana</label>
         <select id="inputWorkDays" style="margin-bottom:14px;">
-          <option value="4">4 días</option>
-          <option value="5">5 días</option>
-          <option value="6">6 días</option>
-          <option value="7">7 días</option>
+          <option value="4" data-i18n="days.4">4 días</option>
+          <option value="5" data-i18n="days.5">5 días</option>
+          <option value="6" data-i18n="days.6">6 días</option>
+          <option value="7" data-i18n="days.7">7 días</option>
         </select>
         <button class="btn-save" id="btnSaveConfig" style="display:flex; align-items:center; justify-content:center; gap:8px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Guardar cambios
+          <span data-i18n="cfg.room.save">Guardar cambios</span>
         </button>
       </div>
 
       <!-- EQUIPO -->
       <div class="config-section">
-        <div class="config-section-label">Equipo (<span id="memberCount">0</span>/5)</div>
+        <div class="config-section-label"><span data-i18n="cfg.team">Equipo</span> (<span id="memberCount">0</span>/5)</div>
         <div id="membersList" style="margin-bottom:10px;"></div>
         <button class="btn-save" style="background:var(--success); box-shadow:none; display:flex; align-items:center; justify-content:center; gap:8px;" id="btnInvite">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          Invitar a alguien
+          <span data-i18n="cfg.team.invite">Invitar a alguien</span>
         </button>
         <div id="inviteBox" style="display:none; margin-top:10px;">
           <div class="rooms-hint">Comparte este enlace (o el código) con quien quieras invitar:</div>
           <input type="text" id="inviteLink" class="login-input" readonly style="margin-top:6px; font-size:0.8rem;">
           <button class="btn-save" style="background:#3b82f6; box-shadow:none; margin-top:6px; display:flex; align-items:center; justify-content:center; gap:8px;" id="btnCopyInvite">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            Copiar enlace
+            <span data-i18n="cfg.team.copy">Copiar enlace</span>
           </button>
         </div>
       </div>
 
       <!-- PERFILES & REGLAS -->
       <div class="config-section">
-        <div class="config-section-label">Perfiles & Reglas</div>
+        <div class="config-section-label" data-i18n="cfg.profiles">Perfiles & Reglas</div>
         <button class="btn-save" style="background:#3b82f6; margin-bottom:8px; box-shadow:0 4px 6px rgba(59,130,246,0.2); display:flex; align-items:center; justify-content:center; gap:8px;" id="btnOpenUsers">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Gestionar Perfiles y Metas
+          <span data-i18n="cfg.profiles.manage">Gestionar Perfiles y Metas</span>
         </button>
         <button class="btn-save" style="background:linear-gradient(135deg,#7c3aed,#4f46e5); box-shadow:0 4px 6px rgba(124,58,237,0.2); display:flex; align-items:center; justify-content:center; gap:8px;" id="btnOpenGameRules">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Reglas del juego
+          <span data-i18n="cfg.profiles.rules">Reglas del juego</span>
         </button>
       </div>
 
       <!-- ASISTENTE IA -->
       <div class="config-section">
-        <div class="config-section-label">Asistente IA</div>
+        <div class="config-section-label" data-i18n="cfg.ai">Asistente IA</div>
         <div class="config-toggle-row">
           <div>
-            <div class="config-toggle-label">Mensajes de motivación</div>
-            <div class="config-toggle-sub">Frases estoicas y de autoconocimiento según tu árbol</div>
+            <div class="config-toggle-label" data-i18n="cfg.ai.motivation">Mensajes de motivación</div>
+            <div class="config-toggle-sub" data-i18n="cfg.ai.motivation.sub">Frases estoicas y de autoconocimiento según tu árbol</div>
           </div>
           <label class="toggle-switch">
             <input type="checkbox" id="toggleAiMotivation" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- APARIENCIA -->
+      <div class="config-section">
+        <div class="config-section-label" data-i18n="cfg.appearance">Apariencia</div>
+
+        <!-- Idioma -->
+        <div class="config-toggle-row" style="margin-bottom:14px;">
+          <div>
+            <div class="config-toggle-label" data-i18n="cfg.lang.label">Idioma</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button id="btnLangEs" class="lang-btn active" style="font-size:0.78rem; font-weight:700; padding:5px 12px; border-radius:20px; border:1.5px solid var(--active-color); background:var(--active-color); color:#fff; cursor:pointer;">ES</button>
+            <button id="btnLangEn" class="lang-btn" style="font-size:0.78rem; font-weight:700; padding:5px 12px; border-radius:20px; border:1.5px solid var(--card-border); background:transparent; color:var(--text-muted); cursor:pointer;">EN</button>
+          </div>
+        </div>
+
+        <!-- Dark mode -->
+        <div class="config-toggle-row">
+          <div>
+            <div class="config-toggle-label" data-i18n="cfg.theme.label">Modo oscuro</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggleDarkMode">
             <span class="toggle-slider"></span>
           </label>
         </div>
@@ -602,7 +729,7 @@
       <div class="config-section" style="margin-bottom:8px;">
         <button class="btn-save config-danger-btn" style="background:#475569; display:flex;" id="btnSignOut">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Cerrar sesión
+          <span data-i18n="cfg.signout">Cerrar sesión</span>
         </button>
       </div>
 
@@ -610,17 +737,17 @@
       <div class="config-section" style="margin-bottom:4px;">
         <button class="config-danger-toggle" id="btnToggleDangerZone">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          Zona de peligro
+          <span data-i18n="cfg.danger">Zona de peligro</span>
           <svg class="danger-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="config-danger-panel" id="dangerZonePanel">
           <button class="btn-save config-danger-btn" style="background:#f97316;" id="btnWeeklyReset">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            Reseteo semanal
+            <span data-i18n="cfg.danger.weekly">Reseteo semanal</span>
           </button>
           <button class="btn-save config-danger-btn" style="background:var(--danger); margin-top:8px;" id="btnHardReset">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            Reset total de la sala
+            <span data-i18n="cfg.danger.reset">Reset total de la sala</span>
           </button>
           <button class="btn-save config-danger-btn" style="background:#b45309; margin-top:8px; display:none;" id="btnLeaveRoom">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -641,30 +768,31 @@
   <div class="modal-overlay" id="usersModal">
     <div class="modal-content" style="max-height: 90vh; background: #ffffff;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="margin:0; font-family: var(--font-title); font-weight:800; color: var(--text-main);">Equipo de la Sala</h3>
+        <h3 style="margin:0; font-family: var(--font-title); font-weight:800; color: var(--text-main);" data-i18n="users.title">Equipo de la Sala</h3>
         <button id="btnCloseUsers" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer;">×</button>
       </div>
 
       <div id="userConfigListFull" style="margin-bottom: 15px;"></div>
       
-      <button class="btn-save" style="background:var(--success); font-size:1rem; padding:12px; margin-bottom: 15px; box-shadow:none;" id="btnAddNewUser">+ Añadir Persona</button>
-      <button class="btn-close-txt" style="background:rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: var(--radius-md);" id="btnBackToConfig">Volver a Configuración</button>
+      <button class="btn-save" style="background:var(--success); font-size:1rem; padding:12px; margin-bottom: 15px; box-shadow:none;" id="btnAddNewUser" data-i18n="users.add">+ Añadir Persona</button>
+      <button class="btn-close-txt" style="background:rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: var(--radius-md);" id="btnBackToConfig" data-i18n="users.back">Volver a Configuración</button>
     </div>
   </div>
 
   <!-- REPORT OVERLAY VIEW -->
   <div id="reportOverlay">
     <button class="close-doc" id="btnCloseReport"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-    <button class="pdf-btn" id="btnDownloadPDF">Descargar PDF</button>
+    <button class="pdf-btn" id="btnDownloadPDF" data-i18n="reports.download">Descargar PDF</button>
+    <button class="pdf-btn" id="btnEmailReport" style="right: 220px; background: linear-gradient(135deg, #ea4335, #c5221f); border-color: #c5221f;" data-i18n="reports.email">Enviar por Email</button>
     <div id="reportContent" class="report-container">
         <div class="report-header">
-            <h1 class="report-title">REGISTRO DE PRODUCTIVIDAD</h1>
+            <h1 class="report-title" data-i18n="reports.daily.title">REGISTRO DE PRODUCTIVIDAD</h1>
             <div class="report-date" id="docDate"></div>
         </div>
       
         <div class="summary-grid" id="reportSummary"></div>
       
-        <div class="report-subtitle">DETALLE DE ACTIVIDADES</div>
+        <div class="report-subtitle" data-i18n="reports.detail">DETALLE DE ACTIVIDADES</div>
         <table class="doc-table">
             <thead>
               <tr>
@@ -679,13 +807,21 @@
     </div>
   </div>
 
+  <!-- WEEKLY REPORT OVERLAY -->
+  <div id="weeklyReportOverlay">
+    <button class="close-doc" id="btnCloseWeeklyReport"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    <button class="pdf-btn" id="btnDownloadWeeklyPDF" data-i18n="reports.download">Descargar PDF</button>
+    <button class="pdf-btn" id="btnEmailWeeklyReport" style="right: 220px; background: linear-gradient(135deg, #ea4335, #c5221f); border-color: #c5221f;" data-i18n="reports.email">Enviar por Email</button>
+    <div id="weeklyReportContent" class="report-container"></div>
+  </div>
+
   <!-- FOCUS TREE MODAL -->
   <div class="modal-overlay" id="modalProgressTree" style="z-index: 1100;">
     <div class="modal-content tree-modal-content" style="max-width: 600px; width: 95%; max-height: 90vh; background: #ffffff; padding: 20px; position: relative; display: flex; flex-direction: column;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7Z"></path><path d="M12 22v-3"></path></svg>
-          <h3 style="margin:0; font-family: var(--font-title); font-weight:800; color: var(--text-main); font-size: 1.1rem;">Árbol de Enfoque Semanal</h3>
+          <h3 style="margin:0; font-family: var(--font-title); font-weight:800; color: var(--text-main); font-size: 1.1rem;" data-i18n="tree.title">Árbol de Enfoque Semanal</h3>
         </div>
         <div style="display: flex; align-items: center; gap: 12px;">
           <button id="btnTreeInfo" style="border:none; background: rgba(15,23,42,0.05); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; color: var(--text-muted); cursor:pointer; transition: var(--transition);" title="¿Cómo funciona?">i</button>
@@ -695,19 +831,19 @@
 
       <!-- State Badges Row -->
       <div class="tree-badges-row" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; justify-content: center;">
-        <span id="badgeWater" class="tree-status-badge watered hidden"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>Regado</span>
-        <span id="badgeFertilized" class="tree-status-badge fertilized hidden"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"></path><path d="M10 20c5.5-2.5.8-6.4 3-10"></path><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"></path><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"></path></svg>Abonado</span>
-        <span id="badgeBloomed" class="tree-status-badge bloomed hidden"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 9.5V4M12 14.5V20M9.5 12H4M14.5 12H20M10.2 10.2 6.5 6.5M13.8 10.2 17.5 6.5M10.2 13.8 6.5 17.5M13.8 13.8 17.5 17.5"></path></svg>Florecido</span>
-        <span id="badgeWithered" class="tree-status-badge withered hidden"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6"></path></svg>Marchito</span>
+        <span id="badgeWater" class="tree-status-badge watered hidden"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg><span data-i18n="tree.badge.watered">Regado</span></span>
+        <span id="badgeFertilized" class="tree-status-badge fertilized hidden"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"></path><path d="M10 20c5.5-2.5.8-6.4 3-10"></path><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"></path><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"></path></svg><span data-i18n="tree.badge.fertilized">Abonado</span></span>
+        <span id="badgeBloomed" class="tree-status-badge bloomed hidden"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 9.5V4M12 14.5V20M9.5 12H4M14.5 12H20M10.2 10.2 6.5 6.5M13.8 10.2 17.5 6.5M10.2 13.8 6.5 17.5M13.8 13.8 17.5 17.5"></path></svg><span data-i18n="tree.badge.bloomed">Florecido</span></span>
+        <span id="badgeWithered" class="tree-status-badge withered hidden"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6"></path></svg><span data-i18n="tree.badge.withered">Marchito</span></span>
       </div>
 
       <!-- Tree Difficulty Selector -->
       <div class="tree-difficulty-container" style="display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 15px;">
-        <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Exigencia:</label>
+        <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;" data-i18n="tree.difficulty">Exigencia:</label>
         <select id="selectTreeDifficulty" style="margin: 0; padding: 4px 10px; font-size: 0.8rem; border-radius: var(--radius-md); border: 1px solid var(--card-border); background: #ffffff; width: auto; font-weight: 600; color: var(--text-main); cursor: pointer;">
-          <option value="minimo">Mínimo (1 tarea · Racha 3 días)</option>
-          <option value="medio" selected>Medio (2 tareas · Racha 2 días)</option>
-          <option value="maximo">Máximo (3 tareas · Racha 1 día)</option>
+          <option value="minimo" data-i18n="tree.difficulty.min">Mínimo (1 tarea · Racha 3 días)</option>
+          <option value="medio" selected data-i18n="tree.difficulty.mid">Medio (2 tareas · Racha 2 días)</option>
+          <option value="maximo" data-i18n="tree.difficulty.max">Máximo (3 tareas · Racha 1 día)</option>
         </select>
       </div>
 
@@ -726,7 +862,7 @@
   <div class="modal-overlay" id="modalTreeInfo" style="z-index: 1200;">
     <div class="modal-content" style="max-width: 450px; width: 90%; background: #ffffff; padding: 22px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">
-        <h3 style="margin:0; font-family: var(--font-title); font-weight:800; color: var(--text-main); font-size: 1rem;">¿Cómo cultivar tu Árbol?</h3>
+        <h3 style="margin:0; font-family: var(--font-title); font-weight:800; color: var(--text-main); font-size: 1rem;" data-i18n="tree.info.title">¿Cómo cultivar tu Árbol?</h3>
         <button id="btnCloseTreeInfo" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer; line-height: 1;">×</button>
       </div>
 
@@ -734,45 +870,45 @@
         <div style="display: flex; gap: 12px;">
           <div style="margin-top: 2px; flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6"></path></svg></div>
           <div>
-            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Ramas y Hojas (Trabajo Diario)</h4>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Cada una de las 7 ramas representa un día de los últimos 7 días. Las hojas representan el trabajo diario: se obtienen al completar tareas del roadmap O al registrar actividades diarias en la pestaña "Hoy".</p>
+            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);" data-i18n="tree.info.branch.title">Ramas y Hojas (Trabajo Diario)</h4>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;" data-i18n="tree.info.branch.desc">Cada una de las 7 ramas representa un día de los últimos 7 días. Las hojas representan el trabajo diario: se obtienen al completar tareas del roadmap O al registrar actividades diarias en la pestaña "Hoy".</p>
           </div>
         </div>
 
         <div style="display: flex; gap: 12px;">
           <div style="margin-top: 2px; flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#db2777" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 9.5V4M12 14.5V20M9.5 12H4M14.5 12H20M10.2 10.2 6.5 6.5M13.8 10.2 17.5 6.5M10.2 13.8 6.5 17.5M13.8 13.8 17.5 17.5"></path></svg></div>
           <div>
-            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Floración (Florecer)</h4>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Si consigues que al menos 5 días de la semana tengan ramas "llenas", el árbol florecerá con flores de cerezo y hojas extra. Una rama está llena al completar actividades según tu nivel de exigencia (Mínimo: 1+, Medio: 2+, Máximo: 3+).</p>
+            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);" data-i18n="tree.info.bloom.title">Floración (Florecer)</h4>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;" data-i18n="tree.info.bloom.desc">Si consigues que al menos 5 días de la semana tengan ramas "llenas", el árbol florecerá con flores de cerezo y hojas extra. Una rama está llena al completar actividades según tu nivel de exigencia (Mínimo: 1+, Medio: 2+, Máximo: 3+).</p>
           </div>
         </div>
 
         <div style="display: flex; gap: 12px;">
           <div style="margin-top: 2px; flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg></div>
           <div>
-            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Riego (Regar)</h4>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">El riego mantiene las ramas saludables, brillantes y verdes. Se riega hoy al registrar al menos 1 actividad en la pestaña principal "Hoy".</p>
+            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);" data-i18n="tree.info.water.title">Riego (Regar)</h4>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;" data-i18n="tree.info.water.desc">El riego mantiene las ramas saludables, brillantes y verdes. Se riega hoy al registrar al menos 1 actividad en la pestaña principal "Hoy".</p>
           </div>
         </div>
 
         <div style="display: flex; gap: 12px;">
           <div style="margin-top: 2px; flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"></path><path d="M10 20c5.5-2.5.8-6.4 3-10"></path><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"></path><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"></path></svg></div>
           <div>
-            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Abono (Abonar)</h4>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Cumplir tu meta diaria de puntos en la pestaña "Hoy" actúa como abono, haciendo crecer hojas extra grandes en la rama de hoy.</p>
+            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);" data-i18n="tree.info.fertilize.title">Abono (Abonar)</h4>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;" data-i18n="tree.info.fertilize.desc">Cumplir tu meta diaria de puntos en la pestaña "Hoy" actúa como abono, haciendo crecer hojas extra grandes en la rama de hoy.</p>
           </div>
         </div>
 
         <div style="display: flex; gap: 12px;">
           <div style="margin-top: 2px; flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6"></path></svg></div>
           <div>
-            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Marchitado (Constancia)</h4>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">El árbol se seca y se vuelve gris si dejas pasar varios días sin completar ninguna actividad (roadmap o tareas diarias). El límite de días depende de la exigencia (Mínimo: 3 días, Medio: 2 días, Máximo: 1 día de inactividad). ¡Haz algo hoy para revivirlo!</p>
+            <h4 style="margin: 0 0 3px 0; font-size: 0.9rem; font-weight: 700; color: var(--text-main);" data-i18n="tree.info.wither.title">Marchitado (Constancia)</h4>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;" data-i18n="tree.info.wither.desc">El árbol se seca y se vuelve gris si dejas pasar varios días sin completar ninguna actividad (roadmap o tareas diarias). El límite de días depende de la exigencia (Mínimo: 3 días, Medio: 2 días, Máximo: 1 día de inactividad). ¡Haz algo hoy para revivirlo!</p>
           </div>
         </div>
       </div>
       
-      <button class="btn-save" style="margin-top: 20px; font-size: 0.9rem; padding: 10px;" id="btnCloseTreeInfoOk">¡Entendido!</button>
+      <button class="btn-save" style="margin-top: 20px; font-size: 0.9rem; padding: 10px;" id="btnCloseTreeInfoOk" data-i18n="tree.ok.btn">¡Entendido!</button>
     </div>
   </div>
 
@@ -791,13 +927,13 @@
   <div class="modal-overlay" id="roomSwitcherModal">
     <div class="modal-content" style="max-height: 80vh;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="margin:0; font-family: var(--font-title); font-weight:800;">Cambiar de sala</h3>
+        <h3 style="margin:0; font-family: var(--font-title); font-weight:800;" data-i18n="switcher.title">Cambiar de sala</h3>
         <button id="btnCloseRoomSwitcher" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer; line-height:1;">×</button>
       </div>
       <div id="roomSwitcherList" class="rooms-list" style="margin-bottom: 12px;"></div>
       <button class="btn-save" id="btnGoToRooms" style="background:#475569; box-shadow:none; display:flex; align-items:center; justify-content:center; gap:8px;">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-        Ir a "Mis Salas" (crear / unirme)
+        <span data-i18n="switcher.go.rooms">Ir a "Mis Salas" (crear / unirme)</span>
       </button>
     </div>
   </div>
@@ -808,25 +944,25 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <div style="display:flex; align-items:center; gap:8px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
-          <h3 style="margin:0; font-family: var(--font-title); font-weight:800;">Asistente</h3>
+          <h3 style="margin:0; font-family: var(--font-title); font-weight:800;" data-i18n="ai.title">Asistente</h3>
         </div>
         <button id="btnCloseAgent" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer; line-height:1;">×</button>
       </div>
 
       <div id="agentMessages" class="agent-messages">
-        <div class="agent-msg agent-msg-bot">
+        <div class="agent-msg agent-msg-bot" data-i18n="ai.greeting">
           ¡Hola! Soy tu asistente. Conozco tus tareas, compras y rutinas de esta sala. ¿En qué te ayudo?
         </div>
       </div>
 
       <div class="agent-suggestions" id="agentSuggestions">
-        <button class="agent-chip" data-q="¿Qué tareas debería priorizar hoy?">¿Qué priorizo hoy?</button>
-        <button class="agent-chip" data-q="Organiza mi día con mis tareas pendientes.">Organiza mi día</button>
-        <button class="agent-chip" data-q="Dame ideas de recetas con lo que tengo en la lista de compras.">Ideas con mis compras</button>
+        <button class="agent-chip" data-q="¿Qué tareas debería priorizar hoy?" data-i18n="ai.chip.1">¿Qué priorizo hoy?</button>
+        <button class="agent-chip" data-q="Organiza mi día con mis tareas pendientes." data-i18n="ai.chip.2">Organiza mi día</button>
+        <button class="agent-chip" data-q="Dame ideas de recetas con lo que tengo en la lista de compras." data-i18n="ai.chip.3">Ideas con mis compras</button>
       </div>
 
       <div class="agent-input-row">
-        <input type="text" id="agentInput" placeholder="Escribe tu pregunta..." autocomplete="off">
+        <input type="text" id="agentInput" placeholder="Escribe tu pregunta..." autocomplete="off" data-i18n-ph="ai.input.placeholder">
         <button id="btnSendAgent" class="agent-send-btn" title="Enviar">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
         </button>
@@ -838,12 +974,12 @@
   <!-- SHOPPING FULLSCREEN -->
   <div class="fullscreen-overlay" id="shoppingFullscreenModal">
     <div class="fullscreen-header">
-      <h3 style="margin:0; font-family: var(--font-title); font-weight:800; display:inline-flex; align-items:center; gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>Lista de Compras</h3>
+      <h3 style="margin:0; font-family: var(--font-title); font-weight:800; display:inline-flex; align-items:center; gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><span data-i18n="modal.shopping.title">Lista de Compras</span></h3>
       <div style="display:flex; gap:6px; align-items:center;">
-        <button class="btn-col-toggle" id="btnFsCol1" data-cols="1" title="Lista">
+        <button class="btn-col-toggle" id="btnFsCol1" data-cols="1" title="Lista" data-i18n-title="tooltip.list">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
         </button>
-        <button class="btn-col-toggle" id="btnFsCol2" data-cols="2" title="Cuadrícula">
+        <button class="btn-col-toggle" id="btnFsCol2" data-cols="2" title="Cuadrícula" data-i18n-title="tooltip.grid">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>
         </button>
         <button id="btnCloseShoppingFullscreen" style="border:none; background:none; font-size:2rem; color: var(--text-muted); cursor:pointer; line-height:1; margin-left:8px;">×</button>
@@ -855,7 +991,7 @@
   <!-- PENDING FULLSCREEN -->
   <div class="fullscreen-overlay" id="pendingFullscreenModal">
     <div class="fullscreen-header">
-      <h3 style="margin:0; font-family: var(--font-title); font-weight:800; display:inline-flex; align-items:center; gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>Tareas Pendientes</h3>
+      <h3 style="margin:0; font-family: var(--font-title); font-weight:800; display:inline-flex; align-items:center; gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg><span data-i18n="modal.pending.title">Tareas Pendientes</span></h3>
       <button id="btnClosePendingFullscreen" style="border:none; background:none; font-size:2rem; color: var(--text-muted); cursor:pointer; line-height:1;">×</button>
     </div>
     <div id="pendingListFullscreenDisplay" class="fullscreen-body"></div>
@@ -864,7 +1000,7 @@
   <!-- TODAY FULLSCREEN -->
   <div class="fullscreen-overlay" id="todayFullscreenModal">
     <div class="fullscreen-header">
-      <h3 style="margin:0; font-family: var(--font-title); font-weight:800; display:inline-flex; align-items:center; gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>Actividad Hoy</h3>
+      <h3 style="margin:0; font-family: var(--font-title); font-weight:800; display:inline-flex; align-items:center; gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span data-i18n="modal.today.title">Actividad Hoy</span></h3>
       <button id="btnCloseTodayFullscreen" style="border:none; background:none; font-size:2rem; color: var(--text-muted); cursor:pointer; line-height:1;">×</button>
     </div>
     <div id="todayFullscreenDisplay" class="fullscreen-body"></div>
@@ -873,42 +1009,67 @@
   <!-- GAME RULES MODAL -->
   <div class="modal-overlay" id="gameRulesModal">
     <div class="modal-content">
-      <h3 style="text-align:center; margin-top:0; margin-bottom:6px; font-family:var(--font-title); font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>Set Rules</h3>
-      <p style="text-align:center; color:var(--text-muted); font-size:0.82rem; margin-bottom:20px;">Define cómo funciona el sistema de juego en esta sala</p>
+      <h3 style="text-align:center; margin-top:0; margin-bottom:6px; font-family:var(--font-title); font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px;" data-i18n="rules.title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>Reglas del Juego</h3>
+      <p style="text-align:center; color:var(--text-muted); font-size:0.82rem; margin-bottom:20px;" data-i18n="rules.subtitle">Define cómo funciona el sistema de juego en esta sala</p>
 
-      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); letter-spacing:0.04em; text-transform:uppercase; display:block; margin-bottom:8px;">Rachas de tareas (Streak)</label>
+      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); letter-spacing:0.04em; text-transform:uppercase; display:block; margin-bottom:8px;" data-i18n="rules.streak.section">Rachas de tareas (Streak)</label>
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
         <label class="toggle-label">
           <input type="checkbox" id="ruleStreakEnabled" checked>
           <span class="toggle-track"></span>
         </label>
-        <span style="font-size:0.9rem; font-weight:600; color:var(--text-main);">Activar bonos por racha</span>
+        <span style="font-size:0.9rem; font-weight:600; color:var(--text-main);" data-i18n="rules.streak.enable">Activar bonos por racha</span>
       </div>
       <div id="streakOptions">
         <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
-          <label style="font-size:0.8rem; color:var(--text-muted); flex:1;">Tareas para activar racha</label>
+          <label style="font-size:0.8rem; color:var(--text-muted); flex:1;" data-i18n="rules.streak.threshold">Tareas para activar racha</label>
           <input type="number" id="ruleStreakThreshold" value="3" min="2" max="10" style="width:60px; text-align:center; margin:0; padding:8px;">
         </div>
         <div style="display:flex; gap:10px; align-items:center; margin-bottom:16px;">
-          <label style="font-size:0.8rem; color:var(--text-muted); flex:1;">Puntos de bono por racha</label>
+          <label style="font-size:0.8rem; color:var(--text-muted); flex:1;" data-i18n="rules.streak.bonus">Puntos de bono por racha</label>
           <input type="number" id="ruleStreakBonus" value="1" min="1" max="20" style="width:60px; text-align:center; margin:0; padding:8px;">
         </div>
       </div>
 
       <div style="border-top:1px dashed var(--card-border); margin:16px 0;"></div>
 
-      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); letter-spacing:0.04em; text-transform:uppercase; display:block; margin-bottom:8px;">Urgencia de tareas</label>
+      <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); letter-spacing:0.04em; text-transform:uppercase; display:block; margin-bottom:8px;" data-i18n="rules.urgency.section">Urgencia de tareas</label>
       <div style="display:flex; gap:10px; align-items:center; margin-bottom:16px;">
-        <label style="font-size:0.8rem; color:var(--text-muted); flex:1;">Días para marcar como urgente</label>
+        <label style="font-size:0.8rem; color:var(--text-muted); flex:1;" data-i18n="rules.urgency.days">Días para marcar como urgente</label>
         <input type="number" id="ruleUrgencyDays" value="3" min="1" max="14" style="width:60px; text-align:center; margin:0; padding:8px;">
       </div>
 
       <div style="background:rgba(124,58,237,0.06); border:1px solid rgba(124,58,237,0.15); border-radius:10px; padding:12px; margin-bottom:18px;">
-        <p style="margin:0; font-size:0.78rem; color:#6d28d9; font-weight:600; display:flex; align-items:flex-start; gap:7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5"></path></svg><span>Más reglas próximamente: desafíos semanales, metas de equipo, recompensas personalizadas.</span></p>
+        <p style="margin:0; font-size:0.78rem; color:#6d28d9; font-weight:600; display:flex; align-items:flex-start; gap:7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5"></path></svg><span data-i18n="rules.coming.soon">Más reglas próximamente: desafíos semanales, metas de equipo, recompensas personalizadas.</span></p>
       </div>
 
-      <button class="btn-save" id="btnSaveGameRules">Guardar Reglas</button>
-      <button class="btn-close-txt" id="btnCloseGameRules">Cerrar</button>
+      <button class="btn-save" id="btnSaveGameRules" data-i18n="rules.save">Guardar Reglas</button>
+      <button class="btn-close-txt" id="btnCloseGameRules" data-i18n="rules.close">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- EDIT SAVED LIST OVERLAY MODAL -->
+  <div class="modal-overlay" id="editSavedListModal">
+    <div class="modal-content" style="max-height: 90vh; max-width: 600px; width: 95%; display: flex; flex-direction: column;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <h3 style="margin:0; font-family: var(--font-title); font-weight:800;" data-i18n="saved.edit.modal.title">Editar Lista</h3>
+        <button id="btnCloseEditSavedListModal" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer; line-height: 1;">×</button>
+      </div>
+      
+      <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
+        <label for="editSavedListModalName" style="font-size:0.75rem; font-weight:700; color:var(--text-muted);" data-i18n="saved.edit.modal.name.label">Nombre de la lista</label>
+        <input type="text" id="editSavedListModalName" class="login-input" style="margin-bottom:0;" placeholder="Ej: Supermercado" data-i18n-ph="saved.edit.modal.name.ph">
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:6px; flex:1; min-height:0; margin-bottom:16px;">
+        <label for="editSavedListModalItems" style="font-size:0.75rem; font-weight:700; color:var(--text-muted);" data-i18n="saved.edit.modal.items.label">Artículos (uno por línea)</label>
+        <textarea id="editSavedListModalItems" style="flex:1; width:100%; min-height:180px; padding:12px 14px; border:1px solid rgba(15, 23, 42, 0.15); border-radius:var(--radius-md); font-family:inherit; font-size:0.95rem; outline:none; transition:var(--transition); resize:none; box-sizing:border-box;" placeholder="Ej: Leche x2 #Lidl"></textarea>
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn-confirm-no" id="btnCancelEditSavedListModal" style="width:auto; margin:0; padding:10px 18px;" data-i18n="saved.edit.modal.cancel">Cancelar</button>
+        <button class="btn-save" id="btnSaveEditSavedListModal" style="width:auto; margin:0; padding:10px 18px;" data-i18n="saved.edit.modal.save">Guardar</button>
+      </div>
     </div>
   </div>
 
