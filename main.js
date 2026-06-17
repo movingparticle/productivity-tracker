@@ -853,7 +853,22 @@ function bindEvents() {
 
   if (ui.elements.btnToggleShoppingFilters) {
     ui.elements.btnToggleShoppingFilters.onclick = () => {
-      ui.toggleGeneralFilters();
+      ui.openShoppingFiltersModal();
+    };
+  }
+  if (ui.elements.btnCloseShoppingFilters) {
+    ui.elements.btnCloseShoppingFilters.onclick = () => {
+      ui.closeModal(ui.elements.modalShoppingFilters);
+    };
+  }
+  if (ui.elements.btnShoppingFiltersSave) {
+    ui.elements.btnShoppingFiltersSave.onclick = () => {
+      ui.saveShoppingFiltersFromModal();
+    };
+  }
+  if (ui.elements.btnShoppingFiltersClear) {
+    ui.elements.btnShoppingFiltersClear.onclick = () => {
+      ui.clearShoppingFiltersFromModal();
     };
   }
 

@@ -215,6 +215,12 @@ export function initDomElements() {
     lightboxImage: document.getElementById('lightboxImage'),
     lightboxCaption: document.getElementById('lightboxCaption'),
 
+    // Shopping filters modal caching
+    modalShoppingFilters: document.getElementById('modalShoppingFilters'),
+    btnCloseShoppingFilters: document.getElementById('btnCloseShoppingFilters'),
+    btnShoppingFiltersSave: document.getElementById('btnShoppingFiltersSave'),
+    btnShoppingFiltersClear: document.getElementById('btnShoppingFiltersClear'),
+
     // Pending task priority
     pendingPriority: document.getElementById('pendingPriority'),
 
@@ -1984,11 +1990,15 @@ let shopCols = Math.min(2, parseInt(localStorage.getItem('shopCols') || '1', 10)
 export function setShopCols(n) {
   shopCols = Math.min(2, Math.max(1, n));
   localStorage.setItem('shopCols', shopCols);
-  // Update toggle button active states (inline + fullscreen)
+  // Update toggle button active states & visibility (inline + fullscreen)
+  // The active layout button is hidden, and the alternative is shown.
   ['', 'Fs'].forEach(prefix => {
     [1, 2].forEach(c => {
       const btn = elements[`btn${prefix}Col${c}`];
-      if (btn) btn.classList.toggle('active', c === shopCols);
+      if (btn) {
+        btn.classList.toggle('active', c === shopCols);
+        btn.style.display = (c === shopCols) ? 'none' : 'inline-flex';
+      }
     });
   });
   _applyShopGrid(elements.shoppingListDisplay);
@@ -2025,47 +2035,14 @@ function _applyShopGrid(container) {
   }
 }
 
-export function toggleGeneralFilters() {
-  generalFiltersVisible = !generalFiltersVisible;
-  const container = document.getElementById('generalShoppingFilters');
-  if (container) {
-    container.style.display = generalFiltersVisible ? 'block' : 'none';
-  }
-  updateFilterFunnelStyle();
-}
-
-export function updateFilterFunnelStyle() {
-  const btn = elements.btnToggleShoppingFilters;
-  if (!btn) return;
-  
-  const hasActiveFilters = activeGeneralListFilters.length > 0;
-  
-  if (generalFiltersVisible) {
-    btn.classList.add('active');
-    btn.style.background = 'var(--active-color)';
-    btn.style.color = '#fff';
-    btn.classList.remove('filters-active');
-  } else {
-    btn.classList.remove('active');
-    btn.style.background = '';
-    btn.style.color = '';
-    if (hasActiveFilters) {
-      btn.classList.add('filters-active');
-    } else {
-      btn.classList.remove('filters-active');
-    }
-  }
-}
-
-function renderGeneralShoppingFilters() {
-  const container = document.getElementById('generalShoppingFilters');
+export function openShoppingFiltersModal() {
+  const container = document.getElementById('shoppingFilterTagsContainer');
   if (!container) return;
   container.innerHTML = '';
   
-  const rawItems = state.store.shoppingList || [];
   const tagMap = new Map();
-  rawItems.forEach(it => {
-    (it.tags || []).forEach(t => {
+  if (state.store.persistentTags) {
+    state.store.persistentTags.forEach(t => {
       const trimmed = (t || '').trim();
       if (!trimmed) return;
       const lower = trimmed.toLowerCase();
@@ -2078,52 +2055,84 @@ function renderGeneralShoppingFilters() {
         }
       }
     });
-  });
+  }
   
   const allTags = [...tagMap.values()];
   
   if (allTags.length === 0) {
-    activeGeneralListFilters = [];
-    updateFilterFunnelStyle();
-    container.style.display = 'none';
-    return;
+    container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-style:italic;">${tr('shop.tags.empty')}</div>`;
+  } else {
+    allTags.forEach(tag => {
+      const isActive = activeGeneralListFilters.some(f => f.toLowerCase() === tag.toLowerCase());
+      const row = document.createElement('div');
+      row.className = 'filter-modal-tag-row';
+      row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom: 1px solid var(--card-border); border-radius:var(--radius-sm); transition:background 0.2s; cursor:pointer;';
+      row.innerHTML = `
+        <span style="font-weight:600; font-size:0.9rem; color:var(--text-primary);">${esc(tag)}</span>
+        <input type="checkbox" class="filter-modal-checkbox" data-tag="${esc(tag)}" ${isActive ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer; accent-color:var(--active-color);">
+      `;
+      // Toggle checkbox when clicking anywhere on the row
+      row.onclick = (e) => {
+        if (e.target.tagName !== 'INPUT') {
+          const cb = row.querySelector('input');
+          if (cb) cb.checked = !cb.checked;
+        }
+      };
+      container.appendChild(row);
+    });
   }
   
-  container.style.display = generalFiltersVisible ? 'block' : 'none';
-  updateFilterFunnelStyle();
-  
-  const div = document.createElement('div');
-  div.className = 'saved-list-filters';
-  div.style.cssText = 'display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; align-items:center;';
-  
-  div.innerHTML = `
-    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">${tr('saved.filter.label')}</span>
-    <span class="filter-pill ${activeGeneralListFilters.length === 0 ? 'active' : ''}" data-tag="" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${activeGeneralListFilters.length === 0 ? 'var(--active-color)' : 'rgba(15,23,42,0.05)'}; color:${activeGeneralListFilters.length === 0 ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${tr('saved.filter.all')}</span>
-    ${allTags.map(tag => {
-      const isActive = activeGeneralListFilters.some(t => t.toLowerCase() === tag.toLowerCase());
-      return `<span class="filter-pill ${isActive ? 'active' : ''}" data-tag="${esc(tag)}" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${isActive ? 'var(--active-color)' : 'rgba(15,23,42,0.05)'}; color:${isActive ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${esc(tag)}</span>`;
-    }).join('')}
-  `;
-  
-  div.querySelectorAll('.filter-pill').forEach(pill => {
-    pill.onclick = () => {
-      const tag = pill.dataset.tag;
-      if (!tag) {
-        activeGeneralListFilters = [];
-      } else {
-        const lowerTag = tag.toLowerCase();
-        const idx = activeGeneralListFilters.findIndex(t => t.toLowerCase() === lowerTag);
-        if (idx >= 0) {
-          activeGeneralListFilters.splice(idx, 1);
-        } else {
-          activeGeneralListFilters.push(tag);
-        }
-      }
-      renderShoppingList();
-    };
+  openModal(elements.modalShoppingFilters);
+}
+
+export function saveShoppingFiltersFromModal() {
+  const container = document.getElementById('shoppingFilterTagsContainer');
+  if (!container) return;
+  const checkboxes = container.querySelectorAll('.filter-modal-checkbox');
+  const newFilters = [];
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      newFilters.push(cb.dataset.tag);
+    }
   });
+  activeGeneralListFilters = newFilters;
+  closeModal(elements.modalShoppingFilters);
+  updateFilterFunnelStyle();
+  renderShoppingList();
+}
+
+export function clearShoppingFiltersFromModal() {
+  const container = document.getElementById('shoppingFilterTagsContainer');
+  if (!container) return;
+  const checkboxes = container.querySelectorAll('.filter-modal-checkbox');
+  checkboxes.forEach(cb => {
+    cb.checked = false;
+  });
+  activeGeneralListFilters = [];
+  closeModal(elements.modalShoppingFilters);
+  updateFilterFunnelStyle();
+  renderShoppingList();
+}
+
+export function updateFilterFunnelStyle() {
+  const btn = elements.btnToggleShoppingFilters;
+  if (!btn) return;
   
-  container.appendChild(div);
+  const hasActiveFilters = activeGeneralListFilters.length > 0;
+  
+  if (hasActiveFilters) {
+    btn.classList.add('filters-active');
+    btn.style.background = 'var(--active-color)';
+    btn.style.color = '#fff';
+  } else {
+    btn.classList.remove('filters-active');
+    btn.style.background = '';
+    btn.style.color = '';
+  }
+}
+
+function renderGeneralShoppingFilters() {
+  updateFilterFunnelStyle();
 }
 
 export function renderShoppingList() {

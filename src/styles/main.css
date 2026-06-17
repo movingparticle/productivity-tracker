@@ -3344,3 +3344,11 @@ input:focus, select:focus {
   border: 1.5px solid var(--active-color) !important;
   color: var(--active-color) !important;
 }
+
+/* Modal Filter Tags Styling */
+.filter-modal-tag-row:hover {
+  background: rgba(15, 23, 42, 0.04) !important;
+}
+[data-theme="dark"] .filter-modal-tag-row:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
