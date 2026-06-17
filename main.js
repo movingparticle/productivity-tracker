@@ -747,6 +747,12 @@ function bindEvents() {
     };
   }
 
+  if (ui.elements.shopItemTags) {
+    ui.elements.shopItemTags.oninput = () => {
+      ui.updateQuickTagChipStyles();
+    };
+  }
+
   // Bulk: add the whole pasted/typed list as-is (one item per line/comma).
   if (ui.elements.btnAddBulkList) {
     ui.elements.btnAddBulkList.onclick = () => {

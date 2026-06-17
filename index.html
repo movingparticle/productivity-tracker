@@ -490,7 +490,7 @@
               <span data-i18n="shop.item.name">Nombre del Artículo</span>
               <span style="text-transform:none; font-weight:600; color:var(--text-muted); margin-left:4px;" data-i18n="shop.item.name.photo">(o solo sube una foto)</span>
             </label>
-            <input type="text" id="shopItemName" placeholder="¿Qué se necesita? Ej: Leche, Jabón..." style="margin:0;" data-i18n-ph="shop.item.name.ph">
+            <input type="text" id="shopItemName" placeholder="¿Qué se necesita? Ej: Leche, Jabón..." style="margin:0; box-sizing: border-box; height: 40px; padding: 8px 12px; font-size: 0.9rem;" data-i18n-ph="shop.item.name.ph">
           </div>
 
           <!-- Foto (Opcional) -->
@@ -514,11 +514,11 @@
           <div style="display:flex; gap:8px; align-items:flex-end;">
             <div style="flex:1;">
               <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:block; margin-bottom:4px;" data-i18n="shop.item.qty">Cantidad</label>
-              <input type="text" id="shopItemQty" placeholder="Ej: 2L, x3..." style="margin:0;" data-i18n-ph="shop.item.qty.ph">
+              <input type="text" id="shopItemQty" placeholder="Ej: 2L, x3..." style="margin:0; box-sizing: border-box; height: 40px; padding: 8px 12px; font-size: 0.9rem;" data-i18n-ph="shop.item.qty.ph">
             </div>
             <div style="flex:1.5;">
               <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:block; margin-bottom:4px;" data-i18n="shop.item.for">Para quién</label>
-              <select id="shopItemUser" style="margin:0; font-size:0.85rem; padding: 11px;">
+              <select id="shopItemUser" style="margin:0; box-sizing: border-box; height: 40px; padding: 8px 12px; font-size: 0.9rem;">
                 <option value="casa" data-i18n="shop.item.for.all">La Sala</option>
               </select>
             </div>
@@ -530,7 +530,8 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
               <span data-i18n="shop.item.tags">Etiquetas / Supermercados (ej: Lidl, Mercadona)</span>
             </label>
-            <input type="text" id="shopItemTags" placeholder="Separadas por coma..." style="margin:0;" data-i18n-ph="shop.item.tags.ph">
+            <input type="text" id="shopItemTags" placeholder="Separadas por coma..." style="margin:0; box-sizing: border-box; height: 40px; padding: 8px 12px; font-size: 0.9rem;" data-i18n-ph="shop.item.tags.ph">
+            <div class="quick-tags-container" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;"></div>
           </div>
 
           <button class="btn-save" id="btnSaveShopItem" style="margin-top: 5px; background: var(--active-color);" data-i18n="shop.item.add">Añadir a la Lista</button>

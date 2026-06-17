@@ -1620,7 +1620,9 @@ export function toggleShoppingTab(tabId) {
     if (elements.shopItemQty) elements.shopItemQty.value = '';
     if (elements.shopItemImage) elements.shopItemImage.value = '';
     if (elements.shopItemTags) elements.shopItemTags.value = '';
-} else if (tabId === 'saved') {
+    renderQuickTagChips();
+    updateQuickTagChipStyles();
+  } else if (tabId === 'saved') {
     if (savedTab) savedTab.classList.remove('hidden');
     if (savedBtn) savedBtn.classList.add('active');
     renderSavedLists();
@@ -1685,9 +1687,6 @@ export function renderSavedLists() {
         </div>
         <div style="display:flex; gap:6px;">
           <button data-action="toggle-edit-panel" data-id="${esc(list.id)}" style="border:none; background:rgba(79,70,229,0.08); border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#4f46e5;" title="${esc(tr('saved.edit.panel.tooltip'))}">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-          </button>
-          <button data-action="rename" data-id="${esc(list.id)}" style="border:none; background:rgba(15,23,42,0.06); border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="${esc(tr('saved.rename.tooltip'))}">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
           </button>
           <button data-action="delete" data-id="${esc(list.id)}" style="border:none; background:rgba(220,38,38,0.08); border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--danger);" title="${esc(tr('saved.delete.tooltip'))}">
@@ -2020,6 +2019,8 @@ function renderShoppingItemsInto(list) {
     const card = document.createElement('div');
     card.className = `shop-card${isTile ? ' shop-card-tile' : ''}`;
 
+    const displayQty = item.qty ? (/^\d+$/.test(item.qty) ? `x${item.qty}` : item.qty) : '';
+
     if (isTile) {
       // ─── TILE LAYOUT (2-col): image on top, info + buttons below ───
       card.innerHTML = `
@@ -2032,7 +2033,7 @@ function renderShoppingItemsInto(list) {
         <div class="shop-tile-info">
           <span class="shop-tile-name">${esc(displayName)}</span>
           <div class="shop-tile-meta">
-            ${item.qty ? `<span class="shop-qty">${esc(item.qty)}</span>` : ''}
+            ${displayQty ? `<span class="shop-qty">${esc(displayQty)}</span>` : ''}
             ${targetBadge}
             ${(item.tags || []).map(t => {
               const s = getTagStyle(t);
@@ -2049,11 +2050,16 @@ function renderShoppingItemsInto(list) {
       // ─── ROW LAYOUT (1-col): image on left, info + actions on right ───
       card.innerHTML = `
         <div class="shop-card-inner">
-          ${hasImage ? `<img class="shop-card-img" src="${esc(item.image)}" alt="${esc(displayName)}">` : ''}
+          <div class="shop-card-img-wrap">
+            ${hasImage
+              ? `<img class="shop-card-img" src="${esc(item.image)}" alt="${esc(displayName)}">`
+              : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity=".4"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>`
+            }
+          </div>
           <div class="shop-card-info">
             <span class="shop-card-name">${esc(displayName)}</span>
             <div class="shop-card-meta">
-              ${item.qty ? `<span class="shop-qty">${esc(item.qty)}</span>` : ''}
+              ${displayQty ? `<span class="shop-qty">${esc(displayQty)}</span>` : ''}
               ${targetBadge}
               ${(item.tags || []).map(t => {
                 const s = getTagStyle(t);
@@ -3345,6 +3351,72 @@ export function setRedeemVisible(visible) {
   if (elements.redeemSection) {
     elements.redeemSection.style.display = visible ? '' : 'none';
   }
+}
+
+export function renderQuickTagChips() {
+  const container = document.querySelector('.quick-tags-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const existingTags = new Set();
+  if (state.store.shoppingList) {
+    state.store.shoppingList.forEach(it => {
+      if (Array.isArray(it.tags)) {
+        it.tags.forEach(t => existingTags.add(t));
+      }
+    });
+  }
+
+  const defaultTags = ['Lidl', 'Mercadona', 'Carrefour', 'Farmacia', 'Limpieza', 'Fruta'];
+  defaultTags.forEach(t => existingTags.add(t));
+
+  [...existingTags].forEach(tag => {
+    const chip = document.createElement('span');
+    chip.className = 'quick-tag-chip';
+    chip.innerText = tag;
+    chip.onclick = () => {
+      const input = elements.shopItemTags;
+      if (!input) return;
+      let tags = input.value.split(',')
+        .map(x => x.trim())
+        .filter(x => x.length > 0);
+      
+      const tagIndex = tags.indexOf(tag);
+      if (tagIndex >= 0) {
+        tags.splice(tagIndex, 1);
+      } else {
+        tags.push(tag);
+      }
+      input.value = tags.join(', ');
+      updateQuickTagChipStyles();
+    };
+    container.appendChild(chip);
+  });
+}
+
+export function updateQuickTagChipStyles() {
+  const container = document.querySelector('.quick-tags-container');
+  if (!container) return;
+  const input = elements.shopItemTags;
+  if (!input) return;
+  const currentTags = input.value.split(',')
+    .map(x => x.trim().toLowerCase())
+    .filter(x => x.length > 0);
+
+  container.querySelectorAll('.quick-tag-chip').forEach(chip => {
+    const tag = chip.innerText.trim().toLowerCase();
+    if (currentTags.includes(tag)) {
+      chip.classList.add('active');
+      chip.style.background = 'var(--active-color)';
+      chip.style.borderColor = 'var(--active-color)';
+      chip.style.color = '#fff';
+    } else {
+      chip.classList.remove('active');
+      chip.style.background = '';
+      chip.style.borderColor = '';
+      chip.style.color = '';
+    }
+  });
 }
 
 export { elements };
