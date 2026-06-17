@@ -708,6 +708,7 @@ function bindEvents() {
   const resetShopForm = () => {
     if (ui.elements.shopItemName) ui.elements.shopItemName.value = '';
     if (ui.elements.shopItemQty) ui.elements.shopItemQty.value = '';
+    if (ui.elements.shopItemTags) ui.elements.shopItemTags.value = '';
     selectedImageBase64 = null;
     if (ui.elements.shopItemImage) ui.elements.shopItemImage.value = '';
     if (ui.elements.shopImageFileName) ui.elements.shopImageFileName.innerText = tr('shop.item.no.photo');
@@ -728,7 +729,18 @@ function bindEvents() {
         return;
       }
 
-      state.saveShoppingItem(name, qty, target, selectedImageBase64);
+      // Parse tags from the input
+      let tags = [];
+      if (ui.elements.shopItemTags) {
+        const rawTags = ui.elements.shopItemTags.value.trim();
+        if (rawTags) {
+          tags = rawTags.split(',')
+            .map(t => t.trim().replace(/^#/, ''))
+            .filter(t => t.length > 0);
+        }
+      }
+
+      state.saveShoppingItem(name, qty, target, selectedImageBase64, tags);
       ui.showToast(tr('toast.item.added'));
       resetShopForm();
       ui.toggleShoppingTab('list');

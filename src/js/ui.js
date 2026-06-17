@@ -203,6 +203,7 @@ export function initDomElements() {
     shopImagePreview: document.getElementById('shopImagePreview'),
     shopItemQty: document.getElementById('shopItemQty'),
     shopItemUser: document.getElementById('shopItemUser'),
+    shopItemTags: document.getElementById('shopItemTags'),
     btnSaveShopItem: document.getElementById('btnSaveShopItem'),
     shoppingListDisplay: document.getElementById('shoppingListDisplay'),
     
@@ -1618,6 +1619,7 @@ export function toggleShoppingTab(tabId) {
     if (elements.shopItemName) elements.shopItemName.value = '';
     if (elements.shopItemQty) elements.shopItemQty.value = '';
     if (elements.shopItemImage) elements.shopItemImage.value = '';
+    if (elements.shopItemTags) elements.shopItemTags.value = '';
 } else if (tabId === 'saved') {
     if (savedTab) savedTab.classList.remove('hidden');
     if (savedBtn) savedBtn.classList.add('active');
