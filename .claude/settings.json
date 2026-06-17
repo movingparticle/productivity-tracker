@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(Get-ChildItem -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(Select-Object Name)",
+      "Bash(mkdir -p \"c:/Users/usuario/Desktop/Proyecto 2026/productivity tracker/docs\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\usuario\\Desktop\\Proyecto 2026\\productivity tracker"
     ]
   }
 }

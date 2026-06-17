@@ -110,6 +110,41 @@ export function setRoomState(roomId, newState) {
       if (!t.createdAt) { t.createdAt = Date.now(); migrated = true; }
     });
 
+    // Ensure persistentTags exists as an array
+    if (!Array.isArray(store.persistentTags)) {
+      store.persistentTags = [];
+      const tagMap = new Map();
+      const gather = (t) => {
+        const trimmed = (t || '').trim();
+        if (!trimmed) return;
+        const lower = trimmed.toLowerCase();
+        if (!tagMap.has(lower)) {
+          tagMap.set(lower, trimmed);
+        } else {
+          const existing = tagMap.get(lower);
+          if (trimmed[0] === trimmed[0].toUpperCase() && existing[0] !== existing[0].toUpperCase()) {
+            tagMap.set(lower, trimmed);
+          }
+        }
+      };
+      if (store.shoppingList) {
+        store.shoppingList.forEach(it => {
+          if (Array.isArray(it.tags)) it.tags.forEach(gather);
+        });
+      }
+      if (store.savedShoppingLists) {
+        store.savedShoppingLists.forEach(list => {
+          if (Array.isArray(list.items)) {
+            list.items.forEach(it => {
+              if (Array.isArray(it.tags)) it.tags.forEach(gather);
+            });
+          }
+        });
+      }
+      store.persistentTags = [...tagMap.values()];
+      migrated = true;
+    }
+
     // Check for day change
     checkDateAutoClose();
 
@@ -610,6 +645,39 @@ export function setTreeDifficulty(level) {
   saveState();
 }
 
+export function normalizeTags(tagsArray) {
+  if (!tagsArray) return [];
+  const normalized = [];
+  tagsArray.forEach(tag => {
+    const trimmed = tag.trim();
+    if (!trimmed) return;
+    const existing = (store.persistentTags || []).find(t => t.toLowerCase() === trimmed.toLowerCase());
+    const finalTag = existing || trimmed;
+    if (!normalized.some(t => t.toLowerCase() === finalTag.toLowerCase())) {
+      normalized.push(finalTag);
+    }
+  });
+  return normalized;
+}
+
+export function addPersistentTags(tagsArray, skipSave = false) {
+  if (!store.persistentTags) store.persistentTags = [];
+  let changed = false;
+  (tagsArray || []).forEach(tag => {
+    const trimmed = tag.trim();
+    if (!trimmed) return;
+    const exists = store.persistentTags.some(t => t.toLowerCase() === trimmed.toLowerCase());
+    if (!exists) {
+      store.persistentTags.push(trimmed);
+      changed = true;
+    }
+  });
+  if (changed && !skipSave) {
+    saveState();
+  }
+  return changed;
+}
+
 /**
  * Adds a new item to the shopping list.
  * Shopping items no longer use points. The name is optional when there is a
@@ -624,9 +692,14 @@ export function saveShoppingItem(name, qty, assignedTo, imageBase64, tags) {
   if (tagMatches.length > 0) {
     tagMatches.forEach(m => {
       const t = m[1];
-      if (!finalTags.includes(t)) finalTags.push(t);
+      if (!finalTags.some(ft => ft.toLowerCase() === t.toLowerCase())) finalTags.push(t);
     });
     cleanName = cleanName.replace(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g, '').trim();
+  }
+
+  finalTags = normalizeTags(finalTags);
+  if (finalTags.length > 0) {
+    addPersistentTags(finalTags, true);
   }
 
   store.shoppingList.push({
@@ -649,6 +722,7 @@ export function saveShoppingItem(name, qty, assignedTo, imageBase64, tags) {
 export function saveShoppingItemsBulk(items, assignedTo) {
   if (!store.shoppingList) store.shoppingList = [];
   let count = 0;
+  const allTags = [];
   (items || []).forEach((it, i) => {
     let cleanName = (it.name || '').trim();
     if (!cleanName) return;
@@ -658,10 +732,13 @@ export function saveShoppingItemsBulk(items, assignedTo) {
     if (tagMatches.length > 0) {
       tagMatches.forEach(m => {
         const t = m[1];
-        if (!finalTags.includes(t)) finalTags.push(t);
+        if (!finalTags.some(ft => ft.toLowerCase() === t.toLowerCase())) finalTags.push(t);
       });
       cleanName = cleanName.replace(/#([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]+)/g, '').trim();
     }
+
+    finalTags = normalizeTags(finalTags);
+    finalTags.forEach(t => allTags.push(t));
 
     store.shoppingList.push({
       id: 'shop_' + Date.now() + '_' + i + '_' + Math.floor(Math.random() * 1000),
@@ -669,12 +746,15 @@ export function saveShoppingItemsBulk(items, assignedTo) {
       qty: (it.qty || '').trim(),
       assignedTo: assignedTo || 'casa',
       addedBy: localProfileId,
-      image: null,
+      image: it.image || null,
       dateAdded: new Date().toISOString(),
       tags: finalTags
     });
     count++;
   });
+  if (allTags.length > 0) {
+    addPersistentTags(allTags, true);
+  }
   if (count > 0) saveState();
   return count;
 }
@@ -829,15 +909,23 @@ export function deleteSavedShoppingList(listId) {
   saveState();
 }
 
-export function addItemToSavedList(listId, name, qty, tags) {
+export function addItemToSavedList(listId, name, qty, tags, image) {
   const list = (store.savedShoppingLists || []).find(l => l.id === listId);
   if (!list) return;
   if (!Array.isArray(list.items)) list.items = [];
+  
+  let finalTags = Array.isArray(tags) ? tags : [];
+  finalTags = normalizeTags(finalTags);
+  if (finalTags.length > 0) {
+    addPersistentTags(finalTags, true);
+  }
+
   list.items.push({
     id: 'sli_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
     name: (name || '').trim().slice(0, 80),
     qty: (qty || '').trim(),
-    tags: Array.isArray(tags) ? tags : []
+    tags: finalTags,
+    image: image || null
   });
   saveState();
 }
@@ -849,26 +937,46 @@ export function removeItemFromSavedList(listId, itemId) {
   saveState();
 }
 
-export function updateItemInSavedList(listId, itemId, name, qty, tags) {
+export function updateItemInSavedList(listId, itemId, name, qty, tags, image) {
   const list = (store.savedShoppingLists || []).find(l => l.id === listId);
   if (!list || !Array.isArray(list.items)) return;
   const item = list.items.find(i => i.id === itemId);
   if (!item) return;
+  
+  let finalTags = Array.isArray(tags) ? tags : [];
+  finalTags = normalizeTags(finalTags);
+  if (finalTags.length > 0) {
+    addPersistentTags(finalTags, true);
+  }
+
   item.name = (name || '').trim().slice(0, 80);
   item.qty = (qty || '').trim();
-  item.tags = Array.isArray(tags) ? tags : [];
+  item.tags = finalTags;
+  item.image = image || null;
   saveState();
 }
 
 export function replaceSavedListItems(listId, newItems) {
   const list = (store.savedShoppingLists || []).find(l => l.id === listId);
   if (!list) return;
-  list.items = (newItems || []).map((it, i) => ({
-    id: 'sli_' + Date.now() + '_' + i + '_' + Math.floor(Math.random() * 1000),
-    name: (it.name || '').trim().slice(0, 80),
-    qty: (it.qty || '').trim(),
-    tags: Array.isArray(it.tags) ? it.tags : []
-  }));
+  
+  const allTags = [];
+  list.items = (newItems || []).map((it, i) => {
+    let finalTags = Array.isArray(it.tags) ? it.tags : [];
+    finalTags = normalizeTags(finalTags);
+    finalTags.forEach(t => allTags.push(t));
+    return {
+      id: 'sli_' + Date.now() + '_' + i + '_' + Math.floor(Math.random() * 1000),
+      name: (it.name || '').trim().slice(0, 80),
+      qty: (it.qty || '').trim(),
+      tags: finalTags,
+      image: it.image || null
+    };
+  });
+  
+  if (allTags.length > 0) {
+    addPersistentTags(allTags, true);
+  }
   saveState();
 }
 
@@ -882,7 +990,7 @@ export function addSavedListToShopping(listId, selectedIds, assignedTo) {
   const items = selectedIds
     ? list.items.filter(i => selectedIds.includes(i.id))
     : list.items;
-  return saveShoppingItemsBulk(items.map(i => ({ name: i.name, qty: i.qty, tags: i.tags })), assignedTo || 'casa');
+  return saveShoppingItemsBulk(items.map(i => ({ name: i.name, qty: i.qty, tags: i.tags, image: i.image })), assignedTo || 'casa');
 }
 
 export function buildShareText(listId, filterTags = []) {
@@ -890,7 +998,7 @@ export function buildShareText(listId, filterTags = []) {
   if (!list) return '';
   let items = list.items || [];
   if (filterTags && filterTags.length > 0) {
-    items = items.filter(it => (it.tags || []).some(t => filterTags.includes(t)));
+    items = items.filter(it => (it.tags || []).some(t => filterTags.some(ft => ft.toLowerCase() === t.toLowerCase())));
   }
   if (items.length === 0) return '';
   const lines = items.map(i => {
@@ -907,7 +1015,7 @@ export function buildShareText(listId, filterTags = []) {
 export function buildGeneralShareText(filterTags = []) {
   let list = store.shoppingList || [];
   if (filterTags && filterTags.length > 0) {
-    list = list.filter(it => (it.tags || []).some(t => filterTags.includes(t)));
+    list = list.filter(it => (it.tags || []).some(t => filterTags.some(ft => ft.toLowerCase() === t.toLowerCase())));
   }
   if (list.length === 0) return '';
   const roomName = currentRoomName || 'la Sala';

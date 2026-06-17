@@ -3309,3 +3309,38 @@ input:focus, select:focus {
   width: 64px;
   height: 64px;
 }
+
+/* Custom Autocomplete Dropdown */
+.shop-autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  margin-top: 4px;
+}
+.shop-autocomplete-item {
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.shop-autocomplete-item:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+[data-theme="dark"] .shop-autocomplete-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Active filters funnel button indicator */
+.btn-col-toggle.filters-active {
+  border: 1.5px solid var(--active-color) !important;
+  color: var(--active-color) !important;
+}

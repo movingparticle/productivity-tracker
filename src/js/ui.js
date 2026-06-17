@@ -22,6 +22,7 @@ export function getTagStyle(tagName) {
 
 const activeSavedListFilters = {};
 export let activeGeneralListFilters = [];
+export let generalFiltersVisible = false;
 
 // DOM References Cache
 let elements = {};
@@ -192,6 +193,7 @@ export function initDomElements() {
     btnTabShoppingAdd: document.getElementById('btnTabShoppingAdd'),
     shoppingListViewTab: document.getElementById('shoppingListViewTab'),
     shoppingAddTab: document.getElementById('shoppingAddTab'),
+    btnToggleShoppingFilters: document.getElementById('btnToggleShoppingFilters'),
     
     // Shopping list input controls caching
     shopItemName: document.getElementById('shopItemName'),
@@ -1648,16 +1650,27 @@ export function renderSavedLists() {
     const items = list.items || [];
     const isCardCollapsed = localStorage.getItem(`collapsed_saved_list_${list.id}`) === 'true';
 
-    const allTags = [];
+    const tagMap = new Map();
     items.forEach(it => {
       (it.tags || []).forEach(t => {
-        if (!allTags.includes(t)) allTags.push(t);
+        const trimmed = (t || '').trim();
+        if (!trimmed) return;
+        const lower = trimmed.toLowerCase();
+        if (!tagMap.has(lower)) {
+          tagMap.set(lower, trimmed);
+        } else {
+          const existing = tagMap.get(lower);
+          if (trimmed[0] === trimmed[0].toUpperCase() && existing[0] !== existing[0].toUpperCase()) {
+            tagMap.set(lower, trimmed);
+          }
+        }
       });
     });
+    const allTags = [...tagMap.values()];
 
     const activeFilters = activeSavedListFilters[list.id] || [];
     const displayedItems = activeFilters.length > 0
-      ? items.filter(it => (it.tags || []).some(t => activeFilters.includes(t)))
+      ? items.filter(it => (it.tags || []).some(t => activeFilters.some(f => f.toLowerCase() === t.toLowerCase())))
       : items;
 
     let filtersHtml = '';
@@ -1667,7 +1680,7 @@ export function renderSavedLists() {
           <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">${tr('saved.filter.label')}</span>
           <span class="filter-pill ${activeFilters.length === 0 ? 'active' : ''}" data-tag="" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${activeFilters.length === 0 ? '#3b82f6' : 'rgba(15,23,42,0.05)'}; color:${activeFilters.length === 0 ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${tr('saved.filter.all')}</span>
           ${allTags.map(tag => {
-            const isActive = activeFilters.includes(tag);
+            const isActive = activeFilters.some(f => f.toLowerCase() === tag.toLowerCase());
             return `<span class="filter-pill ${isActive ? 'active' : ''}" data-tag="${esc(tag)}" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${isActive ? '#3b82f6' : 'rgba(15,23,42,0.05)'}; color:${isActive ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${esc(tag)}</span>`;
           }).join('')}
         </div>
@@ -1707,12 +1720,15 @@ export function renderSavedLists() {
                 return `<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; font-weight:700; background:${s.bg}; color:${s.text}; border:1px solid ${s.border}; margin-left:4px; display:inline-block;">${esc(t)}</span>`;
               }).join('');
 
+              const cameraIconHtml = item.image ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--text-muted); margin-left:4px; vertical-align:middle;" title="Tiene foto"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>` : '';
+
               return `
                 <label style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--card-border); cursor:pointer;">
                   <input type="checkbox" class="saved-item-check" checked data-item-id="${esc(item.id)}" style="width:17px; height:17px; flex-shrink:0; accent-color:#3b82f6; cursor:pointer;">
                   <span style="flex:1; font-size:0.9rem; color:var(--text-primary); display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
                     ${esc(item.name)}
                     ${item.qty ? `<span style="color:var(--text-muted); font-size:0.78rem;">(${esc(item.qty)})</span>` : ''}
+                    ${cameraIconHtml}
                     ${itemTagsHtml}
                   </span>
                   <button data-action="edit-item" data-list-id="${esc(list.id)}" data-item-id="${esc(item.id)}" style="border:none; background:none; color:var(--text-muted); cursor:pointer; font-size:0.9rem; padding:4px 6px; display:flex; align-items:center;" title="${esc(tr('saved.edit.item.tooltip'))}">
@@ -1743,7 +1759,8 @@ export function renderSavedLists() {
           activeSavedListFilters[list.id] = [];
         } else {
           let activeFilters = activeSavedListFilters[list.id] || [];
-          const idx = activeFilters.indexOf(tag);
+          const tagLower = tag.toLowerCase();
+          const idx = activeFilters.findIndex(t => t.toLowerCase() === tagLower);
           if (idx >= 0) {
             activeFilters.splice(idx, 1);
           } else {
@@ -1810,6 +1827,8 @@ export function renderSavedLists() {
         const itemObj = items.find(i => i.id === itemId);
         if (!itemObj) return;
 
+        let currentImageBase64 = itemObj.image || '';
+
         const editDiv = document.createElement('div');
         editDiv.style.cssText = 'display:flex; flex-direction:column; gap:8px; padding:10px; border-bottom:1px solid var(--card-border); background:rgba(15,23,42,0.01); width:100%; border-radius:6px; box-sizing:border-box; margin:4px 0;';
         editDiv.innerHTML = `
@@ -1820,6 +1839,18 @@ export function renderSavedLists() {
           <div>
             <input type="text" class="edit-item-tags" value="${esc((itemObj.tags || []).join(', '))}" placeholder="${esc(tr('saved.item.tags'))}" style="width:100%; margin:0; padding:6px 10px; font-size:0.85rem;">
           </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button class="btn-save btn-upload-inline" style="width:auto; margin:0; padding:6px 10px; font-size:0.75rem; background:#475569; display:flex; align-items:center; gap:4px; box-shadow:none;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              <span>Foto</span>
+            </button>
+            <input type="file" class="edit-item-image-file" accept="image/*" style="display:none;">
+            <div class="edit-item-img-preview" style="display: ${currentImageBase64 ? 'flex' : 'none'}; align-items:center; gap:6px;">
+              <img src="${currentImageBase64}" style="width:28px; height:28px; border-radius:4px; object-fit:cover; border:1px solid var(--card-border);">
+              <span class="remove-edit-item-img" style="color:var(--danger); cursor:pointer; font-size:1.2rem; line-height:1; font-weight:800;">×</span>
+            </div>
+            <span class="edit-item-no-img" style="font-size:0.72rem; color:var(--text-muted); display: ${currentImageBase64 ? 'none' : 'inline'};">Sin foto</span>
+          </div>
           <div style="display:flex; gap:6px; justify-content:flex-end;">
             <button class="btn-save save-inline-edit" style="width:auto; margin:0; padding:6px 12px; font-size:0.78rem; background:#3b82f6;">${tr('saved.save.btn')}</button>
             <button class="btn-confirm-no cancel-inline-edit" style="width:auto; margin:0; padding:6px 12px; font-size:0.78rem;">${tr('saved.cancel.btn')}</button>
@@ -1828,6 +1859,57 @@ export function renderSavedLists() {
         
         labelRow.style.display = 'none';
         labelRow.parentNode.insertBefore(editDiv, labelRow);
+
+        const fileInput = editDiv.querySelector('.edit-item-image-file');
+        const uploadBtn = editDiv.querySelector('.btn-upload-inline');
+        const previewContainer = editDiv.querySelector('.edit-item-img-preview');
+        const previewImg = editDiv.querySelector('.edit-item-img-preview img');
+        const noImgSpan = editDiv.querySelector('.edit-item-no-img');
+        const removeImgBtn = editDiv.querySelector('.remove-edit-item-img');
+
+        uploadBtn.onclick = (ev) => {
+          ev.preventDefault();
+          fileInput.click();
+        };
+
+        fileInput.onchange = () => {
+          const file = fileInput.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const img = new Image();
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 400;
+                let width = img.width;
+                let height = img.height;
+                if (width > MAX_WIDTH) {
+                  height *= MAX_WIDTH / width;
+                  width = MAX_WIDTH;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                currentImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
+                
+                previewImg.src = currentImageBase64;
+                previewContainer.style.display = 'flex';
+                noImgSpan.style.display = 'none';
+              };
+              img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+
+        removeImgBtn.onclick = (ev) => {
+          ev.preventDefault();
+          currentImageBase64 = '';
+          previewContainer.style.display = 'none';
+          noImgSpan.style.display = 'inline';
+          fileInput.value = '';
+        };
 
         editDiv.querySelector('.cancel-inline-edit').onclick = (ev) => {
           ev.preventDefault();
@@ -1847,7 +1929,7 @@ export function renderSavedLists() {
             return;
           }
 
-          state.updateItemInSavedList(listId, itemId, nameVal, qtyVal, parsedTags);
+          state.updateItemInSavedList(listId, itemId, nameVal, qtyVal, parsedTags, currentImageBase64);
           showToast(tr('saved.item.updated'));
           renderSavedLists();
         };
@@ -1943,23 +2025,72 @@ function _applyShopGrid(container) {
   }
 }
 
+export function toggleGeneralFilters() {
+  generalFiltersVisible = !generalFiltersVisible;
+  const container = document.getElementById('generalShoppingFilters');
+  if (container) {
+    container.style.display = generalFiltersVisible ? 'block' : 'none';
+  }
+  updateFilterFunnelStyle();
+}
+
+export function updateFilterFunnelStyle() {
+  const btn = elements.btnToggleShoppingFilters;
+  if (!btn) return;
+  
+  const hasActiveFilters = activeGeneralListFilters.length > 0;
+  
+  if (generalFiltersVisible) {
+    btn.classList.add('active');
+    btn.style.background = 'var(--active-color)';
+    btn.style.color = '#fff';
+    btn.classList.remove('filters-active');
+  } else {
+    btn.classList.remove('active');
+    btn.style.background = '';
+    btn.style.color = '';
+    if (hasActiveFilters) {
+      btn.classList.add('filters-active');
+    } else {
+      btn.classList.remove('filters-active');
+    }
+  }
+}
+
 function renderGeneralShoppingFilters() {
   const container = document.getElementById('generalShoppingFilters');
   if (!container) return;
   container.innerHTML = '';
   
   const rawItems = state.store.shoppingList || [];
-  const allTags = [];
+  const tagMap = new Map();
   rawItems.forEach(it => {
     (it.tags || []).forEach(t => {
-      if (!allTags.includes(t)) allTags.push(t);
+      const trimmed = (t || '').trim();
+      if (!trimmed) return;
+      const lower = trimmed.toLowerCase();
+      if (!tagMap.has(lower)) {
+        tagMap.set(lower, trimmed);
+      } else {
+        const existing = tagMap.get(lower);
+        if (trimmed[0] === trimmed[0].toUpperCase() && existing[0] !== existing[0].toUpperCase()) {
+          tagMap.set(lower, trimmed);
+        }
+      }
     });
   });
   
+  const allTags = [...tagMap.values()];
+  
   if (allTags.length === 0) {
     activeGeneralListFilters = [];
+    updateFilterFunnelStyle();
+    container.style.display = 'none';
     return;
   }
+  
+  container.style.display = generalFiltersVisible ? 'block' : 'none';
+  updateFilterFunnelStyle();
   
   const div = document.createElement('div');
   div.className = 'saved-list-filters';
@@ -1969,7 +2100,7 @@ function renderGeneralShoppingFilters() {
     <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">${tr('saved.filter.label')}</span>
     <span class="filter-pill ${activeGeneralListFilters.length === 0 ? 'active' : ''}" data-tag="" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${activeGeneralListFilters.length === 0 ? 'var(--active-color)' : 'rgba(15,23,42,0.05)'}; color:${activeGeneralListFilters.length === 0 ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${tr('saved.filter.all')}</span>
     ${allTags.map(tag => {
-      const isActive = activeGeneralListFilters.includes(tag);
+      const isActive = activeGeneralListFilters.some(t => t.toLowerCase() === tag.toLowerCase());
       return `<span class="filter-pill ${isActive ? 'active' : ''}" data-tag="${esc(tag)}" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${isActive ? 'var(--active-color)' : 'rgba(15,23,42,0.05)'}; color:${isActive ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${esc(tag)}</span>`;
     }).join('')}
   `;
@@ -1980,7 +2111,8 @@ function renderGeneralShoppingFilters() {
       if (!tag) {
         activeGeneralListFilters = [];
       } else {
-        const idx = activeGeneralListFilters.indexOf(tag);
+        const lowerTag = tag.toLowerCase();
+        const idx = activeGeneralListFilters.findIndex(t => t.toLowerCase() === lowerTag);
         if (idx >= 0) {
           activeGeneralListFilters.splice(idx, 1);
         } else {
@@ -2012,7 +2144,7 @@ function renderShoppingItemsInto(list) {
 
   const rawItems = state.store.shoppingList || [];
   const items = activeGeneralListFilters.length > 0
-    ? rawItems.filter(it => (it.tags || []).some(t => activeGeneralListFilters.includes(t)))
+    ? rawItems.filter(it => (it.tags || []).some(t => activeGeneralListFilters.some(f => f.toLowerCase() === t.toLowerCase())))
     : rawItems;
   const isTile = shopCols === 2;
 
@@ -3379,38 +3511,31 @@ export function renderQuickTagChips() {
   if (!container) return;
   container.innerHTML = '';
 
-  const existingTags = new Set();
-  if (state.store.shoppingList) {
-    state.store.shoppingList.forEach(it => {
-      if (Array.isArray(it.tags)) {
-        it.tags.forEach(t => {
-          const trimmed = t.trim();
-          if (trimmed) existingTags.add(trimmed);
-        });
-      }
-    });
-  }
-  if (state.store.savedShoppingLists) {
-    state.store.savedShoppingLists.forEach(list => {
-      if (Array.isArray(list.items)) {
-        list.items.forEach(it => {
-          if (Array.isArray(it.tags)) {
-            it.tags.forEach(t => {
-              const trimmed = t.trim();
-              if (trimmed) existingTags.add(trimmed);
-            });
-          }
-        });
+  const tagMap = new Map();
+  // Gather from store.persistentTags
+  if (state.store.persistentTags) {
+    state.store.persistentTags.forEach(t => {
+      const trimmed = (t || '').trim();
+      if (!trimmed) return;
+      const lower = trimmed.toLowerCase();
+      if (!tagMap.has(lower)) {
+        tagMap.set(lower, trimmed);
+      } else {
+        const existing = tagMap.get(lower);
+        // Prefer capitalized ones
+        if (trimmed[0] === trimmed[0].toUpperCase() && existing[0] !== existing[0].toUpperCase()) {
+          tagMap.set(lower, trimmed);
+        }
       }
     });
   }
 
-  if (existingTags.size === 0) {
+  if (tagMap.size === 0) {
     container.innerHTML = `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">${tr('shop.tags.empty')}</span>`;
     return;
   }
 
-  [...existingTags].forEach(tag => {
+  [...tagMap.values()].forEach(tag => {
     const chip = document.createElement('span');
     chip.className = 'quick-tag-chip';
     chip.innerText = tag;
@@ -3421,7 +3546,8 @@ export function renderQuickTagChips() {
         .map(x => x.trim())
         .filter(x => x.length > 0);
       
-      const tagIndex = tags.indexOf(tag);
+      const tagLower = tag.toLowerCase();
+      const tagIndex = tags.findIndex(x => x.toLowerCase() === tagLower);
       if (tagIndex >= 0) {
         tags.splice(tagIndex, 1);
       } else {
@@ -3434,10 +3560,10 @@ export function renderQuickTagChips() {
   });
 }
 
-export function renderShopItemSuggestions() {
-  const datalist = document.getElementById('shopItemSuggestions');
-  if (!datalist) return;
-  datalist.innerHTML = '';
+export function showShopItemSuggestions(query = '') {
+  const dropdown = document.getElementById('shopItemAutocompleteDropdown');
+  if (!dropdown) return;
+  dropdown.innerHTML = '';
 
   const uniqueNames = new Set();
 
@@ -3467,7 +3593,7 @@ export function renderShopItemSuggestions() {
   const defaultCommonItems = isEn ? [
     'Milk', 'Bread', 'Eggs', 'Cheese', 'Butter', 'Yogurt', 'Sugar', 'Salt', 'Coffee', 'Tea', 
     'Olive oil', 'Rice', 'Pasta', 'Tomato sauce', 'Onion', 'Garlic', 'Potatoes', 'Carrots', 
-    'Bananas', 'Apples', 'Oranges', 'Lemons', 'Chicken', 'Beef', 'Canned tuna', 
+    'Bananas', 'Apples', 'Oranges', 'Limones', 'Chicken', 'Beef', 'Canned tuna', 
     'Dish soap', 'Laundry detergent', 'Fabric softener', 'Toilet paper', 'Paper towels', 
     'Trash bags', 'Shampoo', 'Shower gel', 'Toothpaste'
   ] : [
@@ -3482,11 +3608,30 @@ export function renderShopItemSuggestions() {
     uniqueNames.add(name);
   });
 
-  uniqueNames.forEach(name => {
-    const option = document.createElement('option');
-    option.value = name;
-    datalist.appendChild(option);
+  const q = query.trim().toLowerCase();
+  const matches = [...uniqueNames].filter(name => name.toLowerCase().includes(q));
+
+  if (matches.length === 0) {
+    dropdown.classList.add('hidden');
+    return;
+  }
+
+  matches.slice(0, 10).forEach(name => {
+    const item = document.createElement('div');
+    item.className = 'shop-autocomplete-item';
+    item.innerText = name;
+    item.onmousedown = (e) => {
+      e.preventDefault();
+      const input = elements.shopItemName;
+      if (input) {
+        input.value = name;
+      }
+      dropdown.classList.add('hidden');
+    };
+    dropdown.appendChild(item);
   });
+
+  dropdown.classList.remove('hidden');
 }
 
 export function updateQuickTagChipStyles() {

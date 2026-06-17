@@ -753,6 +753,21 @@ function bindEvents() {
     };
   }
 
+  if (ui.elements.shopItemName) {
+    ui.elements.shopItemName.onfocus = () => {
+      ui.showShopItemSuggestions(ui.elements.shopItemName.value);
+    };
+    ui.elements.shopItemName.oninput = () => {
+      ui.showShopItemSuggestions(ui.elements.shopItemName.value);
+    };
+    ui.elements.shopItemName.onblur = () => {
+      setTimeout(() => {
+        const dropdown = document.getElementById('shopItemAutocompleteDropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+      }, 150);
+    };
+  }
+
   // Bulk: add the whole pasted/typed list as-is (one item per line/comma).
   if (ui.elements.btnAddBulkList) {
     ui.elements.btnAddBulkList.onclick = () => {
@@ -834,6 +849,12 @@ function bindEvents() {
   }
   if (ui.elements.btnShoppingFullscreenShare) {
     ui.elements.btnShoppingFullscreenShare.onclick = shareHandler;
+  }
+
+  if (ui.elements.btnToggleShoppingFilters) {
+    ui.elements.btnToggleShoppingFilters.onclick = () => {
+      ui.toggleGeneralFilters();
+    };
   }
 
   // Shopping column toggles (1 or 2 cols)
@@ -1554,6 +1575,15 @@ function bindEvents() {
       });
     }
   }
+
+  // Close autocompletion dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('shopItemAutocompleteDropdown');
+    const input = ui.elements.shopItemName;
+    if (dropdown && input && !dropdown.contains(e.target) && e.target !== input) {
+      dropdown.classList.add('hidden');
+    }
+  });
 }
 
 /* ------------------------------------------------------------------ */
