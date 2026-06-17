@@ -23,6 +23,7 @@ export function getTagStyle(tagName) {
 const activeSavedListFilters = {};
 export let activeGeneralListFilters = [];
 export let generalFiltersVisible = false;
+export let shopCols = Math.min(2, parseInt(localStorage.getItem('shopCols') || '1', 10));
 
 // DOM References Cache
 let elements = {};
@@ -339,6 +340,7 @@ export function initDomElements() {
 
   createToastContainer();
   createConfirmContainer();
+  setShopCols(shopCols);
 }
 
 /* --- TOAST SYSTEM (ELEGANT CUSTOM NOTIFICATIONS) --- */
@@ -1985,7 +1987,6 @@ export function renderSavedLists() {
 }
 
 // Current column count for shopping (1 or 2). Persisted in localStorage.
-let shopCols = Math.min(2, parseInt(localStorage.getItem('shopCols') || '1', 10));
 
 export function setShopCols(n) {
   shopCols = Math.min(2, Math.max(1, n));
