@@ -21,7 +21,7 @@ export function getTagStyle(tagName) {
 }
 
 const activeSavedListFilters = {};
-export let activeGeneralListFilter = '';
+export let activeGeneralListFilters = [];
 
 // DOM References Cache
 let elements = {};
@@ -1622,6 +1622,7 @@ export function toggleShoppingTab(tabId) {
     if (elements.shopItemTags) elements.shopItemTags.value = '';
     renderQuickTagChips();
     updateQuickTagChipStyles();
+    renderShopItemSuggestions();
   } else if (tabId === 'saved') {
     if (savedTab) savedTab.classList.remove('hidden');
     if (savedBtn) savedBtn.classList.add('active');
@@ -1654,9 +1655,9 @@ export function renderSavedLists() {
       });
     });
 
-    const activeFilter = activeSavedListFilters[list.id] || '';
-    const displayedItems = activeFilter
-      ? items.filter(it => (it.tags || []).includes(activeFilter))
+    const activeFilters = activeSavedListFilters[list.id] || [];
+    const displayedItems = activeFilters.length > 0
+      ? items.filter(it => (it.tags || []).some(t => activeFilters.includes(t)))
       : items;
 
     let filtersHtml = '';
@@ -1664,9 +1665,9 @@ export function renderSavedLists() {
       filtersHtml = `
         <div class="saved-list-filters" style="display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
           <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">${tr('saved.filter.label')}</span>
-          <span class="filter-pill ${!activeFilter ? 'active' : ''}" data-tag="" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${!activeFilter ? '#3b82f6' : 'rgba(15,23,42,0.05)'}; color:${!activeFilter ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${tr('saved.filter.all')}</span>
+          <span class="filter-pill ${activeFilters.length === 0 ? 'active' : ''}" data-tag="" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${activeFilters.length === 0 ? '#3b82f6' : 'rgba(15,23,42,0.05)'}; color:${activeFilters.length === 0 ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${tr('saved.filter.all')}</span>
           ${allTags.map(tag => {
-            const isActive = activeFilter === tag;
+            const isActive = activeFilters.includes(tag);
             return `<span class="filter-pill ${isActive ? 'active' : ''}" data-tag="${esc(tag)}" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${isActive ? '#3b82f6' : 'rgba(15,23,42,0.05)'}; color:${isActive ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${esc(tag)}</span>`;
           }).join('')}
         </div>
@@ -1738,7 +1739,18 @@ export function renderSavedLists() {
       const filterPill = e.target.closest('.filter-pill');
       if (filterPill) {
         const tag = filterPill.dataset.tag;
-        activeSavedListFilters[list.id] = tag;
+        if (!tag) {
+          activeSavedListFilters[list.id] = [];
+        } else {
+          let activeFilters = activeSavedListFilters[list.id] || [];
+          const idx = activeFilters.indexOf(tag);
+          if (idx >= 0) {
+            activeFilters.splice(idx, 1);
+          } else {
+            activeFilters.push(tag);
+          }
+          activeSavedListFilters[list.id] = activeFilters;
+        }
         renderSavedLists();
         return;
       }
@@ -1867,7 +1879,8 @@ export function renderSavedLists() {
     const shareBtn = card.querySelector('.saved-list-share');
     if (shareBtn) {
       shareBtn.onclick = () => {
-        const text = state.buildShareText(shareBtn.dataset.listId);
+        const activeFilters = activeSavedListFilters[list.id] || [];
+        const text = state.buildShareText(shareBtn.dataset.listId, activeFilters);
         if (!text) { showToast(tr('toast.list.empty'), 'warning'); return; }
         if (navigator.share) {
           navigator.share({ title: list.name, text }).catch(() => {});
@@ -1944,11 +1957,9 @@ function renderGeneralShoppingFilters() {
   });
   
   if (allTags.length === 0) {
-    activeGeneralListFilter = '';
+    activeGeneralListFilters = [];
     return;
   }
-  
-  const activeFilter = activeGeneralListFilter || '';
   
   const div = document.createElement('div');
   div.className = 'saved-list-filters';
@@ -1956,16 +1967,26 @@ function renderGeneralShoppingFilters() {
   
   div.innerHTML = `
     <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">${tr('saved.filter.label')}</span>
-    <span class="filter-pill ${!activeFilter ? 'active' : ''}" data-tag="" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${!activeFilter ? 'var(--active-color)' : 'rgba(15,23,42,0.05)'}; color:${!activeFilter ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${tr('saved.filter.all')}</span>
+    <span class="filter-pill ${activeGeneralListFilters.length === 0 ? 'active' : ''}" data-tag="" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${activeGeneralListFilters.length === 0 ? 'var(--active-color)' : 'rgba(15,23,42,0.05)'}; color:${activeGeneralListFilters.length === 0 ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${tr('saved.filter.all')}</span>
     ${allTags.map(tag => {
-      const isActive = activeFilter === tag;
+      const isActive = activeGeneralListFilters.includes(tag);
       return `<span class="filter-pill ${isActive ? 'active' : ''}" data-tag="${esc(tag)}" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; cursor:pointer; background:${isActive ? 'var(--active-color)' : 'rgba(15,23,42,0.05)'}; color:${isActive ? '#fff' : 'var(--text-muted)'}; font-weight:700;">${esc(tag)}</span>`;
     }).join('')}
   `;
   
   div.querySelectorAll('.filter-pill').forEach(pill => {
     pill.onclick = () => {
-      activeGeneralListFilter = pill.dataset.tag;
+      const tag = pill.dataset.tag;
+      if (!tag) {
+        activeGeneralListFilters = [];
+      } else {
+        const idx = activeGeneralListFilters.indexOf(tag);
+        if (idx >= 0) {
+          activeGeneralListFilters.splice(idx, 1);
+        } else {
+          activeGeneralListFilters.push(tag);
+        }
+      }
       renderShoppingList();
     };
   });
@@ -1990,8 +2011,8 @@ function renderShoppingItemsInto(list) {
   list.innerHTML = '';
 
   const rawItems = state.store.shoppingList || [];
-  const items = activeGeneralListFilter
-    ? rawItems.filter(it => (it.tags || []).includes(activeGeneralListFilter))
+  const items = activeGeneralListFilters.length > 0
+    ? rawItems.filter(it => (it.tags || []).some(t => activeGeneralListFilters.includes(t)))
     : rawItems;
   const isTile = shopCols === 2;
 
@@ -3362,13 +3383,32 @@ export function renderQuickTagChips() {
   if (state.store.shoppingList) {
     state.store.shoppingList.forEach(it => {
       if (Array.isArray(it.tags)) {
-        it.tags.forEach(t => existingTags.add(t));
+        it.tags.forEach(t => {
+          const trimmed = t.trim();
+          if (trimmed) existingTags.add(trimmed);
+        });
+      }
+    });
+  }
+  if (state.store.savedShoppingLists) {
+    state.store.savedShoppingLists.forEach(list => {
+      if (Array.isArray(list.items)) {
+        list.items.forEach(it => {
+          if (Array.isArray(it.tags)) {
+            it.tags.forEach(t => {
+              const trimmed = t.trim();
+              if (trimmed) existingTags.add(trimmed);
+            });
+          }
+        });
       }
     });
   }
 
-  const defaultTags = ['Lidl', 'Mercadona', 'Carrefour', 'Farmacia', 'Limpieza', 'Fruta'];
-  defaultTags.forEach(t => existingTags.add(t));
+  if (existingTags.size === 0) {
+    container.innerHTML = `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">${tr('shop.tags.empty')}</span>`;
+    return;
+  }
 
   [...existingTags].forEach(tag => {
     const chip = document.createElement('span');
@@ -3391,6 +3431,61 @@ export function renderQuickTagChips() {
       updateQuickTagChipStyles();
     };
     container.appendChild(chip);
+  });
+}
+
+export function renderShopItemSuggestions() {
+  const datalist = document.getElementById('shopItemSuggestions');
+  if (!datalist) return;
+  datalist.innerHTML = '';
+
+  const uniqueNames = new Set();
+
+  if (state.store.shoppingList) {
+    state.store.shoppingList.forEach(it => {
+      if (it.name) {
+        const trimmed = it.name.trim();
+        if (trimmed) uniqueNames.add(trimmed);
+      }
+    });
+  }
+
+  if (state.store.savedShoppingLists) {
+    state.store.savedShoppingLists.forEach(list => {
+      if (Array.isArray(list.items)) {
+        list.items.forEach(it => {
+          if (it.name) {
+            const trimmed = it.name.trim();
+            if (trimmed) uniqueNames.add(trimmed);
+          }
+        });
+      }
+    });
+  }
+
+  const isEn = getLang() === 'en';
+  const defaultCommonItems = isEn ? [
+    'Milk', 'Bread', 'Eggs', 'Cheese', 'Butter', 'Yogurt', 'Sugar', 'Salt', 'Coffee', 'Tea', 
+    'Olive oil', 'Rice', 'Pasta', 'Tomato sauce', 'Onion', 'Garlic', 'Potatoes', 'Carrots', 
+    'Bananas', 'Apples', 'Oranges', 'Lemons', 'Chicken', 'Beef', 'Canned tuna', 
+    'Dish soap', 'Laundry detergent', 'Fabric softener', 'Toilet paper', 'Paper towels', 
+    'Trash bags', 'Shampoo', 'Shower gel', 'Toothpaste'
+  ] : [
+    'Leche', 'Pan', 'Huevos', 'Queso', 'Mantequilla', 'Yogur', 'Azúcar', 'Sal', 'Café', 'Té', 
+    'Aceite de oliva', 'Arroz', 'Pasta', 'Tomate frito', 'Cebolla', 'Ajo', 'Patatas', 'Zanahorias',
+    'Plátanos', 'Manzanas', 'Naranjas', 'Limones', 'Pollo', 'Ternera', 'Atún en lata', 
+    'Jabón de platos', 'Detergente', 'Suavizante', 'Papel higiénico', 'Papel de cocina', 
+    'Bolsas de basura', 'Champú', 'Gel de ducha', 'Pasta de dientes'
+  ];
+
+  defaultCommonItems.forEach(name => {
+    uniqueNames.add(name);
+  });
+
+  uniqueNames.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    datalist.appendChild(option);
   });
 }
 

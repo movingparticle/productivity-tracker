@@ -816,7 +816,7 @@ function bindEvents() {
   
   // General shopping list sharing
   const shareHandler = () => {
-    const text = state.buildGeneralShareText();
+    const text = state.buildGeneralShareText(ui.activeGeneralListFilters);
     if (!text) {
       ui.showToast(tr('toast.shop.empty.share') || 'La lista de compras está vacía', 'warning');
       return;

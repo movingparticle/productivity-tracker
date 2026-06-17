@@ -490,7 +490,8 @@
               <span data-i18n="shop.item.name">Nombre del Artículo</span>
               <span style="text-transform:none; font-weight:600; color:var(--text-muted); margin-left:4px;" data-i18n="shop.item.name.photo">(o solo sube una foto)</span>
             </label>
-            <input type="text" id="shopItemName" placeholder="¿Qué se necesita? Ej: Leche, Jabón..." style="margin:0; box-sizing: border-box; height: 40px; padding: 8px 12px; font-size: 0.9rem;" data-i18n-ph="shop.item.name.ph">
+            <input type="text" id="shopItemName" list="shopItemSuggestions" placeholder="¿Qué se necesita? Ej: Leche, Jabón..." style="margin:0; box-sizing: border-box; height: 40px; padding: 8px 12px; font-size: 0.9rem;" data-i18n-ph="shop.item.name.ph">
+            <datalist id="shopItemSuggestions"></datalist>
           </div>
 
           <!-- Foto (Opcional) -->

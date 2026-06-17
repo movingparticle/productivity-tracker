@@ -885,15 +885,30 @@ export function addSavedListToShopping(listId, selectedIds, assignedTo) {
   return saveShoppingItemsBulk(items.map(i => ({ name: i.name, qty: i.qty, tags: i.tags })), assignedTo || 'casa');
 }
 
-export function buildShareText(listId) {
+export function buildShareText(listId, filterTags = []) {
   const list = (store.savedShoppingLists || []).find(l => l.id === listId);
   if (!list) return '';
-  const lines = (list.items || []).map(i => i.qty ? `- ${i.name} (${i.qty})` : `- ${i.name}`);
+  let items = list.items || [];
+  if (filterTags && filterTags.length > 0) {
+    items = items.filter(it => (it.tags || []).some(t => filterTags.includes(t)));
+  }
+  if (items.length === 0) return '';
+  const lines = items.map(i => {
+    let line = `- ${i.name}`;
+    if (i.qty) line += ` (${i.qty})`;
+    if (i.tags && i.tags.length > 0) {
+      line += ` ${i.tags.map(t => `#${t}`).join(' ')}`;
+    }
+    return line;
+  });
   return `${list.name}\n${lines.join('\n')}`;
 }
 
-export function buildGeneralShareText() {
-  const list = store.shoppingList || [];
+export function buildGeneralShareText(filterTags = []) {
+  let list = store.shoppingList || [];
+  if (filterTags && filterTags.length > 0) {
+    list = list.filter(it => (it.tags || []).some(t => filterTags.includes(t)));
+  }
   if (list.length === 0) return '';
   const roomName = currentRoomName || 'la Sala';
   const lines = list.map(i => {
