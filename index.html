@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Tracker">
   <link rel="manifest" href="/productivity-tracker/manifest.json">
   <link rel="apple-touch-icon" href="/productivity-tracker/icon-192.svg">
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-BZRX2GXo.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-D241_Sht.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-0m-CFzR8.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-DdlVAmtG.css">
 <script id="vite-plugin-pwa:register-sw" src="/productivity-tracker/registerSW.js"></script></head>
 <body>
 
@@ -440,12 +440,15 @@
       <div id="shoppingListViewTab">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px; gap:8px;">
           <!-- Column toggle (1 or 2 cols only) -->
-          <div style="display:flex; gap:4px;">
+          <div style="display:flex; gap:4px; align-items:center;">
             <button class="btn-col-toggle active" id="btnCol1" data-cols="1" title="Lista" data-i18n-title="tooltip.list">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
             </button>
             <button class="btn-col-toggle" id="btnCol2" data-cols="2" title="Cuadrícula" data-i18n-title="tooltip.grid">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>
+            </button>
+            <button class="btn-col-toggle" id="btnToggleShoppingFilters" title="Filtrar por etiquetas" style="display:flex; align-items:center; justify-content:center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             </button>
           </div>
           <div style="display:flex; gap:6px; margin-left:auto;">
@@ -485,14 +488,14 @@
         <div class="roadmap-builder-card" style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 15px; margin-bottom: 90px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);">
 
           <!-- Nombre (opcional si hay foto) -->
-          <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px;">
+          <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px; position: relative;">
             <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:inline-flex; align-items:center; gap:6px;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
               <span data-i18n="shop.item.name">Nombre del Artículo</span>
               <span style="text-transform:none; font-weight:600; color:var(--text-muted); margin-left:4px;" data-i18n="shop.item.name.photo">(o solo sube una foto)</span>
             </label>
-            <input type="text" id="shopItemName" list="shopItemSuggestions" placeholder="¿Qué se necesita? Ej: Leche, Jabón..." style="margin:0; box-sizing: border-box; height: 40px; padding: 8px 12px; font-size: 0.9rem;" data-i18n-ph="shop.item.name.ph">
-            <datalist id="shopItemSuggestions"></datalist>
+            <input type="text" id="shopItemName" autocomplete="off" placeholder="¿Qué se necesita? Ej: Leche, Jabón..." style="margin:0; box-sizing: border-box; height: 40px; padding: 8px 12px; font-size: 0.9rem;" data-i18n-ph="shop.item.name.ph">
+            <div id="shopItemAutocompleteDropdown" class="shop-autocomplete-dropdown hidden"></div>
           </div>
 
           <!-- Foto (Opcional) -->
