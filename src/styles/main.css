@@ -3341,8 +3341,9 @@ input:focus, select:focus {
 
 /* Active filters funnel button indicator */
 .btn-col-toggle.filters-active {
-  border: 1.5px solid var(--active-color) !important;
-  color: var(--active-color) !important;
+  border: 2px solid #7c3aed !important;
+  color: #7c3aed !important;
+  background: transparent !important;
 }
 
 /* Modal Filter Tags Styling */

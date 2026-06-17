@@ -2040,44 +2040,106 @@ export function openShoppingFiltersModal() {
   if (!container) return;
   container.innerHTML = '';
   
+  const rawItems = state.store.shoppingList || [];
   const tagMap = new Map();
+  
+  // 1. Gather all unique tags from persistentTags first
   if (state.store.persistentTags) {
     state.store.persistentTags.forEach(t => {
       const trimmed = (t || '').trim();
       if (!trimmed) return;
       const lower = trimmed.toLowerCase();
       if (!tagMap.has(lower)) {
-        tagMap.set(lower, trimmed);
+        tagMap.set(lower, { name: trimmed, activeItems: [] });
       } else {
         const existing = tagMap.get(lower);
-        if (trimmed[0] === trimmed[0].toUpperCase() && existing[0] !== existing[0].toUpperCase()) {
-          tagMap.set(lower, trimmed);
+        if (trimmed[0] === trimmed[0].toUpperCase() && existing.name[0] !== existing.name[0].toUpperCase()) {
+          existing.name = trimmed;
         }
       }
     });
   }
   
-  const allTags = [...tagMap.values()];
+  // 2. Find active items for each tag
+  rawItems.forEach(it => {
+    (it.tags || []).forEach(t => {
+      const trimmed = (t || '').trim();
+      if (!trimmed) return;
+      const lower = trimmed.toLowerCase();
+      if (!tagMap.has(lower)) {
+        tagMap.set(lower, { name: trimmed, activeItems: [it] });
+      } else {
+        const entry = tagMap.get(lower);
+        if (!entry.activeItems.some(x => x.id === it.id)) {
+          entry.activeItems.push(it);
+        }
+      }
+    });
+  });
   
-  if (allTags.length === 0) {
+  const allTagEntries = [...tagMap.values()];
+  
+  if (allTagEntries.length === 0) {
     container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-style:italic;">${tr('shop.tags.empty')}</div>`;
   } else {
-    allTags.forEach(tag => {
+    // Sort so that active tags (items count > 0) are at the top
+    allTagEntries.sort((a, b) => b.activeItems.length - a.activeItems.length);
+    
+    allTagEntries.forEach(entry => {
+      const tag = entry.name;
+      const itemsWithTag = entry.activeItems;
+      const count = itemsWithTag.length;
+      const hasItems = count > 0;
+      
       const isActive = activeGeneralListFilters.some(f => f.toLowerCase() === tag.toLowerCase());
+      
       const row = document.createElement('div');
       row.className = 'filter-modal-tag-row';
-      row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom: 1px solid var(--card-border); border-radius:var(--radius-sm); transition:background 0.2s; cursor:pointer;';
-      row.innerHTML = `
-        <span style="font-weight:600; font-size:0.9rem; color:var(--text-primary);">${esc(tag)}</span>
-        <input type="checkbox" class="filter-modal-checkbox" data-tag="${esc(tag)}" ${isActive ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer; accent-color:var(--active-color);">
-      `;
-      // Toggle checkbox when clicking anywhere on the row
-      row.onclick = (e) => {
-        if (e.target.tagName !== 'INPUT') {
-          const cb = row.querySelector('input');
-          if (cb) cb.checked = !cb.checked;
-        }
-      };
+      
+      if (hasItems) {
+        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom: 1px solid var(--card-border); border-radius:var(--radius-sm); transition:background 0.2s; cursor:pointer;';
+        
+        const previewText = itemsWithTag.map(it => {
+          let name = it.name && it.name.trim() ? it.name.trim() : (tr('shop.item.photo.fallback') || 'Artículo en foto');
+          if (it.qty && it.qty.trim()) name += ` (${it.qty.trim()})`;
+          return name;
+        }).join(', ');
+        
+        row.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:4px; flex:1; text-align:left; padding-right:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-weight:700; font-size:0.95rem; color:var(--text-primary);">${esc(tag)}</span>
+              <span style="background:#7c3aed; color:#fff; font-size:0.7rem; padding:1px 6px; border-radius:10px; font-weight:700;">${count}</span>
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:320px;">
+              ${esc(previewText)}
+            </div>
+          </div>
+          <input type="checkbox" class="filter-modal-checkbox" data-tag="${esc(tag)}" ${isActive ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer; accent-color:#7c3aed; flex-shrink:0;">
+        `;
+        
+        row.onclick = (e) => {
+          if (e.target.tagName !== 'INPUT') {
+            const cb = row.querySelector('input');
+            if (cb) cb.checked = !cb.checked;
+          }
+        };
+      } else {
+        // Disabled tag row
+        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom: 1px solid var(--card-border); border-radius:var(--radius-sm); opacity:0.45; user-select:none;';
+        row.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:4px; flex:1; text-align:left; padding-right:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-weight:600; font-size:0.95rem; color:var(--text-primary);">${esc(tag)}</span>
+              <span style="background:var(--card-border); color:var(--text-muted); font-size:0.7rem; padding:1px 6px; border-radius:10px; font-weight:700;">0</span>
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">
+              Sin productos activos
+            </div>
+          </div>
+          <input type="checkbox" class="filter-modal-checkbox" disabled style="width:18px; height:18px; cursor:not-allowed; flex-shrink:0;">
+        `;
+      }
       container.appendChild(row);
     });
   }
@@ -2122,8 +2184,8 @@ export function updateFilterFunnelStyle() {
   
   if (hasActiveFilters) {
     btn.classList.add('filters-active');
-    btn.style.background = 'var(--active-color)';
-    btn.style.color = '#fff';
+    btn.style.background = '';
+    btn.style.color = '';
   } else {
     btn.classList.remove('filters-active');
     btn.style.background = '';
