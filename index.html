@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Tracker">
   <link rel="manifest" href="/productivity-tracker/manifest.json">
   <link rel="apple-touch-icon" href="/productivity-tracker/icon-192.svg">
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-B8DG8XNp.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-DKnWA6a9.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-C_KgldqH.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-D65Wk0tw.css">
 <script id="vite-plugin-pwa:register-sw" src="/productivity-tracker/registerSW.js"></script></head>
 <body>
 
@@ -167,7 +167,7 @@
     </div>
 
     <!-- ROADMAP TAB (DAILY PLAN) -->
-    <div class="screen" id="screenRoadmap" style="overflow-y: auto;">
+    <div class="screen" id="screenRoadmap">
       <div class="header-row">
         <span class="app-title" data-i18n="plan.title">Plan de Enfoque</span>
       </div>
@@ -192,7 +192,7 @@
       </div>
 
       <!-- TAB 1: VIEW ROADMAP -->
-      <div id="roadmapViewTab">
+      <div id="roadmapViewTab" style="flex: 1; overflow-y: auto; padding-bottom: 90px;">
         <div class="roadmap-card" id="roadmapContainer" style="margin-top: 5px; min-height: 120px;">
           <div class="roadmap-header">
             <span class="roadmap-card-title" id="roadmapUserTitle">Plan de Hoy</span>
@@ -210,7 +210,7 @@
       </div>
 
       <!-- TAB 2: BUILD ROADMAP (interactive blocks) -->
-      <div id="roadmapBuilderTab" class="hidden">
+      <div id="roadmapBuilderTab" class="hidden" style="flex: 1; overflow-y: auto; padding-bottom: 90px;">
         <h4 class="section-title" id="builderUserTitle" data-i18n="plan.builder.hint">Toca bloques para armar tu plan</h4>
 
         <!-- Sub-tabs: Pendientes / Rutinas / Personal -->
@@ -523,6 +523,15 @@
                 <option value="casa" data-i18n="shop.item.for.all">La Sala</option>
               </select>
             </div>
+          </div>
+
+          <!-- Etiquetas / Supermercado -->
+          <div class="builder-row" style="display: flex; flex-direction: column; gap: 4px;">
+            <label class="builder-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display:inline-flex; align-items:center; gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+              <span data-i18n="shop.item.tags">Etiquetas / Supermercados (ej: Lidl, Mercadona)</span>
+            </label>
+            <input type="text" id="shopItemTags" placeholder="Separadas por coma..." style="margin:0;" data-i18n-ph="shop.item.tags.ph">
           </div>
 
           <button class="btn-save" id="btnSaveShopItem" style="margin-top: 5px; background: var(--active-color);" data-i18n="shop.item.add">Añadir a la Lista</button>
