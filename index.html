@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Tracker">
   <link rel="manifest" href="/productivity-tracker/manifest.json">
   <link rel="apple-touch-icon" href="/productivity-tracker/icon-192.svg">
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-0m-CFzR8.js"></script>
-  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-DdlVAmtG.css">
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-CSvFngZA.js"></script>
+  <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-CjG3Whqd.css">
 <script id="vite-plugin-pwa:register-sw" src="/productivity-tracker/registerSW.js"></script></head>
 <body>
 
@@ -462,8 +462,6 @@
             </button>
           </div>
         </div>
-        <!-- Filter Bar for General Shopping List -->
-        <div id="generalShoppingFilters" style="margin-top: 10px; margin-bottom: 5px;"></div>
         <div class="template-list" id="shoppingListDisplay" style="margin-top: 8px; min-height: 250px; border: none; background: transparent; overflow-y: visible; max-height: none; margin-bottom: 90px;">
           <!-- Dynamically populated shopping items -->
         </div>
@@ -980,6 +978,26 @@
         <button id="btnSendAgent" class="agent-send-btn" title="Enviar">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOPPING FILTER MODAL -->
+  <div class="modal-overlay" id="modalShoppingFilters" style="z-index: 1200;">
+    <div class="modal-content" style="max-width: 450px; width: 90%; background: var(--card-bg); color: var(--text-primary); padding: 22px; border: 1px solid var(--card-border); border-radius: var(--radius-md);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">
+        <h3 style="margin:0; font-family: var(--font-title); font-weight:800; font-size: 1.1rem;" data-i18n="shop.filter.modal.title">Filtrar por etiquetas</h3>
+        <button id="btnCloseShoppingFilters" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer; line-height: 1;">×</button>
+      </div>
+      
+      <!-- Tags Selection Area -->
+      <div id="shoppingFilterTagsContainer" style="display:flex; flex-direction:column; gap:10px; max-height:250px; overflow-y:auto; padding:5px 0;">
+        <!-- Checkboxes for each unique tag will go here -->
+      </div>
+      
+      <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
+        <button id="btnShoppingFiltersClear" class="btn-save" style="background:#475569; font-size:0.85rem; padding:8px 14px; margin:0;" data-i18n="shop.filter.modal.clear">Limpiar todo</button>
+        <button id="btnShoppingFiltersSave" class="btn-save" style="background:var(--active-color); font-size:0.85rem; padding:8px 14px; margin:0;" data-i18n="shop.filter.modal.save">Guardar</button>
       </div>
     </div>
   </div>
