@@ -215,6 +215,8 @@ export function initDomElements() {
     btnCloseLightbox: document.getElementById('btnCloseLightbox'),
     lightboxImage: document.getElementById('lightboxImage'),
     lightboxCaption: document.getElementById('lightboxCaption'),
+    shopItemDetailsModal: document.getElementById('shopItemDetailsModal'),
+    btnCloseShopDetails: document.getElementById('btnCloseShopDetails'),
 
     // Shopping filters modal caching
     modalShoppingFilters: document.getElementById('modalShoppingFilters'),
@@ -2344,7 +2346,7 @@ function renderShoppingItemsInto(list) {
   const isTile = shopCols === 2;
 
   if (items.length === 0) {
-    list.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">${tr('shop.empty')}</div>`;
+    list.innerHTML = `<div style="grid-column: 1 / -1; width: 100%; padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">${tr('shop.empty')}</div>`;
     return;
   }
 
@@ -2366,6 +2368,7 @@ function renderShoppingItemsInto(list) {
 
     const card = document.createElement('div');
     card.className = `shop-card${isTile ? ' shop-card-tile' : ''}`;
+    card.style.cursor = 'pointer';
 
     const displayQty = item.qty ? (/^\d+$/.test(item.qty) ? `x${item.qty}` : item.qty) : '';
 
@@ -2420,11 +2423,6 @@ function renderShoppingItemsInto(list) {
             <button class="btn-del-shop" title="${esc(tr('shop.item.delete'))}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
         </div>
-        <div class="shop-card-detail" style="display:none;">
-          ${hasImage ? `<img class="shop-card-detail-img" src="${esc(item.image)}" alt="${esc(displayName)}">` : ''}
-          ${item.qty ? `<div class="shop-card-detail-row"><span class="shop-detail-label">${tr('shop.detail.qty')}</span> ${esc(item.qty)}</div>` : ''}
-          <div class="shop-card-detail-row"><span class="shop-detail-label">${tr('shop.detail.for')}</span> ${targetBadge}</div>
-        </div>
       `;
     }
 
@@ -2437,13 +2435,14 @@ function renderShoppingItemsInto(list) {
       });
     };
 
-    // Single-tap on row card → toggle expand
+    // Card tap / click triggers details modal
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('button') || e.target.closest('img')) return;
+      openShopItemDetails(item);
+    });
+
+    // Button and image click handlers
     if (!isTile) {
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('button') || e.target.closest('img')) return;
-        const detail = card.querySelector('.shop-card-detail');
-        if (detail) detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
-      });
       card.querySelector('.btn-buy-shop').onclick = (e) => { e.stopPropagation(); doBuy(); };
       card.querySelector('.btn-del-shop').onclick = (e) => { e.stopPropagation(); doDelete(); };
       if (hasImage) {
@@ -2523,6 +2522,110 @@ function renderTodayLogInto(container) {
     `;
     container.appendChild(item);
   });
+}
+
+export function openShopItemDetails(item) {
+  const modal = elements.shopItemDetailsModal;
+  if (!modal) return;
+
+  const roomName = state.currentRoomName && state.currentRoomName !== 'la Sala' ? state.currentRoomName : tr('tracker.default.room');
+
+  // Title / Name
+  const displayName = item.name && item.name.trim() ? item.name : tr('shop.item.photo.fallback');
+  const nameEl = document.getElementById('shopDetailName');
+  if (nameEl) nameEl.innerText = displayName;
+
+  // Quantity
+  const qtyEl = document.getElementById('shopDetailQty');
+  if (qtyEl) {
+    qtyEl.innerText = item.qty ? (/^\d+$/.test(item.qty) ? `x${item.qty}` : item.qty) : '—';
+  }
+
+  // Assigned to (Para quién)
+  const assignedEl = document.getElementById('shopDetailAssigned');
+  if (assignedEl) {
+    if (!item.assignedTo || item.assignedTo === 'casa') {
+      assignedEl.innerHTML = `<span class="shop-badge-room" style="background:rgba(59,130,246,0.1);color:#2563eb;border-color:rgba(59,130,246,0.2);padding:2px 8px;border-radius:4px;border:1px solid;font-size:0.8rem;font-weight:700;">${esc(roomName)}</span>`;
+    } else {
+      const assignedUser = state.store.config.users.find(u => u.id === item.assignedTo);
+      const color = assignedUser ? assignedUser.color : 'var(--text-muted)';
+      const name = assignedUser ? assignedUser.name : '???';
+      assignedEl.innerHTML = `<span class="shop-badge-user" style="background:${esc(color)}15;color:${esc(color)};border-color:${esc(color)}30;padding:2px 8px;border-radius:4px;border:1px solid;font-size:0.8rem;font-weight:700;">${esc(name)}</span>`;
+    }
+  }
+
+  // Added By (Pedido por)
+  const addedByEl = document.getElementById('shopDetailAddedBy');
+  if (addedByEl) {
+    const addedUser = state.store.config.users.find(u => u.id === item.addedBy);
+    addedByEl.innerText = addedUser ? addedUser.name : '???';
+  }
+
+  // Date (Fecha pedido)
+  const dateEl = document.getElementById('shopDetailDate');
+  if (dateEl) {
+    dateEl.innerText = item.dateAdded ? new Date(item.dateAdded).toLocaleString(getLang() === 'en' ? 'en-US' : 'es-ES', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+  }
+
+  // Tags (Etiquetas / Supermercados)
+  const tagsEl = document.getElementById('shopDetailTags');
+  if (tagsEl) {
+    tagsEl.innerHTML = '';
+    const tags = item.tags || [];
+    if (tags.length === 0) {
+      tagsEl.innerHTML = `<span style="font-size:0.85rem;color:var(--text-muted);font-style:italic;">${getLang() === 'en' ? 'No tags' : 'Sin etiquetas'}</span>`;
+    } else {
+      tags.forEach(t => {
+        const s = getTagStyle(t);
+        tagsEl.innerHTML += `<span style="font-size:0.75rem; padding:3px 8px; border-radius:6px; font-weight:700; background:${s.bg}; color:${s.text}; border:1px solid ${s.border}; display:inline-block;">${esc(t)}</span>`;
+      });
+    }
+  }
+
+  // Associated Task (Tarea asociada)
+  const taskEl = document.getElementById('shopDetailTask');
+  if (taskEl) {
+    taskEl.innerHTML = '';
+    const associatedTasks = state.store.pendingList.filter(t => {
+      const hasIdMatch = Array.isArray(t.shopItems) && t.shopItems.includes(item.id);
+      const hasNameMatch = item.name && t.name.toLowerCase().includes(item.name.toLowerCase());
+      return hasIdMatch || hasNameMatch;
+    });
+
+    if (associatedTasks.length === 0) {
+      taskEl.innerHTML = `<span style="font-size:0.85rem;color:var(--text-muted);font-style:italic;">${getLang() === 'en' ? 'Not associated with any task' : 'No asociada a ninguna tarea'}</span>`;
+    } else {
+      associatedTasks.forEach(t => {
+        const prio = PRIORITY_META[t.priority] || PRIORITY_META.media;
+        taskEl.innerHTML += `
+          <div style="display:flex; align-items:center; gap:8px; margin-top:4px; background: rgba(15, 23, 42, 0.03); border:1px solid var(--card-border); padding:8px; border-radius:8px;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${prio.color}; flex-shrink:0;"></span>
+            <span style="font-weight:700; font-size:0.85rem; flex:1;">${esc(t.name)}</span>
+            <span class="badge" style="font-size:0.65rem;">+${t.pts} pts</span>
+          </div>
+        `;
+      });
+    }
+  }
+
+  // Image (Foto)
+  const imgContainer = document.getElementById('shopDetailImgContainer');
+  const imgEl = document.getElementById('shopDetailImage');
+  if (imgContainer && imgEl) {
+    if (item.image) {
+      imgEl.src = item.image;
+      imgContainer.style.display = 'flex';
+      imgEl.onclick = () => {
+        openLightbox(item.image, displayName);
+      };
+    } else {
+      imgEl.src = '';
+      imgContainer.style.display = 'none';
+      imgEl.onclick = null;
+    }
+  }
+
+  openModal(modal);
 }
 
 export function openLightbox(src, caption) {

@@ -979,6 +979,11 @@ function bindEvents() {
       ui.closeModal(ui.elements.imageLightbox);
     };
   }
+  if (ui.elements.btnCloseShopDetails) {
+    ui.elements.btnCloseShopDetails.onclick = () => {
+      ui.closeModal(ui.elements.shopItemDetailsModal);
+    };
+  }
   if (ui.elements.btnCloseReport) {
     ui.elements.btnCloseReport.onclick = () => ui.closeReport();
   }
