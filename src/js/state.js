@@ -380,6 +380,20 @@ export function completePendingTask(index, onBonusCallback) {
   // Add activity log
   addLogEntry(task.name, task.pts);
 
+  // Sync with roadmap items: if there is a pending roadmap item with matching name, mark it completed!
+  const plan = store.roadmaps && store.roadmaps[localProfileId];
+  if (plan && Array.isArray(plan.items)) {
+    const matchingRoadmapItem = plan.items.find(it => it.type === 'pending' && !it.completed && it.text.trim().toLowerCase() === task.name.trim().toLowerCase());
+    if (matchingRoadmapItem) {
+      matchingRoadmapItem.completed = true;
+      matchingRoadmapItem.completedAt = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+  }
+
   // Manage Streak logic (+1 pt after 3 tasks)
   if (!store.bonusCounters) store.bonusCounters = {};
   if (!store.bonusCounters[localProfileId]) store.bonusCounters[localProfileId] = 0;
@@ -589,6 +603,21 @@ export function toggleRoadmapItem(itemId) {
         hour12: true
       });
       addLogEntry(item.text, item.pts || 0);
+
+      // Auto-complete matching pending task
+      if (item.type === 'pending') {
+        const tIndex = store.pendingList.findIndex(t => t.name.trim().toLowerCase() === item.text.trim().toLowerCase());
+        if (tIndex !== -1) {
+          store.pendingList.splice(tIndex, 1);
+          if (!store.bonusCounters) store.bonusCounters = {};
+          if (!store.bonusCounters[localProfileId]) store.bonusCounters[localProfileId] = 0;
+          store.bonusCounters[localProfileId]++;
+          if (store.bonusCounters[localProfileId] >= 3) {
+            store.bonusCounters[localProfileId] = 0;
+            addLogEntry("BONO Racha", 1);
+          }
+        }
+      }
     } else {
       delete item.completedAt;
       if (store.todayLog) {

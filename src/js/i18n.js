@@ -83,6 +83,11 @@ const T = {
     'confirm.delete.log': '¿Borrar actividad "{name}"?',
     'toast.log.deleted': 'Registro eliminado',
     'toast.task.done': '¡Tarea completada!',
+    'toast.task.undone': 'Acción deshecha',
+    'task.undo.title': '¡Tarea completada!',
+    'task.undo.body': 'Completaste "{name}" (+{pts} pts)',
+    'task.undo.btn.undo': 'Deshacer',
+    'task.undo.btn.accept': 'Aceptar',
     'toast.streak': '¡RACHA 3! +1 PUNTO',
     // Pending
     'pending.title': 'Pendientes',
@@ -581,6 +586,11 @@ const T = {
     'confirm.delete.log': 'Delete activity "{name}"?',
     'toast.log.deleted': 'Log entry deleted',
     'toast.task.done': 'Task completed!',
+    'toast.task.undone': 'Action undone',
+    'task.undo.title': 'Task completed!',
+    'task.undo.body': 'Completed "{name}" (+{pts} pts)',
+    'task.undo.btn.undo': 'Undo',
+    'task.undo.btn.accept': 'Accept',
     'toast.streak': 'STREAK 3! +1 POINT',
     // Pending
     'pending.title': 'Pending',

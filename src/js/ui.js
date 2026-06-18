@@ -438,6 +438,118 @@ export function showConfirm(message, onConfirm, onCancel = null, yesLabel = null
   };
 }
 
+/* --- UNDO COMPLETION MODAL --- */
+let undoOverlay = null;
+let undoTimeout = null;
+let undoTimerInterval = null;
+
+function createUndoContainer() {
+  undoOverlay = document.createElement('div');
+  undoOverlay.className = 'confirm-overlay';
+  undoOverlay.id = 'taskUndoOverlay';
+  undoOverlay.style.zIndex = '12000';
+  undoOverlay.innerHTML = `
+    <div class="confirm-box" style="position: relative; overflow: hidden; padding-bottom: 24px;">
+      <h3 style="margin-top: 0; font-family: var(--font-title); font-weight: 800; color: var(--success); font-size: 1.25rem; margin-bottom: 10px;" id="undoModalTitle">¡Tarea completada!</h3>
+      <p style="font-size: 0.95rem; margin-bottom: 20px; line-height: 1.5; color: var(--text-main);" id="undoModalBody"></p>
+      
+      <!-- Countdown timer indicator -->
+      <div style="width: 100%; height: 5px; background: rgba(15, 23, 42, 0.05); border-radius: 3px; margin-bottom: 24px; position: relative; overflow: hidden;">
+        <div id="undoProgressBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 100%; background: var(--success); transition: width 0.1s linear;"></div>
+      </div>
+      
+      <div class="confirm-actions" style="display: flex; gap: 10px;">
+        <button class="btn-confirm-no" id="undoModalBtnUndo" style="flex: 1; padding: 12px; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; transition: var(--transition);">Deshacer</button>
+        <button class="btn-confirm-yes" id="undoModalBtnAccept" style="flex: 1; padding: 12px; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; transition: var(--transition); background: var(--success); color: white; border: none;">Aceptar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(undoOverlay);
+}
+
+export function showUndoCompleteModal(taskIndex, taskName, taskPts, onConfirm, onUndo) {
+  if (!undoOverlay) createUndoContainer();
+  
+  if (undoTimeout) clearTimeout(undoTimeout);
+  if (undoTimerInterval) clearInterval(undoTimerInterval);
+  
+  document.getElementById('undoModalTitle').innerText = tr('task.undo.title') || '¡Tarea completada!';
+  document.getElementById('undoModalBody').innerHTML = (tr('task.undo.body') || 'Completaste "{name}" (+{pts} pts)')
+    .replace('{name}', `<strong>${esc(taskName)}</strong>`)
+    .replace('{pts}', taskPts);
+  
+  const undoBtn = document.getElementById('undoModalBtnUndo');
+  const acceptBtn = document.getElementById('undoModalBtnAccept');
+  
+  undoBtn.innerText = tr('task.undo.btn.undo') || 'Deshacer';
+  acceptBtn.innerText = tr('task.undo.btn.accept') || 'Aceptar';
+  
+  const duration = 4000;
+  let timeRemaining = duration;
+  const tick = 100;
+  
+  const progressBar = document.getElementById('undoProgressBar');
+  if (progressBar) {
+    progressBar.style.width = '100%';
+    progressBar.style.background = 'var(--success)';
+  }
+  
+  undoOverlay.classList.add('visible');
+  
+  const triggerConfirm = () => {
+    undoOverlay.classList.remove('visible');
+    clearTimeout(undoTimeout);
+    clearInterval(undoTimerInterval);
+    undoOverlay.onclick = null;
+    undoBtn.onclick = null;
+    acceptBtn.onclick = null;
+    if (onConfirm) onConfirm();
+  };
+  
+  const triggerUndo = () => {
+    undoOverlay.classList.remove('visible');
+    clearTimeout(undoTimeout);
+    clearInterval(undoTimerInterval);
+    undoOverlay.onclick = null;
+    undoBtn.onclick = null;
+    acceptBtn.onclick = null;
+    if (onUndo) onUndo();
+  };
+  
+  undoTimerInterval = setInterval(() => {
+    timeRemaining -= tick;
+    const percentage = Math.max(0, (timeRemaining / duration) * 100);
+    if (progressBar) {
+      progressBar.style.width = `${percentage}%`;
+    }
+    if (timeRemaining <= 0) {
+      clearInterval(undoTimerInterval);
+    }
+  }, tick);
+  
+  undoTimeout = setTimeout(() => {
+    triggerConfirm();
+  }, duration);
+  
+  undoOverlay.onclick = (e) => {
+    if (e.target === undoOverlay) {
+      triggerConfirm();
+    }
+  };
+  
+  undoOverlay.querySelector('.confirm-box').onclick = (e) => {
+    e.stopPropagation();
+  };
+  
+  undoBtn.onclick = () => {
+    triggerUndo();
+  };
+  
+  acceptBtn.onclick = () => {
+    triggerConfirm();
+  };
+}
+
 /* --- SYNC STATUS INDICATOR --- */
 export function showSyncIndicator() {
   if (elements.syncIndicator) {
@@ -776,10 +888,14 @@ function buildPendingCard(t, i, onEdit) {
   // Prevent parent card clicks from firing on action buttons/inputs
   card.querySelector('.btn-check-card').onclick = (e) => {
     e.stopPropagation();
-    state.completePendingTask(i, () => {
-      showToast(tr('toast.streak'), "warning");
+    showUndoCompleteModal(i, t.name, t.pts, () => {
+      state.completePendingTask(i, () => {
+        showToast(tr('toast.streak'), "warning");
+      });
+      showToast(tr('toast.task.done'));
+    }, () => {
+      showToast(tr('toast.task.undone') || 'Acción deshecha', 'info');
     });
-    showToast(tr('toast.task.done'));
   };
 
   card.querySelector('.btn-edit-pen').onclick = (e) => {
