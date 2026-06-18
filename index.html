@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="Tracker">
   <link rel="manifest" href="/productivity-tracker/manifest.json">
   <link rel="apple-touch-icon" href="/productivity-tracker/icon-192.svg">
-  <script type="module" crossorigin src="/productivity-tracker/assets/index-Cisg4u9o.js"></script>
+  <script type="module" crossorigin src="/productivity-tracker/assets/index-B7eyN-6p.js"></script>
   <link rel="stylesheet" crossorigin href="/productivity-tracker/assets/index-BGxaYA43.css">
 <script id="vite-plugin-pwa:register-sw" src="/productivity-tracker/registerSW.js"></script></head>
 <body>
@@ -932,6 +932,63 @@
       <button id="btnCloseLightbox" style="position: absolute; top: -45px; right: 0; background: none; border: none; color: white; font-size: 2.2rem; cursor: pointer; line-height: 1;">×</button>
       <img id="lightboxImage" style="max-width: 100%; max-height: 75vh; border-radius: var(--radius-md); box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain;">
       <div id="lightboxCaption" style="color: white; margin-top: 12px; font-family: var(--font-title); font-weight: 600; text-align: center; font-size: 1rem;"></div>
+    </div>
+  </div>
+
+  <!-- SHOPPING ITEM DETAILS MODAL -->
+  <div class="modal-overlay" id="shopItemDetailsModal">
+    <div class="modal-content" style="max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding: 24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--card-border); padding-bottom:12px;">
+        <h3 style="margin:0; font-family: var(--font-title); font-weight:800; color: var(--active-color);" id="shopDetailTitle">Detalle del Artículo</h3>
+        <button id="btnCloseShopDetails" style="border:none; background:none; font-size:1.8rem; color: var(--text-muted); cursor:pointer; line-height:1;">×</button>
+      </div>
+      
+      <!-- Full Product Name -->
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Nombre del Artículo</span>
+        <span id="shopDetailName" style="font-size:1.15rem; font-weight:700; word-break:break-word; color:var(--text-main); line-height:1.4;"></span>
+      </div>
+
+      <!-- Detail rows -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Cantidad</span>
+          <span id="shopDetailQty" style="font-size:0.9rem; font-weight:600; color:var(--text-main);"></span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Para quién</span>
+          <span id="shopDetailAssigned" style="font-size:0.9rem; font-weight:600;"></span>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Pedido por</span>
+          <span id="shopDetailAddedBy" style="font-size:0.9rem; font-weight:600; color:var(--text-main);"></span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Fecha pedido</span>
+          <span id="shopDetailDate" style="font-size:0.9rem; font-weight:600; color:var(--text-main);"></span>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Etiquetas / Supermercados</span>
+        <div id="shopDetailTags" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:2px;"></div>
+      </div>
+
+      <!-- Associated Task -->
+      <div style="display:flex; flex-direction:column; gap:4px; border-top: 1px dashed var(--card-border); padding-top:12px;">
+        <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Tareas asociadas</span>
+        <div id="shopDetailTask" style="font-size:0.9rem; font-weight:600; color:var(--text-main); line-height:1.4;"></div>
+      </div>
+
+      <!-- Image (large preview) -->
+      <div id="shopDetailImgContainer" style="display:none; flex-direction:column; gap:4px; border-top: 1px dashed var(--card-border); padding-top:12px;">
+        <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Foto</span>
+        <img id="shopDetailImage" style="max-height: 200px; border-radius: var(--radius-md); object-fit: cover; border: 1px solid var(--card-border); cursor: zoom-in; max-width: 100%;">
+      </div>
     </div>
   </div>
 
