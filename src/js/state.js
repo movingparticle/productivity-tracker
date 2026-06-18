@@ -383,7 +383,7 @@ export function completePendingTask(index, onBonusCallback) {
   // Sync with roadmap items: if there is a pending roadmap item with matching name, mark it completed!
   const plan = store.roadmaps && store.roadmaps[localProfileId];
   if (plan && Array.isArray(plan.items)) {
-    const matchingRoadmapItem = plan.items.find(it => it.type === 'pending' && !it.completed && it.text.trim().toLowerCase() === task.name.trim().toLowerCase());
+    const matchingRoadmapItem = plan.items.find(it => !it.completed && it.text.trim().toLowerCase() === task.name.trim().toLowerCase());
     if (matchingRoadmapItem) {
       matchingRoadmapItem.completed = true;
       matchingRoadmapItem.completedAt = new Date().toLocaleTimeString('en-US', {
@@ -406,11 +406,13 @@ export function completePendingTask(index, onBonusCallback) {
     setTimeout(() => {
       addLogEntry("BONO Racha", 1);
       saveState();
+      triggerUiUpdate();
       if (onBonusCallback) onBonusCallback();
     }, 300);
   } else {
     saveState();
   }
+  triggerUiUpdate();
 }
 
 /**
@@ -604,18 +606,16 @@ export function toggleRoadmapItem(itemId) {
       });
       addLogEntry(item.text, item.pts || 0);
 
-      // Auto-complete matching pending task
-      if (item.type === 'pending') {
-        const tIndex = store.pendingList.findIndex(t => t.name.trim().toLowerCase() === item.text.trim().toLowerCase());
-        if (tIndex !== -1) {
-          store.pendingList.splice(tIndex, 1);
-          if (!store.bonusCounters) store.bonusCounters = {};
-          if (!store.bonusCounters[localProfileId]) store.bonusCounters[localProfileId] = 0;
-          store.bonusCounters[localProfileId]++;
-          if (store.bonusCounters[localProfileId] >= 3) {
-            store.bonusCounters[localProfileId] = 0;
-            addLogEntry("BONO Racha", 1);
-          }
+      // Auto-complete matching pending task (even if it was added as custom)
+      const tIndex = store.pendingList.findIndex(t => t.name.trim().toLowerCase() === item.text.trim().toLowerCase());
+      if (tIndex !== -1) {
+        store.pendingList.splice(tIndex, 1);
+        if (!store.bonusCounters) store.bonusCounters = {};
+        if (!store.bonusCounters[localProfileId]) store.bonusCounters[localProfileId] = 0;
+        store.bonusCounters[localProfileId]++;
+        if (store.bonusCounters[localProfileId] >= 3) {
+          store.bonusCounters[localProfileId] = 0;
+          addLogEntry("BONO Racha", 1);
         }
       }
     } else {
@@ -630,6 +630,7 @@ export function toggleRoadmapItem(itemId) {
       }
     }
     saveState();
+    triggerUiUpdate();
   }
 }
 
@@ -641,6 +642,7 @@ export function deleteRoadmapItem(itemId) {
   const items = store.roadmaps[localProfileId].items || [];
   store.roadmaps[localProfileId].items = items.filter(x => x.id !== itemId);
   saveState();
+  triggerUiUpdate();
 }
 
 /**

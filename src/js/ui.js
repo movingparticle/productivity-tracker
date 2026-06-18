@@ -888,14 +888,22 @@ function buildPendingCard(t, i, onEdit) {
   // Prevent parent card clicks from firing on action buttons/inputs
   card.querySelector('.btn-check-card').onclick = (e) => {
     e.stopPropagation();
-    showUndoCompleteModal(i, t.name, t.pts, () => {
-      state.completePendingTask(i, () => {
-        showToast(tr('toast.streak'), "warning");
-      });
-      showToast(tr('toast.task.done'));
+    const promptMsg = (tr('task.undo.body') || '¿Completar "{name}" (+{pts} pts)?')
+      .replace('{name}', t.name)
+      .replace('{pts}', t.pts)
+      .replace(/<[^>]*>?/gm, ''); // remove html tags from translations if any
+
+    showConfirm(promptMsg, () => {
+      const currentIndex = state.store.pendingList.indexOf(t);
+      if (currentIndex !== -1) {
+        state.completePendingTask(currentIndex, () => {
+          showToast(tr('toast.streak'), "warning");
+        });
+        showToast(tr('toast.task.done'));
+      }
     }, () => {
       showToast(tr('toast.task.undone') || 'Acción deshecha', 'info');
-    });
+    }, tr('task.undo.btn.accept') || 'Aceptar', tr('task.undo.btn.undo') || 'Deshacer');
   };
 
   card.querySelector('.btn-edit-pen').onclick = (e) => {
@@ -906,8 +914,12 @@ function buildPendingCard(t, i, onEdit) {
   card.querySelector('.btn-del-pen').onclick = (e) => {
     e.stopPropagation();
     showConfirm(tr('confirm.delete.task', { name: t.name }), () => {
-      state.deletePendingTask(i);
-      showToast(tr('toast.task.deleted'));
+      const currentIndex = state.store.pendingList.indexOf(t);
+      if (currentIndex !== -1) {
+        state.deletePendingTask(currentIndex);
+        state.triggerUiUpdate();
+        showToast(tr('toast.task.deleted'));
+      }
     });
   };
 
