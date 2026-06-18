@@ -1408,6 +1408,30 @@ input:focus, select:focus {
   padding-left: 10px;
 }
 
+.btn-undo-action {
+  background: var(--active-color);
+  color: #ffffff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-title);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.btn-undo-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  filter: brightness(1.1);
+}
+
+.btn-undo-action:active {
+  transform: translateY(0);
+}
+
 /* --- CONFIRM DIALOG OVERLAY --- */
 .confirm-overlay {
   position: fixed;

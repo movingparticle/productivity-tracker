@@ -438,115 +438,89 @@ export function showConfirm(message, onConfirm, onCancel = null, yesLabel = null
   };
 }
 
-/* --- UNDO COMPLETION MODAL --- */
-let undoOverlay = null;
-let undoTimeout = null;
-let undoTimerInterval = null;
+/* --- NON-BLOCKING UNDO TOAST FOR TASKS --- */
+const activeUndoToasts = new Set();
 
-function createUndoContainer() {
-  undoOverlay = document.createElement('div');
-  undoOverlay.className = 'confirm-overlay';
-  undoOverlay.id = 'taskUndoOverlay';
-  undoOverlay.style.zIndex = '12000';
-  undoOverlay.innerHTML = `
-    <div class="confirm-box" style="position: relative; overflow: hidden; padding-bottom: 24px;">
-      <h3 style="margin-top: 0; font-family: var(--font-title); font-weight: 800; color: var(--success); font-size: 1.25rem; margin-bottom: 10px;" id="undoModalTitle">¡Tarea completada!</h3>
-      <p style="font-size: 0.95rem; margin-bottom: 20px; line-height: 1.5; color: var(--text-main);" id="undoModalBody"></p>
-      
-      <!-- Countdown timer indicator -->
-      <div style="width: 100%; height: 5px; background: rgba(15, 23, 42, 0.05); border-radius: 3px; margin-bottom: 24px; position: relative; overflow: hidden;">
-        <div id="undoProgressBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 100%; background: var(--success); transition: width 0.1s linear;"></div>
-      </div>
-      
-      <div class="confirm-actions" style="display: flex; gap: 10px;">
-        <button class="btn-confirm-no" id="undoModalBtnUndo" style="flex: 1; padding: 12px; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; transition: var(--transition);">Deshacer</button>
-        <button class="btn-confirm-yes" id="undoModalBtnAccept" style="flex: 1; padding: 12px; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; transition: var(--transition); background: var(--success); color: white; border: none;">Aceptar</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(undoOverlay);
+export function commitAllPendingUndoTasks() {
+  if (activeUndoToasts.size > 0) {
+    const toCommit = [...activeUndoToasts];
+    toCommit.forEach(commitFn => commitFn());
+  }
 }
 
-export function showUndoCompleteModal(taskIndex, taskName, taskPts, onConfirm, onUndo) {
-  if (!undoOverlay) createUndoContainer();
+// Ensure unload commits everything
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    commitAllPendingUndoTasks();
+  });
+}
+
+export function showUndoToast(message, onUndo, onCommit, duration = 5000) {
+  if (!toastContainer) createToastContainer();
   
-  if (undoTimeout) clearTimeout(undoTimeout);
-  if (undoTimerInterval) clearInterval(undoTimerInterval);
+  const toast = document.createElement('div');
+  toast.className = `toast toast-success`;
+  toast.style.display = 'flex';
+  toast.style.alignItems = 'center';
+  toast.style.justifyContent = 'space-between';
+  toast.style.gap = '15px';
+  toast.style.padding = '10px 14px';
   
-  document.getElementById('undoModalTitle').innerText = tr('task.undo.title') || '¡Tarea completada!';
-  document.getElementById('undoModalBody').innerHTML = (tr('task.undo.body') || 'Completaste "{name}" (+{pts} pts)')
-    .replace('{name}', `<strong>${esc(taskName)}</strong>`)
-    .replace('{pts}', taskPts);
+  const icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color: var(--success);"><polyline points="20 6 9 17 4 12"></polyline></svg>';
   
-  const undoBtn = document.getElementById('undoModalBtnUndo');
-  const acceptBtn = document.getElementById('undoModalBtnAccept');
+  toast.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px; overflow:hidden; flex:1;">
+      <span class="icon-span" style="display:flex; align-items:center; flex-shrink:0;">${icon}</span>
+      <span style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(message)}</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+      <button class="btn-undo-action">${tr('task.undo.btn.undo') || 'Deshacer'}</button>
+      <button class="toast-close" style="display:flex; align-items:center; justify-content:center; padding:0; background:none; border:none; color:var(--text-muted); cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+  `;
   
-  undoBtn.innerText = tr('task.undo.btn.undo') || 'Deshacer';
-  acceptBtn.innerText = tr('task.undo.btn.accept') || 'Aceptar';
+  toastContainer.appendChild(toast);
+  toast.offsetHeight; // force reflow
+  toast.classList.add('show');
   
-  const duration = 4000;
-  let timeRemaining = duration;
-  const tick = 100;
+  let finished = false;
   
-  const progressBar = document.getElementById('undoProgressBar');
-  if (progressBar) {
-    progressBar.style.width = '100%';
-    progressBar.style.background = 'var(--success)';
-  }
-  
-  undoOverlay.classList.add('visible');
-  
-  const triggerConfirm = () => {
-    undoOverlay.classList.remove('visible');
-    clearTimeout(undoTimeout);
-    clearInterval(undoTimerInterval);
-    undoOverlay.onclick = null;
-    undoBtn.onclick = null;
-    acceptBtn.onclick = null;
-    if (onConfirm) onConfirm();
+  const commit = () => {
+    if (finished) return;
+    finished = true;
+    activeUndoToasts.delete(commit);
+    
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+    
+    if (onCommit) onCommit();
   };
   
-  const triggerUndo = () => {
-    undoOverlay.classList.remove('visible');
-    clearTimeout(undoTimeout);
-    clearInterval(undoTimerInterval);
-    undoOverlay.onclick = null;
-    undoBtn.onclick = null;
-    acceptBtn.onclick = null;
+  const undo = () => {
+    if (finished) return;
+    finished = true;
+    activeUndoToasts.delete(commit);
+    
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+    
     if (onUndo) onUndo();
   };
   
-  undoTimerInterval = setInterval(() => {
-    timeRemaining -= tick;
-    const percentage = Math.max(0, (timeRemaining / duration) * 100);
-    if (progressBar) {
-      progressBar.style.width = `${percentage}%`;
-    }
-    if (timeRemaining <= 0) {
-      clearInterval(undoTimerInterval);
-    }
-  }, tick);
+  activeUndoToasts.add(commit);
   
-  undoTimeout = setTimeout(() => {
-    triggerConfirm();
+  const timer = setTimeout(() => {
+    commit();
   }, duration);
   
-  undoOverlay.onclick = (e) => {
-    if (e.target === undoOverlay) {
-      triggerConfirm();
-    }
+  toast.querySelector('.btn-undo-action').onclick = () => {
+    clearTimeout(timer);
+    undo();
   };
   
-  undoOverlay.querySelector('.confirm-box').onclick = (e) => {
-    e.stopPropagation();
-  };
-  
-  undoBtn.onclick = () => {
-    triggerUndo();
-  };
-  
-  acceptBtn.onclick = () => {
-    triggerConfirm();
+  toast.querySelector('.toast-close').onclick = () => {
+    clearTimeout(timer);
+    commit();
   };
 }
 
@@ -562,6 +536,9 @@ export function showSyncIndicator() {
 
 /* --- SCREEN SWAPPING --- */
 export function navTo(screenId, navButton) {
+  // Commit any pending undo tasks immediately when changing pages
+  commitAllPendingUndoTasks();
+
   // Reset FAB position on page switch
   const fab = document.getElementById('mainFab');
   if (fab) {
@@ -888,22 +865,38 @@ function buildPendingCard(t, i, onEdit) {
   // Prevent parent card clicks from firing on action buttons/inputs
   card.querySelector('.btn-check-card').onclick = (e) => {
     e.stopPropagation();
-    const promptMsg = (tr('task.undo.body') || '¿Completar "{name}" (+{pts} pts)?')
+    
+    // 1. Mark task as completing so it hides immediately
+    t._isCompleting = true;
+    state.triggerUiUpdate();
+
+    // 2. Build task completed notification toast message
+    const toastMsg = (tr('task.undo.body') || 'Completaste "{name}" (+{pts} pts)')
       .replace('{name}', t.name)
       .replace('{pts}', t.pts)
-      .replace(/<[^>]*>?/gm, ''); // remove html tags from translations if any
+      .replace(/<[^>]*>?/gm, ''); // remove HTML tags if any
 
-    showConfirm(promptMsg, () => {
-      const currentIndex = state.store.pendingList.indexOf(t);
-      if (currentIndex !== -1) {
-        state.completePendingTask(currentIndex, () => {
-          showToast(tr('toast.streak'), "warning");
-        });
-        showToast(tr('toast.task.done'));
-      }
-    }, () => {
-      showToast(tr('toast.task.undone') || 'Acción deshecha', 'info');
-    }, tr('task.undo.btn.accept') || 'Aceptar', tr('task.undo.btn.undo') || 'Deshacer');
+    // 3. Show small toast at the top
+    showUndoToast(
+      toastMsg,
+      // onUndo:
+      () => {
+        delete t._isCompleting;
+        state.triggerUiUpdate();
+        showToast(tr('toast.task.undone') || 'Acción deshecha', 'info');
+      },
+      // onCommit:
+      () => {
+        const currentIndex = state.store.pendingList.indexOf(t);
+        if (currentIndex !== -1) {
+          state.completePendingTask(currentIndex, () => {
+            showToast(tr('toast.streak'), "warning");
+          });
+          showToast(tr('toast.task.done'));
+        }
+      },
+      5000 // 5 seconds
+    );
   };
 
   card.querySelector('.btn-edit-pen').onclick = (e) => {
@@ -960,7 +953,9 @@ function renderPendingInto(container, withEditFocus) {
   if (!container) return;
   container.innerHTML = '';
 
-  const allTasks = state.store.pendingList.map((t, i) => ({ t, i }));
+  const allTasks = state.store.pendingList
+    .map((t, i) => ({ t, i }))
+    .filter(({ t }) => !t._isCompleting);
 
   if (allTasks.length === 0) {
     container.innerHTML = `<div style="padding: 30px 20px; text-align:center; color:var(--text-muted); font-size:0.9rem;">${tr('pending.empty')}</div>`;
